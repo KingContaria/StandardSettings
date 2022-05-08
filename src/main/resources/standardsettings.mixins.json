@@ -1,0 +1,16 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "com.kingcontaria.standardsettings.mixins",
+  "compatibilityLevel": "JAVA_8",
+  "mixins": [
+    "PieChartAccessor",
+    "ResetSettingsMixin",
+    "InstancenumberMixin"
+  ],
+  "client": [
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

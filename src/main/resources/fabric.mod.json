@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "id": "standardsettings",
+  "version": "${version}",
+
+  "name": "StandardSettings",
+  "description": "Resetting Mod for Minecraft Speedrunning",
+  "authors": [
+    "KingContaria"
+  ],
+  "contact": {
+    "homepage": "",
+    "sources": ""
+  },
+
+  "license": "CC0-1.0",
+  "icon": "",
+
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "com.kingcontaria.standardsettings.StandardSettingsMod"
+    ]
+  },
+  "mixins": [
+    "standardsettings.mixins.json"
+  ],
+
+  "depends": {
+    "fabricloader": ">=0.7.4",
+    "minecraft": "1.16.x"
+  },
+  "suggests": {
+    "another-mod": "*"
+  }
+}
