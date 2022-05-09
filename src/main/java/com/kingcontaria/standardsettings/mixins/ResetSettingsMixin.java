@@ -14,12 +14,7 @@ public class ResetSettingsMixin{
 
     @Inject(at = @At("HEAD"), method = "createLevel")
     private void createLevel(CallbackInfo info){
-
-        System.out.println("Check 0");
-        new ResetSettings();
+        ResetSettings.LoadStandardSettings();
     }
 
 }
-
-
-
