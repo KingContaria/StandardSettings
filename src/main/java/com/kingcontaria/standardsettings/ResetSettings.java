@@ -15,7 +15,6 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtHelper;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.util.Arm;
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.*;
@@ -24,7 +23,7 @@ import java.util.Iterator;
 @Environment(value= EnvType.CLIENT)
 public class ResetSettings {
 
-    private static final Logger LOGGER = LogManager.getLogger();
+    private static final Logger LOGGER = StandardSettings.LOGGER;
     private static final Splitter COLON_SPLITTER = Splitter.on(':').limit(2);
     protected static MinecraftClient client = MinecraftClient.getInstance();
     private static final File standardoptionsFile = new File("standardoptions.txt");
@@ -42,13 +41,13 @@ public class ResetSettings {
                         Iterator iterator = COLON_SPLITTER.split(string).iterator();
                         compoundTag.putString((String) iterator.next(), (String) iterator.next());
                     } catch (Exception exception) {
-                        LOGGER.warn("Skipping bad standardoption: {}", string);
+                        LOGGER.warn("Skipping bad StandardSetting: {}", string);
                     }
                 });
             }
             CompoundTag compoundTag2 = update(compoundTag);
             if (!compoundTag2.contains("graphicsMode") && compoundTag2.contains("fancyGraphics")) {
-                client.options.graphicsMode = "true".equals(compoundTag2.getString("fancyGraphics")) ? GraphicsMode.FANCY : GraphicsMode.FAST;
+                MinecraftClient.getInstance().options.graphicsMode = "true".equals(compoundTag2.getString("fancyGraphics")) ? GraphicsMode.FANCY : GraphicsMode.FAST;
             }
             for (String string2 : compoundTag2.getKeys()) {
                 String string22 = compoundTag2.getString(string2);
@@ -129,7 +128,8 @@ public class ResetSettings {
                     }
                     if ("guiScale".equals(string2)) {
                         client.options.guiScale = Integer.parseInt(string22);
-                        client.onResolutionChanged();
+                        int i = client.getWindow().calculateScaleFactor(client.options.guiScale, client.forcesUnicodeFont());
+                        client.getWindow().setScaleFactor(i);
                     }
                     if ("particles".equals(string2)) {
                         client.options.particles = ParticlesOption.byId(Integer.parseInt(string22));
@@ -160,7 +160,7 @@ public class ResetSettings {
                         }
                     }
                     if ("attackIndicator".equals(string2)) {
-                        client.options.attackIndicator = AttackIndicator.byId(Integer.parseInt( string22));
+                        client.options.attackIndicator = AttackIndicator.byId(Integer.parseInt(string22));
                     }
                     //Deactivated
                     /*
@@ -236,7 +236,7 @@ public class ResetSettings {
                     }
                     if ("rawMouseInput".equals(string2)) {
                         client.options.rawMouseInput = "true".equals(string22);
-                        client.getWindow().setRawMouseMotion("true".equals( string22));
+                        Option.RAW_MOUSE_INPUT.set(client.options, string22);
                     }
                     if ("perspective".equals(string2)) {
                         client.options.perspective = Integer.parseInt(string22);
@@ -244,6 +244,14 @@ public class ResetSettings {
                     if ("piedirectory".equals(string2)) {
                         string22 = string22.replace(".", "");
                         ((PieChartAccessor) client).setopenProfilerSection(string22);
+                    }
+                    if ("chunkborders".equals(string2)) {
+                        if(client.debugRenderer.toggleShowChunkBorder() != "true".equals(string22)){
+                            client.debugRenderer.toggleShowChunkBorder();
+                        }
+                    }
+                    if ("hitboxes".equals(string2)) {
+                        client.getEntityRenderManager().setRenderHitboxes("true".equals(string22));
                     }
                     for (KeyBinding keyBinding : client.options.keysAll) {
                         if (!string2.equals("key_" + keyBinding.getTranslationKey())) continue;
@@ -263,14 +271,16 @@ public class ResetSettings {
                     // Additionally, options.txt settings which aren't accessible in vanilla Minecraft and some unnecessary settings (like Multiplayer stuff) are not included.
                 }
                 catch (Exception exception) {
-                    LOGGER.warn("Skipping bad standardoption: {}:{}", string2, string22);
+                    LOGGER.warn("Skipping bad StandardSetting: {}:{}", string2, string22);
                 }
             }
             KeyBinding.updateKeysByCode();
+            LOGGER.info("Finished loading StandardSettings");
         }
         catch (Exception exception2) {
-            LOGGER.error("Failed to load standardoptions", exception2);
+            LOGGER.error("Failed to load StandardSettings", exception2);
         }
+        client.options.debugProfilerEnabled = false;
         client.options.write();
     }
 

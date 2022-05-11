@@ -1,20 +1,31 @@
 package com.kingcontaria.standardsettings.mixins;
 
 import com.kingcontaria.standardsettings.ResetSettings;
+import com.kingcontaria.standardsettings.StandardSettings;
 import net.minecraft.client.gui.screen.world.CreateWorldScreen;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-
 @Mixin(CreateWorldScreen.class)
 
 public class ResetSettingsMixin{
 
-    @Inject(at = @At("HEAD"), method = "createLevel")
-    private void createLevel(CallbackInfo info){
-        ResetSettings.LoadStandardSettings();
+    private static boolean bl = true;
+
+    @Inject(method = "createLevel()V", at = @At("HEAD"))
+    private void changeSettings(CallbackInfo info){
+        if(bl) {
+            StandardSettings.LOGGER.info("Reset to StandardSettings...");
+            ResetSettings.LoadStandardSettings();
+            bl = false;
+        }
+    }
+
+    @Inject(method = "createLevel", at = @At("TAIL"))
+    private void setcondition(CallbackInfo ci){
+        bl = true;
     }
 
 }
