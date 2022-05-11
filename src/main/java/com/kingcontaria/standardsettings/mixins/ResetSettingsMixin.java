@@ -15,7 +15,7 @@ public class ResetSettingsMixin{
     private static boolean bl = true;
 
     @Inject(method = "createLevel()V", at = @At("HEAD"))
-    private void changeSettings(CallbackInfo info){
+    private void createLevel(CallbackInfo info){
         if(bl) {
             StandardSettings.LOGGER.info("Reset to StandardSettings...");
             ResetSettings.LoadStandardSettings();

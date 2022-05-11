@@ -17,7 +17,8 @@ import net.minecraft.sound.SoundCategory;
 import net.minecraft.util.Arm;
 import org.apache.logging.log4j.Logger;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.File;
 import java.util.Iterator;
 
 @Environment(value= EnvType.CLIENT)
@@ -29,6 +30,7 @@ public class ResetSettings {
     private static final File standardoptionsFile = new File("standardoptions.txt");
 
     public static void LoadStandardSettings() {
+
         try {
             if (!standardoptionsFile.exists()) {
                 LOGGER.error("standardoptions.txt is missing");
@@ -46,9 +48,6 @@ public class ResetSettings {
                 });
             }
             CompoundTag compoundTag2 = update(compoundTag);
-            if (!compoundTag2.contains("graphicsMode") && compoundTag2.contains("fancyGraphics")) {
-                MinecraftClient.getInstance().options.graphicsMode = "true".equals(compoundTag2.getString("fancyGraphics")) ? GraphicsMode.FANCY : GraphicsMode.FAST;
-            }
             for (String string2 : compoundTag2.getKeys()) {
                 String string22 = compoundTag2.getString(string2);
                 try {
@@ -69,7 +68,7 @@ public class ResetSettings {
                     }
                     if ("enableVsync".equals(string2)) {
                         client.options.enableVsync = Boolean.parseBoolean(string22);
-                        client.getWindow().setVsync(Boolean.parseBoolean(string22));
+                        client.window.setVsync(Boolean.parseBoolean(string22));
                     }
                     if ("entityShadows".equals(string2)) {
                         client.options.entityShadows = Boolean.parseBoolean(string22);
@@ -97,19 +96,13 @@ public class ResetSettings {
                         client.options.touchscreen = Boolean.parseBoolean(string22);
                     }
                     if ("fullscreen".equals(string2)) {
-                        if(client.getWindow().isFullscreen() != Boolean.parseBoolean(string22)){
+                        if (client.window.isFullscreen() != Boolean.parseBoolean(string22)) {
                             client.options.fullscreen = Boolean.parseBoolean(string22);
-                            client.getWindow().toggleFullscreen();
+                            client.window.toggleFullscreen();
                         }
                     }
                     if ("bobView".equals(string2)) {
                         client.options.bobView = Boolean.parseBoolean(string22);
-                    }
-                    if ("toggleCrouch".equals(string2)) {
-                        client.options.sneakToggled = Boolean.parseBoolean(string22);
-                    }
-                    if ("toggleSprint".equals(string2)) {
-                        client.options.sprintToggled = Boolean.parseBoolean(string22);
                     }
                     if ("mouseSensitivity".equals(string2)) {
                         client.options.mouseSensitivity = Float.parseFloat(string22);
@@ -123,25 +116,22 @@ public class ResetSettings {
                     if ("renderDistance".equals(string2)) {
                         client.options.viewDistance = Integer.parseInt(string22);
                     }
-                    if ("entityDistanceScaling".equals(string2)) {
-                        client.options.entityDistanceScaling = Float.parseFloat(string22);
-                    }
                     if ("guiScale".equals(string2)) {
                         client.options.guiScale = Integer.parseInt(string22);
-                        int i = client.getWindow().calculateScaleFactor(client.options.guiScale, client.forcesUnicodeFont());
-                        client.getWindow().setScaleFactor(i);
+                        int i = client.window.calculateScaleFactor(client.options.guiScale, client.forcesUnicodeFont());
+                        client.window.setScaleFactor(i);
                     }
                     if ("particles".equals(string2)) {
                         client.options.particles = ParticlesOption.byId(Integer.parseInt(string22));
                     }
                     if ("maxFps".equals(string2)) {
                         client.options.maxFps = Integer.parseInt(string22);
-                        if (client.getWindow() != null) {
-                            client.getWindow().setFramerateLimit(client.options.maxFps);
+                        if (client.window != null) {
+                            client.window.setFramerateLimit(client.options.maxFps);
                         }
                     }
-                    if ("graphicsMode".equals(string2)) {
-                        client.options.graphicsMode = GraphicsMode.byId(Integer.parseInt(string22));
+                    if ("fancyGraphics".equals(string2)) {
+                        client.options.fancyGraphics = "true".equals(string22);
                     }
                     if ("ao".equals(string2)) {
                         switch ((int) Float.parseFloat(string22)) {
@@ -176,9 +166,6 @@ public class ResetSettings {
                     if ("chatOpacity".equals(string2)) {
                         client.options.chatOpacity = Float.parseFloat(string22);
                     }
-                    if ("chatLineSpacing".equals(string2)) {
-                        client.options.chatLineSpacing = Float.parseFloat(string22);
-                    }
                     if ("textBackgroundOpacity".equals(string2)) {
                         client.options.textBackgroundOpacity = Float.parseFloat(string22);
                     }
@@ -202,9 +189,6 @@ public class ResetSettings {
                     }
                     if ("chatHeightFocused".equals(string2)) {
                         client.options.chatHeightFocused = Float.parseFloat(string22);
-                    }
-                    if ("chatDelay".equals(string2)) {
-                        client.options.chatDelay = Float.parseFloat(string22);
                     }
                     if ("chatHeightUnfocused".equals(string2)) {
                         client.options.chatHeightUnfocused = Float.parseFloat(string22);
@@ -235,7 +219,7 @@ public class ResetSettings {
                         client.options.mouseWheelSensitivity = Float.parseFloat(string22);
                     }
                     if ("rawMouseInput".equals(string2)) {
-                        client.options.rawMouseInput = "true".equals(string22);
+                        client.options.field_20308 = "true".equals(string22);
                         Option.RAW_MOUSE_INPUT.set(client.options, string22);
                     }
                     if ("perspective".equals(string2)) {
@@ -253,34 +237,41 @@ public class ResetSettings {
                     if ("hitboxes".equals(string2)) {
                         client.getEntityRenderManager().setRenderHitboxes("true".equals(string22));
                     }
-                    for (KeyBinding keyBinding : client.options.keysAll) {
-                        if (!string2.equals("key_" + keyBinding.getTranslationKey())) continue;
-                        keyBinding.setBoundKey(InputUtil.fromTranslationKey(string22));
+                    KeyBinding[] var6 = client.options.keysAll;
+                    int var7 = var6.length;
+                    int var8;
+                    for (var8 = 0; var8 < var7; ++var8) {
+                        KeyBinding keyBinding = var6[var8];
+                        if (string2.equals("key_" + keyBinding.getId())) {
+                            keyBinding.setKeyCode(InputUtil.fromName(string22));
+                        }
                     }
                     for (SoundCategory soundCategory : SoundCategory.values()) {
-                        if (!string2.equals("soundCategory_" + (soundCategory).getName())) continue;
+                        if (!string2.equals("soundCategory_" + soundCategory.getName()))
+                            continue;
                         client.getSoundManager().updateSoundVolume(soundCategory, Float.parseFloat(string22));
                         client.options.setSoundVolume(soundCategory, Float.parseFloat(string22));
                     }
-                    for (PlayerModelPart playerModelPart : PlayerModelPart.values()) {
-                        if (!string2.equals("modelPart_" + playerModelPart.getName())) continue;
-                        client.options.setPlayerModelPart(playerModelPart, "true".equals(string22));
+                    PlayerModelPart[] var24 = PlayerModelPart.values();
+                    var7 = var24.length;
+                    for (var8 = 0; var8 < var7; ++var8) {
+                        PlayerModelPart playerModelPart = var24[var8];
+                        if (string2.equals("modelPart_" + playerModelPart.getName())) {
+                            client.options.setPlayerModelPart(playerModelPart, string22.equals("true"));
+                        }
                     }
 
                     // Excluded are Language and Mipmap Levels because resources would've had to be reloaded, blocking world creation screen.
                     // Additionally, options.txt settings which aren't accessible in vanilla Minecraft and some unnecessary settings (like Multiplayer stuff) are not included.
-                }
-                catch (Exception exception) {
-                    LOGGER.warn("Skipping bad StandardSetting: {}:{}", string2, string22);
+                } catch (Exception exception) {
+                    LOGGER.warn("Skipping bad StandardSetting: {}:{}",  string2,  string22);
                 }
             }
             KeyBinding.updateKeysByCode();
             LOGGER.info("Finished loading StandardSettings");
-        }
-        catch (Exception exception2) {
+        } catch (Exception exception2) {
             LOGGER.error("Failed to load StandardSettings", exception2);
         }
-        client.options.debugProfilerEnabled = false;
         client.options.write();
     }
 
