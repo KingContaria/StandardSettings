@@ -19,7 +19,7 @@
   "environment": "*",
   "entrypoints": {
     "main": [
-      "com.kingcontaria.standardsettings.StandardSettingsMod"
+      "com.kingcontaria.standardsettings.StandardSettings"
     ]
   },
   "mixins": [
