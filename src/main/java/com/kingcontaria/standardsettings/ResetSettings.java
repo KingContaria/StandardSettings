@@ -15,7 +15,6 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtHelper;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.util.Arm;
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.BufferedReader;
@@ -25,7 +24,7 @@ import java.util.Iterator;
 @Environment(value= EnvType.CLIENT)
 public class ResetSettings {
 
-    private static final Logger LOGGER = LogManager.getLogger();
+    private static final Logger LOGGER = StandardSettings.LOGGER;
     private static final Splitter COLON_SPLITTER = Splitter.on(':').limit(2);
     protected static MinecraftClient client = MinecraftClient.getInstance();
     private static final File standardoptionsFile = new File("standardoptions.txt");
@@ -44,7 +43,7 @@ public class ResetSettings {
                         Iterator iterator = COLON_SPLITTER.split(string).iterator();
                         compoundTag.putString((String) iterator.next(), (String) iterator.next());
                     } catch (Exception exception) {
-                        LOGGER.warn("Skipping bad standardoption: {}", string);
+                        LOGGER.warn("Skipping bad StandardSetting: {}", string);
                     }
                 });
             }
@@ -52,113 +51,112 @@ public class ResetSettings {
             for (String string2 : compoundTag2.getKeys()) {
                 String string22 = compoundTag2.getString(string2);
                 try {
-                    if ("autoJump".equals( string2)) {
+                    if ("autoJump".equals(string2)) {
                         client.options.autoJump = Boolean.parseBoolean(string22);
                     }
-                    if ("autoSuggestions".equals( string2)) {
+                    if ("autoSuggestions".equals(string2)) {
                         client.options.autoSuggestions = Boolean.parseBoolean(string22);
                     }
-                    if ("chatColors".equals( string2)) {
+                    if ("chatColors".equals(string2)) {
                         client.options.chatColors = Boolean.parseBoolean(string22);
                     }
-                    if ("chatLinks".equals( string2)) {
+                    if ("chatLinks".equals(string2)) {
                         client.options.chatLinks = Boolean.parseBoolean(string22);
                     }
-                    if ("chatLinksPrompt".equals( string2)) {
+                    if ("chatLinksPrompt".equals(string2)) {
                         client.options.chatLinksPrompt = Boolean.parseBoolean(string22);
                     }
-                    if ("enableVsync".equals( string2)) {
+                    if ("enableVsync".equals(string2)) {
                         client.options.enableVsync = Boolean.parseBoolean(string22);
                         client.getWindow().setVsync(Boolean.parseBoolean(string22));
                     }
-                    if ("entityShadows".equals( string2)) {
+                    if ("entityShadows".equals(string2)) {
                         client.options.entityShadows = Boolean.parseBoolean(string22);
                     }
-                    if ("forceUnicodeFont".equals( string2)) {
+                    if ("forceUnicodeFont".equals(string2)) {
                         client.options.forceUnicodeFont = Boolean.parseBoolean(string22);
                         Option.FORCE_UNICODE_FONT.set(client.options, string22);
                     }
-                    if ("discrete_mouse_scroll".equals( string2)) {
+                    if ("discrete_mouse_scroll".equals(string2)) {
                         client.options.discreteMouseScroll = Boolean.parseBoolean(string22);
                     }
-                    if ("invertYMouse".equals( string2)) {
+                    if ("invertYMouse".equals(string2)) {
                         client.options.invertYMouse = Boolean.parseBoolean(string22);
                     }
-                    if ("realmsNotifications".equals( string2)) {
+                    if ("realmsNotifications".equals(string2)) {
                         client.options.realmsNotifications = Boolean.parseBoolean(string22);
                     }
-                    if ("reducedDebugInfo".equals( string2)) {
+                    if ("reducedDebugInfo".equals(string2)) {
                         client.options.reducedDebugInfo = Boolean.parseBoolean(string22);
                     }
-                    if ("showSubtitles".equals( string2)) {
+                    if ("showSubtitles".equals(string2)) {
                         client.options.showSubtitles = Boolean.parseBoolean(string22);
                     }
-                    if ("touchscreen".equals( string2)) {
+                    if ("touchscreen".equals(string2)) {
                         client.options.touchscreen = Boolean.parseBoolean(string22);
                     }
-                    if ("fullscreen".equals( string2)) {
+                    if ("fullscreen".equals(string2)) {
                         if (client.getWindow().isFullscreen() != Boolean.parseBoolean(string22)) {
                             client.options.fullscreen = Boolean.parseBoolean(string22);
                             client.getWindow().toggleFullscreen();
                         }
                     }
-                    if ("bobView".equals( string2)) {
+                    if ("bobView".equals(string2)) {
                         client.options.bobView = Boolean.parseBoolean(string22);
                     }
-                    if ("toggleCrouch".equals( string2)) {
+                    if ("toggleCrouch".equals(string2)) {
                         client.options.sneakToggled = Boolean.parseBoolean(string22);
                     }
-                    if ("toggleSprint".equals( string2)) {
+                    if ("toggleSprint".equals(string2)) {
                         client.options.sprintToggled = Boolean.parseBoolean(string22);
                     }
-                    if ("mouseSensitivity".equals( string2)) {
+                    if ("mouseSensitivity".equals(string2)) {
                         client.options.mouseSensitivity = Float.parseFloat(string22);
                     }
-                    if ("fov".equals( string2)) {
+                    if ("fov".equals(string2)) {
                         client.options.fov = Float.parseFloat(string22) * 40.0f + 70.0f;
                     }
-                    if ("gamma".equals( string2)) {
+                    if ("gamma".equals(string2)) {
                         client.options.gamma = Float.parseFloat(string22);
                     }
-                    if ("renderDistance".equals( string2)) {
-                        client.options.viewDistance = Integer.parseInt( string22);
+                    if ("renderDistance".equals(string2)) {
+                        client.options.viewDistance = Integer.parseInt(string22);
                     }
-                    if ("guiScale".equals( string2)) {
-                        client.options.guiScale = Integer.parseInt( string22);
-                        client.onResolutionChanged();
+                    if ("guiScale".equals(string2)) {
+                        client.options.guiScale = Integer.parseInt(string22);
+                        int i = client.getWindow().calculateScaleFactor(client.options.guiScale, client.forcesUnicodeFont());
+                        client.getWindow().setScaleFactor(i);
                     }
-                    if ("particles".equals( string2)) {
-                        client.options.particles = ParticlesOption.byId(Integer.parseInt( string22));
+                    if ("particles".equals(string2)) {
+                        client.options.particles = ParticlesOption.byId(Integer.parseInt(string22));
                     }
-                    if ("maxFps".equals( string2)) {
-                        client.options.maxFps = Integer.parseInt( string22);
+                    if ("maxFps".equals(string2)) {
+                        client.options.maxFps = Integer.parseInt(string22);
                         if (client.getWindow() != null) {
                             client.getWindow().setFramerateLimit(client.options.maxFps);
                         }
                     }
-                    if ("fancyGraphics".equals( string2)) {
-                        client.options.fancyGraphics = "true".equals( string22);
+                    if ("fancyGraphics".equals(string2)) {
+                        client.options.fancyGraphics = "true".equals(string22);
                     }
-                    if ("ao".equals( string2)) {
-                        if ("ao".equals(string2)) {
-                            switch ((int) Float.parseFloat(string22)) {
-                                case 0: client.options.ao = AoOption.OFF; break;
-                                case 1: client.options.ao = AoOption.MIN; break;
-                                case 2: client.options.ao = AoOption.MAX;
-                            }
+                    if ("ao".equals(string2)) {
+                        switch ((int) Float.parseFloat(string22)) {
+                            case 0: client.options.ao = AoOption.OFF; break;
+                            case 1: client.options.ao = AoOption.MIN; break;
+                            case 2: client.options.ao = AoOption.MAX;
                         }
                     }
-                    if ("renderClouds".equals( string2)) {
-                        if ("true".equals( string22)) {
+                    if ("renderClouds".equals(string2)) {
+                        if ("true".equals(string22)) {
                             client.options.cloudRenderMode = CloudRenderMode.FANCY;
-                        } else if ("false".equals( string22)) {
+                        } else if ("false".equals(string22)) {
                             client.options.cloudRenderMode = CloudRenderMode.OFF;
-                        } else if ("fast".equals( string22)) {
+                        } else if ("fast".equals(string22)) {
                             client.options.cloudRenderMode = CloudRenderMode.FAST;
                         }
                     }
-                    if ("attackIndicator".equals( string2)) {
-                        client.options.attackIndicator = AttackIndicator.byId(Integer.parseInt( string22));
+                    if ("attackIndicator".equals(string2)) {
+                        client.options.attackIndicator = AttackIndicator.byId(Integer.parseInt(string22));
                     }
                     //Deactivated
                     /*
@@ -168,43 +166,43 @@ public class ResetSettings {
                         client.reloadResources();
                     }
                     */
-                    if ("chatVisibility".equals( string2)) {
-                        client.options.chatVisibility = ChatVisibility.byId(Integer.parseInt( string22));
+                    if ("chatVisibility".equals(string2)) {
+                        client.options.chatVisibility = ChatVisibility.byId(Integer.parseInt(string22));
                     }
-                    if ("chatOpacity".equals( string2)) {
+                    if ("chatOpacity".equals(string2)) {
                         client.options.chatOpacity = Float.parseFloat(string22);
                     }
-                    if ("textBackgroundOpacity".equals( string2)) {
+                    if ("textBackgroundOpacity".equals(string2)) {
                         client.options.textBackgroundOpacity = Float.parseFloat(string22);
                     }
-                    if ("backgroundForChatOnly".equals( string2)) {
-                        client.options.backgroundForChatOnly = "true".equals( string22);
+                    if ("backgroundForChatOnly".equals(string2)) {
+                        client.options.backgroundForChatOnly = "true".equals(string22);
                     }
-                    if ("fullscreenResolution".equals( string2)) {
+                    if ("fullscreenResolution".equals(string2)) {
                         client.options.fullscreenResolution = string22;
                     }
-                    if ("hideServerAddress".equals( string2)) {
-                        client.options.hideServerAddress = "true".equals( string22);
+                    if ("hideServerAddress".equals(string2)) {
+                        client.options.hideServerAddress = "true".equals(string22);
                     }
-                    if ("advancedItemTooltips".equals( string2)) {
-                        client.options.advancedItemTooltips = "true".equals( string22);
+                    if ("advancedItemTooltips".equals(string2)) {
+                        client.options.advancedItemTooltips = "true".equals(string22);
                     }
-                    if ("pauseOnLostFocus".equals( string2)) {
-                        client.options.pauseOnLostFocus = "true".equals( string22);
+                    if ("pauseOnLostFocus".equals(string2)) {
+                        client.options.pauseOnLostFocus = "true".equals(string22);
                     }
-                    if ("heldItemTooltips".equals( string2)) {
-                        client.options.heldItemTooltips = "true".equals( string22);
+                    if ("heldItemTooltips".equals(string2)) {
+                        client.options.heldItemTooltips = "true".equals(string22);
                     }
-                    if ("chatHeightFocused".equals( string2)) {
+                    if ("chatHeightFocused".equals(string2)) {
                         client.options.chatHeightFocused = Float.parseFloat(string22);
                     }
-                    if ("chatHeightUnfocused".equals( string2)) {
+                    if ("chatHeightUnfocused".equals(string2)) {
                         client.options.chatHeightUnfocused = Float.parseFloat(string22);
                     }
-                    if ("chatScale".equals( string2)) {
+                    if ("chatScale".equals(string2)) {
                         client.options.chatScale = Float.parseFloat(string22);
                     }
-                    if ("chatWidth".equals( string2)) {
+                    if ("chatWidth".equals(string2)) {
                         client.options.chatWidth = Float.parseFloat(string22);
                     }
                     //Deactivated
@@ -214,28 +212,36 @@ public class ResetSettings {
                         client.reloadResources();
                     }
                     */
-                    if ("mainHand".equals( string2)) {
-                        client.options.mainArm = "left".equals( string22) ? Arm.LEFT : Arm.RIGHT;
+                    if ("mainHand".equals(string2)) {
+                        client.options.mainArm = "left".equals(string22) ? Arm.LEFT : Arm.RIGHT;
                     }
-                    if ("narrator".equals( string2)) {
-                        client.options.narrator = NarratorOption.byId(Integer.parseInt( string22));
+                    if ("narrator".equals(string2)) {
+                        client.options.narrator = NarratorOption.byId(Integer.parseInt(string22));
                     }
-                    if ("biomeBlendRadius".equals( string2)) {
-                        client.options.biomeBlendRadius = Integer.parseInt( string22);
+                    if ("biomeBlendRadius".equals(string2)) {
+                        client.options.biomeBlendRadius = Integer.parseInt(string22);
                     }
-                    if ("mouseWheelSensitivity".equals( string2)) {
+                    if ("mouseWheelSensitivity".equals(string2)) {
                         client.options.mouseWheelSensitivity = Float.parseFloat(string22);
                     }
-                    if ("rawMouseInput".equals( string2)) {
-                        client.options.rawMouseInput = "true".equals( string22);
-                        client.getWindow().setRawMouseMotion("true".equals( string22));
+                    if ("rawMouseInput".equals(string2)) {
+                        client.options.rawMouseInput = "true".equals(string22);
+                        Option.RAW_MOUSE_INPUT.set(client.options, string22);
                     }
-                    if ("perspective".equals( string2)) {
-                        client.options.perspective = Integer.parseInt( string22);
+                    if ("perspective".equals(string2)) {
+                        client.options.perspective = Integer.parseInt(string22);
                     }
-                    if ("piedirectory".equals( string2)) {
+                    if ("piedirectory".equals(string2)) {
                         string22 = string22.replace(".", "");
-                        ((PieChartAccessor) client).setopenProfilerSection( string22);
+                        ((PieChartAccessor) client).setopenProfilerSection(string22);
+                    }
+                    if ("chunkborders".equals(string2)) {
+                        if(client.debugRenderer.toggleShowChunkBorder() != "true".equals(string22)){
+                            client.debugRenderer.toggleShowChunkBorder();
+                        }
+                    }
+                    if ("hitboxes".equals(string2)) {
+                        client.getEntityRenderManager().setRenderHitboxes("true".equals(string22));
                     }
                     KeyBinding[] var6 = client.options.keysAll;
                     int var7 = var6.length;
@@ -264,12 +270,13 @@ public class ResetSettings {
                     // Excluded are Language and Mipmap Levels because resources would've had to be reloaded, blocking world creation screen.
                     // Additionally, options.txt settings which aren't accessible in vanilla Minecraft and some unnecessary settings (like Multiplayer stuff) are not included.
                 } catch (Exception exception) {
-                    LOGGER.warn("Skipping bad standardoption: {}:{}",  string2,  string22);
+                    LOGGER.warn("Skipping bad StandardSetting: {}:{}",  string2,  string22);
                 }
             }
             KeyBinding.updateKeysByCode();
+            LOGGER.info("Finished loading StandardSettings");
         } catch (Exception exception2) {
-            LOGGER.error("Failed to load standardoptions", exception2);
+            LOGGER.error("Failed to load StandardSettings", exception2);
         }
         client.options.write();
     }
