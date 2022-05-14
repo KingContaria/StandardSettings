@@ -4,9 +4,10 @@
   "package": "com.kingcontaria.standardsettings.mixins",
   "compatibilityLevel": "JAVA_8",
   "mixins": [
+    "InstancenumberMixin",
     "PieChartAccessor",
     "ResetSettingsMixin",
-    "InstancenumberMixin"
+    "TranslatableTextAccessor"
   ],
   "client": [
   ],
