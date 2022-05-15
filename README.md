@@ -10,5 +10,3 @@ If you want to use additional features, add these lines to the file:
     piedirectory:root.tick.level.entities.blockentities (Configure this path to whatever you like)
     hitboxes:true (Configure true/false to show/hide hitboxes)
     chunkborders:false (Configure true/false to show/hide chunkborders)
-
-To change the window title to "Instance X", add an instancenumber.txt file to your .minecraft and type in the instancenumber X.
