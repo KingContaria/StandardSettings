@@ -4,7 +4,6 @@ import com.kingcontaria.standardsettings.mixins.PieChartAccessor;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.hud.ChatVisibility;
 import net.minecraft.client.options.KeyBinding;
-import net.minecraft.client.render.entity.PlayerModelPart;
 import net.minecraft.client.sound.SoundCategory;
 import net.minecraft.world.Difficulty;
 import org.apache.logging.log4j.Logger;
@@ -55,9 +54,9 @@ public class ResetSettings {
                                 client.toggleFullscreen();
                             }
                         case "enableVsync": client.options.vsync = strings[1].equals("true"); break;
-                        case "useVbo": client.options.vbo = strings[1].equals("true"); break;
                         case "advancedItemTooltips": client.options.advancedItemTooltips = strings[1].equals("true"); break;
                         case "pauseOnLostFocus": client.options.pauseOnLostFocus = strings[1].equals("true"); break;
+                        case "showCape": client.options.field_5053 = strings[1].equals("true"); break;
                         case "touchscreen": client.options.touchScreen = strings[1].equals("true"); break;
                         case "heldItemTooltips": client.options.heldItemTooltips = strings[1].equals("true"); break;
                         case "chatHeightFocused": client.options.chatHeightFocused = Float.parseFloat(strings[1]); break;
@@ -70,9 +69,7 @@ public class ResetSettings {
                             client.options.forceUnicode = strings[1].equals("true");
                             client.options.setValue();
                         */
-                        case "allowBlockAlternatives": client.options.alternativeBlocks = strings[1].equals("true"); break;
-                        case "reducedDebugInfo": client.options.reducedDebugInfo = strings[1].equals("true"); break;
-                        case "renderClouds": client.options.entityShadows = strings[1].equals("true"); break;
+                        case "clouds": client.options.renderClouds = strings[1].equals("true"); break;
                         case "perspective": client.options.perspective = Integer.parseInt(strings[1]); break;
                         case "piedirectory":
                             ((PieChartAccessor) client).setopenProfilerSection(strings[1]); break;
@@ -88,15 +85,9 @@ public class ResetSettings {
                                     client.options.setSoundVolume(soundCategory, Float.parseFloat(strings[1])); break;
                                 }
                             } break;
-                        case "modelPart":
-                            for (PlayerModelPart playerModelPart : PlayerModelPart.values()) {
-                                if (strings[0].equals("modelPart_" + playerModelPart.getName())) {
-                                    client.options.setPlayerModelPart(playerModelPart, strings[1].equals("true")); break;
-                                }
-                            } break;
                     }
 
-                    // Excluded are Language, 3D Anaglyph and Mipmap Levels.
+                    // Excluded are Language, 3D Anaglyph, Anisotropic Filtering and Mipmap Levels.
                     // Additionally, options.txt settings which aren't accessible in vanilla Minecraft and some unnecessary settings (like Multiplayer and Streaming stuff) are not included.
                 } catch (Exception exception) {
                     LOGGER.warn("Skipping bad StandardSetting: " + string);
