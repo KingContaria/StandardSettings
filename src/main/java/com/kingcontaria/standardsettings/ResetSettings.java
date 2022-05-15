@@ -147,13 +147,13 @@ public class ResetSettings {
                         case "hitboxes": client.getEntityRenderDispatcher().setRenderHitboxes("true".equals(string22)); break;
                         case "key":
                             for (KeyBinding keyBinding : client.options.keysAll) {
-                                if (string2.equals("key_" + keyBinding.getTranslationKey())) {
+                                if (string2_split[1].equals(keyBinding.getTranslationKey())) {
                                     keyBinding.setBoundKey(InputUtil.fromTranslationKey(string22)); break;
                                 }
                             } break;
                         case "soundCategory":
                             for (SoundCategory soundCategory : SoundCategory.values()) {
-                                if (string2.equals("soundCategory_" + (soundCategory).getName())) {
+                                if (string2_split[1].equals(soundCategory.getName())) {
                                     client.getSoundManager().updateSoundVolume(soundCategory, Float.parseFloat(string22));
                                     client.options.setSoundVolume(soundCategory, Float.parseFloat(string22)); break;
                                 }
@@ -174,12 +174,12 @@ public class ResetSettings {
                 }
             }
             KeyBinding.updateKeysByCode();
+            client.options.write();
             LOGGER.info("Finished loading StandardSettings");
         }
         catch (Exception exception2) {
             LOGGER.error("Failed to load StandardSettings", exception2);
         }
-        client.options.write();
     }
 
     private static NbtCompound update(NbtCompound tag) {
