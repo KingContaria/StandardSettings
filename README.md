@@ -1,16 +1,10 @@
-# Fabric Example Mod
+[not allowed]
 
-## Setup
+Resetting Mod for Minecraft Speedrunning
 
-1. Edit gradle.properties, build.gradle and mod.json to suit your needs.
-    * The "mixins" object can be removed from mod.json if you do not need to use mixins.
-    * Please replace all occurences of "modid" with your own mod ID - sometimes, a different string may also suffice.
-2. Run the following command:
+To set your standard settings, copy your options.txt file with your preferred settings and rename it to "standardoptions.txt".
 
-```
-./gradlew
-```
+If you want to use additional features, add these lines to the file:
 
-## License
-
-This template is available under the CC0 license. Feel free to learn from it and incorporate it in your own projects.
+    perspective:0 (Configure the number; 0 = first person, 1 = from the back, 2 = from the front)
+    piedirectory:root.tick.level.entities.blockentities (Configure this path to whatever you like)
