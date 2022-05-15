@@ -5,9 +5,10 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 public class StandardSettings implements ModInitializer {
+
     public static Logger LOGGER = LogManager.getLogger();
     @Override
     public void onInitialize() {
-        LOGGER.info("StandardSettings Mod initialized");
+        LogManager.getLogger().info("StandardSettings Mod initialized");
     }
 }

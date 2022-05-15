@@ -2,10 +2,10 @@ package com.kingcontaria.standardsettings;
 
 import com.kingcontaria.standardsettings.mixins.PieChartAccessor;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.gui.hud.ChatVisibility;
 import net.minecraft.client.options.KeyBinding;
 import net.minecraft.client.render.entity.PlayerModelPart;
 import net.minecraft.client.sound.SoundCategory;
-import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.world.Difficulty;
 import org.apache.logging.log4j.Logger;
 
@@ -45,13 +45,7 @@ public class ResetSettings {
                         case "difficulty": client.options.difficulty = Difficulty.byOrdinal(Integer.parseInt(strings[1])); break;
                         case "fancyGraphics": client.options.fancyGraphics = strings[1].equals("true"); break;
                         case "ao": client.options.ao = strings[1].equals("true") ? 2 : (strings[1].equals("false") ? 0 : Integer.parseInt(strings[1])); break;
-                        case "renderClouds":
-                            switch (strings[1]){
-                                case "true": client.options.cloudMode = 2; break;
-                                case "false": client.options.cloudMode = 0; break;
-                                case "fast": client.options.cloudMode = 1; break;
-                            } break;
-                        case "chatVisibility": client.options.chatVisibilityType = PlayerEntity.ChatVisibilityType.getById(Integer.parseInt(strings[1])); break;
+                        case "chatVisibility": client.options.field_7671 = ChatVisibility.get(Integer.parseInt(strings[1])); break;
                         case "chatColors": client.options.chatColor = strings[1].equals("true"); break;
                         case "chatLinks": client.options.chatLink = strings[1].equals("true"); break;
                         case "chatLinksPrompt": client.options.chatLinkPrompt = strings[1].equals("true"); break;
@@ -78,7 +72,7 @@ public class ResetSettings {
                         */
                         case "allowBlockAlternatives": client.options.alternativeBlocks = strings[1].equals("true"); break;
                         case "reducedDebugInfo": client.options.reducedDebugInfo = strings[1].equals("true"); break;
-                        case "entityShadows": client.options.entityShadows = strings[1].equals("true"); break;
+                        case "renderClouds": client.options.entityShadows = strings[1].equals("true"); break;
                         case "perspective": client.options.perspective = Integer.parseInt(strings[1]); break;
                         case "piedirectory":
                             ((PieChartAccessor) client).setopenProfilerSection(strings[1]); break;
