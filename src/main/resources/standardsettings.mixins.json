@@ -4,10 +4,10 @@
   "package": "com.kingcontaria.standardsettings.mixins",
   "compatibilityLevel": "JAVA_8",
   "mixins": [
-    "PieChartAccessor",
-    "ResetSettingsMixin"
   ],
   "client": [
+    "PieChartAccessor",
+    "ResetSettingsMixin"
   ],
   "injectors": {
     "defaultRequire": 1
