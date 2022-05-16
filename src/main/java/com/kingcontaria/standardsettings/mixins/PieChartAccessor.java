@@ -10,4 +10,7 @@ import org.spongepowered.asm.mixin.gen.Invoker;
 public interface PieChartAccessor {
     @Accessor("openProfilerSection")
     void setopenProfilerSection(String value);
+
+    @Invoker
+    void callInitFont(boolean forcesUnicode);
 }

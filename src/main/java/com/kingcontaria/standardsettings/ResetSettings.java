@@ -7,11 +7,11 @@ import com.kingcontaria.standardsettings.mixins.PieChartAccessor;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.options.*;
+import net.minecraft.client.option.*;
 import net.minecraft.client.render.entity.PlayerModelPart;
 import net.minecraft.client.util.InputUtil;
 import net.minecraft.datafixer.DataFixTypes;
-import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.NbtCompound;
 import net.minecraft.nbt.NbtHelper;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.util.Arm;
@@ -34,7 +34,7 @@ public class ResetSettings {
                 LOGGER.error("standardoptions.txt is missing");
                 return;
             }
-            CompoundTag compoundTag = new CompoundTag();
+            NbtCompound compoundTag = new NbtCompound();
             try (BufferedReader bufferedReader = Files.newReader(standardoptionsFile, Charsets.UTF_8)) {
                 bufferedReader.lines().forEach(string -> {
                     try {
@@ -45,9 +45,9 @@ public class ResetSettings {
                     }
                 });
             }
-            CompoundTag compoundTag2 = update(compoundTag);
+            NbtCompound compoundTag2 = update(compoundTag);
             if (!compoundTag2.contains("graphicsMode") && compoundTag2.contains("fancyGraphics")) {
-                MinecraftClient.getInstance().options.graphicsMode = "true".equals(compoundTag2.getString("fancyGraphics")) ? GraphicsMode.FANCY : GraphicsMode.FAST;
+                client.options.graphicsMode = "true".equals(compoundTag2.getString("fancyGraphics")) ? GraphicsMode.FANCY : GraphicsMode.FAST;
             }
             for (String string2 : compoundTag2.getKeys()) {
                 String string22 = compoundTag2.getString(string2);
@@ -65,7 +65,7 @@ public class ResetSettings {
                         case "entityShadows": client.options.entityShadows = Boolean.parseBoolean(string22); break;
                         case "forceUnicodeFont":
                             client.options.forceUnicodeFont = Boolean.parseBoolean(string22);
-                            Option.FORCE_UNICODE_FONT.set(client.options, string22); break;
+                            ((PieChartAccessor)client).callInitFont(Boolean.parseBoolean(string22)); break;
                         case "discrete_mouse_scroll": client.options.discreteMouseScroll = Boolean.parseBoolean(string22); break;
                         case "invertYMouse": client.options.invertYMouse = Boolean.parseBoolean(string22); break;
                         case "realmsNotifications": client.options.realmsNotifications = Boolean.parseBoolean(string22); break;
@@ -80,8 +80,12 @@ public class ResetSettings {
                         case "bobView": client.options.bobView = Boolean.parseBoolean(string22); break;
                         case "toggleCrouch": client.options.sneakToggled = Boolean.parseBoolean(string22); break;
                         case "toggleSprint": client.options.sprintToggled = Boolean.parseBoolean(string22); break;
+                        case "darkMojangStudiosBackground": client.options.monochromeLogo = Boolean.parseBoolean(string22); break;
+                        case "hideLightningFlashes": client.options.hideLightningFlashes = Boolean.parseBoolean(string22); break;
                         case "mouseSensitivity": client.options.mouseSensitivity = Float.parseFloat(string22); break;
                         case "fov": client.options.fov = Float.parseFloat(string22) * 40.0f + 70.0f; break;
+                        case "screenEffectScale": client.options.distortionEffectScale = Float.parseFloat(string22); break;
+                        case "fovEffectScale": client.options.fovEffectScale = Float.parseFloat(string22); break;
                         case "gamma": client.options.gamma = Float.parseFloat(string22); break;
                         case "renderDistance": client.options.viewDistance = Integer.parseInt(string22); break;
                         case "entityDistanceScaling": client.options.entityDistanceScaling = Float.parseFloat(string22); break;
@@ -89,19 +93,14 @@ public class ResetSettings {
                             client.options.guiScale = Integer.parseInt(string22);
                             int i = client.getWindow().calculateScaleFactor(client.options.guiScale, client.forcesUnicodeFont());
                             client.getWindow().setScaleFactor(i); break;
-                        case "particles": client.options.particles = ParticlesOption.byId(Integer.parseInt(string22)); break;
+                        case "particles": client.options.particles = ParticlesMode.byId(Integer.parseInt(string22)); break;
                         case "maxFps":
                             client.options.maxFps = Integer.parseInt(string22);
                             if (client.getWindow() != null) {
                                 client.getWindow().setFramerateLimit(client.options.maxFps);
                             } break;
                         case "graphicsMode": client.options.graphicsMode = GraphicsMode.byId(Integer.parseInt(string22)); break;
-                        case "ao":
-                            switch ((int) Float.parseFloat(string22)) {
-                                case 0: client.options.ao = AoOption.OFF; break;
-                                case 1: client.options.ao = AoOption.MIN; break;
-                                case 2: client.options.ao = AoOption.MAX;
-                            } break;
+                        case "ao": client.options.ao = AoMode.byId((int) Float.parseFloat(string22)); break;
                         case "renderClouds":
                             if ("true".equals(string22)) {
                                 client.options.cloudRenderMode = CloudRenderMode.FANCY;
@@ -127,13 +126,18 @@ public class ResetSettings {
                         case "chatScale": client.options.chatScale = Float.parseFloat(string22); break;
                         case "chatWidth": client.options.chatWidth = Float.parseFloat(string22); break;
                         case "mainHand": client.options.mainArm = "left".equals(string22) ? Arm.LEFT : Arm.RIGHT; break;
-                        case "narrator": client.options.narrator = NarratorOption.byId(Integer.parseInt(string22)); break;
+                        case "narrator": client.options.narrator = NarratorMode.byId(Integer.parseInt(string22)); break;
                         case "biomeBlendRadius": client.options.biomeBlendRadius = Integer.parseInt(string22); break;
                         case "mouseWheelSensitivity": client.options.mouseWheelSensitivity = Float.parseFloat(string22); break;
                         case "rawMouseInput":
                             client.options.rawMouseInput = "true".equals(string22);
-                            Option.RAW_MOUSE_INPUT.set(client.options, string22); break;
-                        case "perspective": client.options.perspective = Integer.parseInt(string22); break;
+                            client.getWindow().setRawMouseMotion("true".equals(string22)); break;
+                        case "perspective":
+                            switch (Integer.parseInt(string22) % 3) {
+                                case 1 -> client.options.setPerspective(Perspective.THIRD_PERSON_BACK);
+                                case 2 -> client.options.setPerspective(Perspective.THIRD_PERSON_FRONT);
+                                default -> client.options.setPerspective(Perspective.FIRST_PERSON);
+                            } break;
                         case "piedirectory":
                             string22 = string22.replace(".", "");
                             ((PieChartAccessor) client).setopenProfilerSection(string22); break;
@@ -141,9 +145,9 @@ public class ResetSettings {
                             if(client.debugRenderer.toggleShowChunkBorder() != "true".equals(string22)){
                                 client.debugRenderer.toggleShowChunkBorder();
                             } break;
-                        case "hitboxes": client.getEntityRenderManager().setRenderHitboxes("true".equals(string22)); break;
+                        case "hitboxes": client.getEntityRenderDispatcher().setRenderHitboxes("true".equals(string22)); break;
                         case "key":
-                            for (KeyBinding keyBinding : client.options.keysAll) {
+                            for (KeyBinding keyBinding : client.options.allKeys) {
                                 if (string2_split[1].equals(keyBinding.getTranslationKey())) {
                                     keyBinding.setBoundKey(InputUtil.fromTranslationKey(string22)); break;
                                 }
@@ -158,7 +162,7 @@ public class ResetSettings {
                         case "modelPart":
                             for (PlayerModelPart playerModelPart : PlayerModelPart.values()) {
                                 if (string2.equals("modelPart_" + playerModelPart.getName())) {
-                                    client.options.setPlayerModelPart(playerModelPart, "true".equals(string22)); break;
+                                    client.options.togglePlayerModelPart(playerModelPart, "true".equals(string22)); break;
                                 }
                             }
                     }
@@ -179,7 +183,7 @@ public class ResetSettings {
         }
     }
 
-    private static CompoundTag update(CompoundTag tag) {
+    private static NbtCompound update(NbtCompound tag) {
         int i = 0;
         try {
             i = Integer.parseInt(tag.getString("version"));
