@@ -18,8 +18,6 @@ public class ResetSettings {
     private static final Logger LOGGER = StandardSettings.LOGGER;
     protected static MinecraftClient client = MinecraftClient.getInstance();
     private static final File standardoptionsFile = new File("standardoptions.txt");
-    public static int rdonworldjoin;
-    public static boolean changerdonjoin = false;
 
     public static void LoadStandardSettings() {
         try {
@@ -27,7 +25,6 @@ public class ResetSettings {
                 LOGGER.error("standardoptions.txt is missing");
                 return;
             }
-            changerdonjoin = false;
             BufferedReader bufferedReader = new BufferedReader(new FileReader(standardoptionsFile));
             String string;
             while ((string = bufferedReader.readLine()) != null) {
@@ -41,13 +38,11 @@ public class ResetSettings {
                         case "gamma": client.options.gamma = Float.parseFloat(strings[1]); break;
                         case "invertYMouse": client.options.invertYMouse = strings[1].equals("true"); break;
                         case "renderDistance": client.options.viewDistance = Integer.parseInt(strings[1]); break;
-                        case "renderDistanceOnWorldJoin":
-                            rdonworldjoin = Integer.parseInt(strings[1]);
-                            changerdonjoin = true; break;
                         case "guiScale": client.options.guiScale = Integer.parseInt(strings[1]); break;
                         case "particles": client.options.particle = Integer.parseInt(strings[1]); break;
                         case "bobView": client.options.bobView = strings[1].equals("true"); break;
                         case "maxFps": client.options.maxFramerate = Integer.parseInt(strings[1]); break;
+                        case "difficulty": client.options.difficulty = Difficulty.byOrdinal(Integer.parseInt(strings[1])); break;
                         case "fancyGraphics": client.options.fancyGraphics = strings[1].equals("true"); break;
                         case "ao": client.options.ao = strings[1].equals("true") ? 2 : (strings[1].equals("false") ? 0 : Integer.parseInt(strings[1])); break;
                         case "renderClouds":
