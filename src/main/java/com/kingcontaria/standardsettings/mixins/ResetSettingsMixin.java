@@ -16,11 +16,4 @@ public class ResetSettingsMixin {
         StandardSettings.LOGGER.info("Reset to StandardSettings...");
         ResetSettings.LoadStandardSettings();
     }
-    @Inject(method = "startGame", at = @At("TAIL"))
-    void ChangeRDonJoin(String string, String levelInfo, LevelInfo par3, CallbackInfo ci) {
-        if(ResetSettings.changerdonjoin) {
-            StandardSettings.LOGGER.info("Reset RD to " + ResetSettings.rdonworldjoin + "on joining the world.");
-            MinecraftClient.getInstance().options.viewDistance = ResetSettings.rdonworldjoin;
-        }
-    }
 }
