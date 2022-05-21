@@ -6,7 +6,6 @@ import net.minecraft.client.options.KeyBinding;
 import net.minecraft.client.render.entity.PlayerModelPart;
 import net.minecraft.client.sound.SoundCategory;
 import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.world.Difficulty;
 import org.apache.logging.log4j.Logger;
 
 import java.io.BufferedReader;
@@ -42,7 +41,6 @@ public class ResetSettings {
                         case "particles": client.options.particle = Integer.parseInt(strings[1]); break;
                         case "bobView": client.options.bobView = strings[1].equals("true"); break;
                         case "maxFps": client.options.maxFramerate = Integer.parseInt(strings[1]); break;
-                        case "difficulty": client.options.difficulty = Difficulty.byOrdinal(Integer.parseInt(strings[1])); break;
                         case "fancyGraphics": client.options.fancyGraphics = strings[1].equals("true"); break;
                         case "ao": client.options.ao = strings[1].equals("true") ? 2 : (strings[1].equals("false") ? 0 : Integer.parseInt(strings[1])); break;
                         case "renderClouds":
@@ -80,8 +78,8 @@ public class ResetSettings {
                         case "reducedDebugInfo": client.options.reducedDebugInfo = strings[1].equals("true"); break;
                         case "entityShadows": client.options.entityShadows = strings[1].equals("true"); break;
                         case "perspective": client.options.perspective = Integer.parseInt(strings[1]); break;
-                        case "piedirectory":
-                            ((PieChartAccessor) client).setopenProfilerSection(strings[1]); break;
+                        case "piedirectory": ((PieChartAccessor) client).setopenProfilerSection(strings[1]); break;
+                        case "hitboxes": client.getEntityRenderManager().method_10205(strings[1].equals("true")); break;
                         case "key":
                             for (KeyBinding keyBinding : client.options.keysAll) {
                                 if (string0_split[1].equals(keyBinding.getTranslationKey())) {

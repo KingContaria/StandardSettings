@@ -11,6 +11,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(MinecraftClient.class)
 public class ResetSettingsMixin {
+
     @Inject(method = "startGame", at = @At("HEAD"))
     void ResetSettings(String string, String levelInfo, LevelInfo par3, CallbackInfo ci) {
         StandardSettings.LOGGER.info("Reset to StandardSettings...");
