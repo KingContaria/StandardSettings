@@ -4,6 +4,7 @@ import com.kingcontaria.standardsettings.mixins.PieChartAccessor;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.hud.ChatVisibility;
 import net.minecraft.client.options.KeyBinding;
+import net.minecraft.client.render.entity.EntityRenderDispatcher;
 import net.minecraft.client.sound.SoundCategory;
 import net.minecraft.world.Difficulty;
 import org.apache.logging.log4j.Logger;
@@ -71,6 +72,7 @@ public class ResetSettings {
                         */
                         case "clouds": client.options.renderClouds = strings[1].equals("true"); break;
                         case "perspective": client.options.perspective = Integer.parseInt(strings[1]); break;
+                        case "hitboxes": EntityRenderDispatcher.field_5192 = strings[1].equals("true"); break;
                         case "piedirectory":
                             ((PieChartAccessor) client).setopenProfilerSection(strings[1]); break;
                         case "key":
