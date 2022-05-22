@@ -19,6 +19,7 @@ import org.apache.logging.log4j.Logger;
 
 import java.io.*;
 import java.util.Iterator;
+import java.util.Scanner;
 
 @Environment(value= EnvType.CLIENT)
 public class ResetSettings {
@@ -175,7 +176,6 @@ public class ResetSettings {
                 }
             }
             KeyBinding.updateKeysByCode();
-            client.options.write();
             LOGGER.info("Finished loading StandardSettings");
         }
         catch (Exception exception2) {
@@ -192,5 +192,110 @@ public class ResetSettings {
             // empty catch block
         }
         return NbtHelper.update(client.getDataFixer(), DataFixTypes.OPTIONS, tag, i);
+    }
+
+    public static void CheckSettings(){
+        client.options.mouseSensitivity = Check("Sensitivity",client.options.mouseSensitivity,0,1);
+        client.options.fov = Check("FOV",client.options.fov,30,110);
+        client.options.distortionEffectScale = Check("Distortion Effects",client.options.distortionEffectScale,0,1);
+        client.options.fovEffectScale = Check("FOV Effects", client.options.fovEffectScale,0,1);
+        client.options.gamma = Check("Brightness",client.options.gamma,0,5);
+        client.options.viewDistance = Check("Render Distance",client.options.viewDistance,2,32);
+        client.options.simulationDistance = Check("Simulation Distance",client.options.simulationDistance,5,32);
+        client.options.entityDistanceScaling = Check("Entity Distance",client.options.entityDistanceScaling,0.5f,5);
+        client.options.guiScale = Check("GUI Scale",client.options.guiScale,0,4);
+        //Because of DynamicFPS/SleepBackground I will not mess with adjusting FPS :)
+        client.options.biomeBlendRadius = Check("Biome Blend Radius",client.options.biomeBlendRadius,0,7);
+        client.options.chatOpacity = Check("Chat Opacity",client.options.chatOpacity,0,1);
+        client.options.chatLineSpacing = Check("Line Spacing",client.options.chatLineSpacing,0,1);
+        client.options.textBackgroundOpacity = Check("Text Background Opacity",client.options.textBackgroundOpacity,0,1);
+        client.options.chatHeightFocused = Check("(Chat) Focused Height",client.options.chatHeightFocused,0,1);
+        client.options.chatDelay = Check("Chat Delay",client.options.chatDelay,0,6);
+        client.options.chatHeightUnfocused = Check("(Chat) Unfocused Height",client.options.chatHeightUnfocused,0,1);
+        client.options.chatScale = Check("Chat Text Size",client.options.chatScale,0,1);
+        client.options.chatWidth = Check("ChatWidth",client.options.chatWidth,0,1);
+        client.options.mouseWheelSensitivity = Check("Scroll Sensitivity",client.options.mouseWheelSensitivity,0.01,10);
+        for(SoundCategory soundCategory : SoundCategory.values()){
+            float i = Check(soundCategory.getName(),client.options.getSoundVolume(soundCategory),0,1);
+            client.getSoundManager().updateSoundVolume(soundCategory, i);
+            client.options.setSoundVolume(soundCategory, i);
+        }
+        if(client.options.mipmapLevels<0){
+            LOGGER.warn("Mipmap Levels was too low! (" + client.options.mipmapLevels + ")");
+            LOGGER.error("Mipmap Levels can not be corrected!");
+        }else {
+            if (client.options.mipmapLevels > 4) {
+                LOGGER.warn("Mipmap Levels was too high! (" + client.options.mipmapLevels + ")");
+                LOGGER.error("Mipmap Levels can not be corrected!");
+            }
+        }
+        LOGGER.info("Finished checking Settings");
+    }
+
+    public static double Check(String settingName, double setting, double min, double max){
+        if(setting<min){
+            LOGGER.warn(settingName + " was too low! (" + setting + ")");
+            return min;
+        }
+        if(setting>max){
+            LOGGER.warn(settingName + " was too high! (" + setting + ")");
+            return max;
+        }
+        return setting;
+    }
+
+    public static float Check(String settingName, float setting, float min, float max){
+        if(setting<min){
+            LOGGER.warn(settingName + " was too low! (" + setting + ")");
+            return min;
+        }
+        if(setting>max){
+            LOGGER.warn(settingName + " was too high! (" + setting + ")");
+            return max;
+        }
+        return setting;
+    }
+
+    public static int Check(String settingName, int setting, int min, int max){
+        if(setting<min){
+            LOGGER.warn(settingName + " was too low! (" + setting + ")");
+            return min;
+        }
+        if(setting>max){
+            LOGGER.warn(settingName + " was too high! (" + setting + ")");
+            return max;
+        }
+        return setting;
+    }
+
+    public static void SetStandardSettings() {
+        LOGGER.info("Saving StandardSettings...");
+
+        PrintWriter printer = null;
+        try (Scanner scanner = new Scanner(new File("options.txt"))) {
+            FileWriter writer = new FileWriter("standardoptions.txt");
+            printer = new PrintWriter(writer);
+
+            while (scanner.hasNextLine()) {
+                String line = scanner.nextLine() + System.lineSeparator();
+                printer.write(line);
+            }
+
+            printer.write("perspective:" + client.options.getPerspective() + System.lineSeparator());
+            printer.write("piedirectory:" + ((PieChartAccessor) client).getopenProfilerSection().replace("", ".") + System.lineSeparator());
+            client.debugRenderer.toggleShowChunkBorder();
+            printer.write("chunkborders:" + client.debugRenderer.toggleShowChunkBorder() + System.lineSeparator());
+            printer.write("hitboxes:" + client.getEntityRenderDispatcher().shouldRenderHitboxes());
+
+        } catch (IOException e) {
+            LOGGER.error("Failed to save StandardSettings");
+            throw new RuntimeException(e);
+        } finally {
+            if (printer != null) {
+                printer.flush();
+                printer.close();
+            }
+            LOGGER.info("Finished saving StandardSettings");
+        }
     }
 }
