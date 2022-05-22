@@ -2,10 +2,14 @@
 
 Resetting Mod for Minecraft Speedrunning
 
-To set your standard settings, copy your options.txt file with your preferred settings and rename it to "standardoptions.txt".
+This Mod will set your Settings to a preset standard when creating a new world. It will also check if your settings are within the allowed boundaries of the game / the speedrun.com rules.
 
-If you want to use additional features, add these lines to the file:
+To set your standard settings, click the Book and Quill Button on the Titlescreen, this will create a 'standardoptions.txt' file in your Minecraft directory.
 
-    perspective:0 (Configure the number; 0 = first person, 1 = from the back, 2 = from the front)
-    hitboxes:true (Configure true/false to show/hide hitboxes)
-    chunkborders:false (Configure true/false to show/hide chunkborders)
+It will be a copy of your current options.txt file plus some additional features:
+
+    perspective:0 (0 = first person, 1 = from the back, 2 = from the front)
+    hitboxes:true (Show/hide Hitboxes)
+    chunkborders:false (Show/hide Chunkborders)
+
+If you don't want some settings to be reset you have manually remove the line from the file.
