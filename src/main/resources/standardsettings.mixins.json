@@ -4,7 +4,8 @@
   "package": "com.kingcontaria.standardsettings.mixins",
   "compatibilityLevel": "JAVA_8",
   "mixins": [
-    "ResetSettingsMixin"
+    "ResetSettingsMixin",
+    "TitleScreenMixin"
   ],
   "client": [
   ],
