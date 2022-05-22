@@ -7,7 +7,8 @@
   ],
   "client": [
     "PieChartAccessor",
-    "ResetSettingsMixin"
+    "ResetSettingsMixin",
+    "TitleScreenMixin"
   ],
   "injectors": {
     "defaultRequire": 1

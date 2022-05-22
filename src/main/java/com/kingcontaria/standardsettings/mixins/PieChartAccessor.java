@@ -8,5 +8,7 @@ import org.spongepowered.asm.mixin.gen.Accessor;
 
 public interface PieChartAccessor {
     @Accessor("openProfilerSection")
+    String getopenProfilerSection();
+    @Accessor("openProfilerSection")
     void setopenProfilerSection(String value);
 }

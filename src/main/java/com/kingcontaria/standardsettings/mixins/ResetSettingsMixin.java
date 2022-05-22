@@ -16,5 +16,8 @@ public class ResetSettingsMixin {
     void ResetSettings(String string, String levelInfo, LevelInfo par3, CallbackInfo ci) {
         StandardSettings.LOGGER.info("Reset to StandardSettings...");
         ResetSettings.LoadStandardSettings();
+        StandardSettings.LOGGER.info("Checking Settings...");
+        ResetSettings.CheckSettings();
+        MinecraftClient.getInstance().options.save();
     }
 }
