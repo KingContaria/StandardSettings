@@ -2,6 +2,7 @@ package com.kingcontaria.standardsettings.mixins;
 
 import com.kingcontaria.standardsettings.ResetSettings;
 import com.kingcontaria.standardsettings.StandardSettings;
+import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.screen.world.CreateWorldScreen;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -19,6 +20,9 @@ public class ResetSettingsMixin{
         if(bl) {
             StandardSettings.LOGGER.info("Reset to StandardSettings...");
             ResetSettings.LoadStandardSettings();
+            StandardSettings.LOGGER.info("Checking Settings...");
+            ResetSettings.CheckSettings();
+            MinecraftClient.getInstance().options.write();
             bl = false;
         }
     }
