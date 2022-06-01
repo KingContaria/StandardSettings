@@ -26,7 +26,8 @@ public class ResetSettings {
 
     private static final Logger LOGGER = StandardSettings.LOGGER;
     private static final Splitter COLON_SPLITTER = Splitter.on(':').limit(2);
-    protected static MinecraftClient client = MinecraftClient.getInstance();
+    private static final MinecraftClient client = MinecraftClient.getInstance();
+    private static final GameOptions options = client.options;
     private static final File standardoptionsFile = new File("standardoptions.txt");
 
     public static void LoadStandardSettings() {
@@ -53,83 +54,87 @@ public class ResetSettings {
                 String[] string2_split = string2.split("_");
                 try {
                     switch(string2_split[0]){
-                        case "autoJump": client.options.autoJump = Boolean.parseBoolean(string22); break;
-                        case "autoSuggestions": client.options.autoSuggestions = Boolean.parseBoolean(string22); break;
-                        case "chatColors": client.options.chatColors = Boolean.parseBoolean(string22); break;
-                        case "chatLinks": client.options.chatLinks = Boolean.parseBoolean(string22); break;
-                        case "chatLinksPrompt": client.options.chatLinksPrompt = Boolean.parseBoolean(string22); break;
+                        case "autoJump": options.autoJump = Boolean.parseBoolean(string22); break;
+                        case "autoSuggestions": options.autoSuggestions = Boolean.parseBoolean(string22); break;
+                        case "chatColors": options.chatColors = Boolean.parseBoolean(string22); break;
+                        case "chatLinks": options.chatLinks = Boolean.parseBoolean(string22); break;
+                        case "chatLinksPrompt": options.chatLinksPrompt = Boolean.parseBoolean(string22); break;
                         case "enableVsync":
-                            client.options.enableVsync = Boolean.parseBoolean(string22);
+                            options.enableVsync = Boolean.parseBoolean(string22);
                             client.getWindow().setVsync(Boolean.parseBoolean(string22)); break;
-                        case "entityShadows": client.options.entityShadows = Boolean.parseBoolean(string22); break;
+                        case "entityShadows": options.entityShadows = Boolean.parseBoolean(string22); break;
                         case "forceUnicodeFont":
-                            client.options.forceUnicodeFont = Boolean.parseBoolean(string22);
-                            Option.FORCE_UNICODE_FONT.set(client.options, string22); break;
-                        case "discrete_mouse_scroll": client.options.discreteMouseScroll = Boolean.parseBoolean(string22); break;
-                        case "invertYMouse": client.options.invertYMouse = Boolean.parseBoolean(string22); break;
-                        case "realmsNotifications": client.options.realmsNotifications = Boolean.parseBoolean(string22); break;
-                        case "reducedDebugInfo": client.options.reducedDebugInfo = Boolean.parseBoolean(string22); break;
-                        case "showSubtitles": client.options.showSubtitles = Boolean.parseBoolean(string22); break;
-                        case "touchscreen": client.options.touchscreen = Boolean.parseBoolean(string22); break;
+                            options.forceUnicodeFont = Boolean.parseBoolean(string22);
+                            Option.FORCE_UNICODE_FONT.set(options, string22); break;
+                        case "discrete_mouse_scroll": options.discreteMouseScroll = Boolean.parseBoolean(string22); break;
+                        case "invertYMouse": options.invertYMouse = Boolean.parseBoolean(string22); break;
+                        case "realmsNotifications": options.realmsNotifications = Boolean.parseBoolean(string22); break;
+                        case "reducedDebugInfo": options.reducedDebugInfo = Boolean.parseBoolean(string22); break;
+                        case "showSubtitles": options.showSubtitles = Boolean.parseBoolean(string22); break;
+                        case "touchscreen": options.touchscreen = Boolean.parseBoolean(string22); break;
                         case "fullscreen":
                             if(client.getWindow().isFullscreen() != Boolean.parseBoolean(string22)){
-                                client.options.fullscreen = Boolean.parseBoolean(string22);
-                                client.getWindow().toggleFullscreen();
+                                if(client.isWindowFocused()){
+                                    client.getWindow().toggleFullscreen();
+                                    options.fullscreen = Boolean.parseBoolean(string22);
+                                }else {
+                                    LOGGER.error("Could not reset fullscreen mode because window wasn't focused!");
+                                }
                             } break;
-                        case "bobView": client.options.bobView = Boolean.parseBoolean(string22); break;
-                        case "toggleCrouch": client.options.sneakToggled = Boolean.parseBoolean(string22); break;
-                        case "toggleSprint": client.options.sprintToggled = Boolean.parseBoolean(string22); break;
-                        case "mouseSensitivity": client.options.mouseSensitivity = Float.parseFloat(string22); break;
-                        case "fov": client.options.fov = Float.parseFloat(string22) * 40.0f + 70.0f; break;
-                        case "gamma": client.options.gamma = Float.parseFloat(string22); break;
-                        case "renderDistance": client.options.viewDistance = Integer.parseInt(string22); break;
+                        case "bobView": options.bobView = Boolean.parseBoolean(string22); break;
+                        case "toggleCrouch": options.sneakToggled = Boolean.parseBoolean(string22); break;
+                        case "toggleSprint": options.sprintToggled = Boolean.parseBoolean(string22); break;
+                        case "mouseSensitivity": options.mouseSensitivity = Float.parseFloat(string22); break;
+                        case "fov": options.fov = Float.parseFloat(string22) * 40.0f + 70.0f; break;
+                        case "gamma": options.gamma = Float.parseFloat(string22); break;
+                        case "renderDistance": options.viewDistance = Integer.parseInt(string22); break;
                         case "guiScale":
-                            client.options.guiScale = Integer.parseInt(string22);
-                            int i = client.getWindow().calculateScaleFactor(client.options.guiScale, client.forcesUnicodeFont());
+                            options.guiScale = Integer.parseInt(string22);
+                            int i = client.getWindow().calculateScaleFactor(options.guiScale, client.forcesUnicodeFont());
                             client.getWindow().setScaleFactor(i); break;
-                        case "particles": client.options.particles = ParticlesOption.byId(Integer.parseInt(string22)); break;
+                        case "particles": options.particles = ParticlesOption.byId(Integer.parseInt(string22)); break;
                         case "maxFps":
-                            client.options.maxFps = Integer.parseInt(string22);
+                            options.maxFps = Integer.parseInt(string22);
                             if (client.getWindow() != null) {
-                                client.getWindow().setFramerateLimit(client.options.maxFps);
+                                client.getWindow().setFramerateLimit(options.maxFps);
                             } break;
-                        case "fancyGraphics": client.options.fancyGraphics = "true".equals(string22); break;
+                        case "fancyGraphics": options.fancyGraphics = "true".equals(string22); break;
                         case "ao":
                             switch ((int) Float.parseFloat(string22)) {
-                                case 0: client.options.ao = AoOption.OFF; break;
-                                case 1: client.options.ao = AoOption.MIN; break;
-                                case 2: client.options.ao = AoOption.MAX;
+                                case 0: options.ao = AoOption.OFF; break;
+                                case 1: options.ao = AoOption.MIN; break;
+                                case 2: options.ao = AoOption.MAX;
                             } break;
                         case "renderClouds":
                             if ("true".equals(string22)) {
-                                client.options.cloudRenderMode = CloudRenderMode.FANCY;
+                                options.cloudRenderMode = CloudRenderMode.FANCY;
                             } else if ("false".equals(string22)) {
-                                client.options.cloudRenderMode = CloudRenderMode.OFF;
+                                options.cloudRenderMode = CloudRenderMode.OFF;
                             } else if ("fast".equals(string22)) {
-                                client.options.cloudRenderMode = CloudRenderMode.FAST;
+                                options.cloudRenderMode = CloudRenderMode.FAST;
                             } break;
-                        case "attackIndicator": client.options.attackIndicator = AttackIndicator.byId(Integer.parseInt(string22)); break;
-                        case "chatVisibility": client.options.chatVisibility = ChatVisibility.byId(Integer.parseInt(string22)); break;
-                        case "chatOpacity": client.options.chatOpacity = Float.parseFloat(string22); break;
-                        case "textBackgroundOpacity": client.options.textBackgroundOpacity = Float.parseFloat(string22); break;
-                        case "backgroundForChatOnly": client.options.backgroundForChatOnly = "true".equals(string22); break;
-                        case "fullscreenResolution": client.options.fullscreenResolution = string22; break;
-                        case "hideServerAddress": client.options.hideServerAddress = "true".equals(string22); break;
-                        case "advancedItemTooltips": client.options.advancedItemTooltips = "true".equals(string22); break;
-                        case "pauseOnLostFocus": client.options.pauseOnLostFocus = "true".equals(string22); break;
-                        case "heldItemTooltips": client.options.heldItemTooltips = "true".equals(string22); break;
-                        case "chatHeightFocused": client.options.chatHeightFocused = Float.parseFloat(string22); break;
-                        case "chatHeightUnfocused": client.options.chatHeightUnfocused = Float.parseFloat(string22); break;
-                        case "chatScale": client.options.chatScale = Float.parseFloat(string22); break;
-                        case "chatWidth": client.options.chatWidth = Float.parseFloat(string22); break;
-                        case "mainHand": client.options.mainArm = "left".equals(string22) ? Arm.LEFT : Arm.RIGHT; break;
-                        case "narrator": client.options.narrator = NarratorOption.byId(Integer.parseInt(string22)); break;
-                        case "biomeBlendRadius": client.options.biomeBlendRadius = Integer.parseInt(string22); break;
-                        case "mouseWheelSensitivity": client.options.mouseWheelSensitivity = Float.parseFloat(string22); break;
+                        case "attackIndicator": options.attackIndicator = AttackIndicator.byId(Integer.parseInt(string22)); break;
+                        case "chatVisibility": options.chatVisibility = ChatVisibility.byId(Integer.parseInt(string22)); break;
+                        case "chatOpacity": options.chatOpacity = Float.parseFloat(string22); break;
+                        case "textBackgroundOpacity": options.textBackgroundOpacity = Float.parseFloat(string22); break;
+                        case "backgroundForChatOnly": options.backgroundForChatOnly = "true".equals(string22); break;
+                        case "fullscreenResolution": options.fullscreenResolution = string22; break;
+                        case "hideServerAddress": options.hideServerAddress = "true".equals(string22); break;
+                        case "advancedItemTooltips": options.advancedItemTooltips = "true".equals(string22); break;
+                        case "pauseOnLostFocus": options.pauseOnLostFocus = "true".equals(string22); break;
+                        case "heldItemTooltips": options.heldItemTooltips = "true".equals(string22); break;
+                        case "chatHeightFocused": options.chatHeightFocused = Float.parseFloat(string22); break;
+                        case "chatHeightUnfocused": options.chatHeightUnfocused = Float.parseFloat(string22); break;
+                        case "chatScale": options.chatScale = Float.parseFloat(string22); break;
+                        case "chatWidth": options.chatWidth = Float.parseFloat(string22); break;
+                        case "mainHand": options.mainArm = "left".equals(string22) ? Arm.LEFT : Arm.RIGHT; break;
+                        case "narrator": options.narrator = NarratorOption.byId(Integer.parseInt(string22)); break;
+                        case "biomeBlendRadius": options.biomeBlendRadius = Integer.parseInt(string22); break;
+                        case "mouseWheelSensitivity": options.mouseWheelSensitivity = Float.parseFloat(string22); break;
                         case "rawMouseInput":
-                            client.options.rawMouseInput = "true".equals(string22);
-                            Option.RAW_MOUSE_INPUT.set(client.options, string22); break;
-                        case "perspective": client.options.perspective = Integer.parseInt(string22); break;
+                            options.rawMouseInput = "true".equals(string22);
+                            Option.RAW_MOUSE_INPUT.set(options, string22); break;
+                        case "perspective": options.perspective = Integer.parseInt(string22); break;
                         case "piedirectory":
                             string22 = string22.replace(".", "");
                             ((PieChartAccessor) client).setopenProfilerSection(string22); break;
@@ -139,7 +144,7 @@ public class ResetSettings {
                             } break;
                         case "hitboxes": client.getEntityRenderManager().setRenderHitboxes("true".equals(string22)); break;
                         case "key":
-                            for (KeyBinding keyBinding : client.options.keysAll) {
+                            for (KeyBinding keyBinding : options.keysAll) {
                                 if (string2_split[1].equals(keyBinding.getId())) {
                                     keyBinding.setKeyCode(InputUtil.fromName(string22)); break;
                                 }
@@ -148,13 +153,13 @@ public class ResetSettings {
                             for (SoundCategory soundCategory : SoundCategory.values()) {
                                 if (string2_split[1].equals(soundCategory.getName())) {
                                     client.getSoundManager().updateSoundVolume(soundCategory, Float.parseFloat(string22));
-                                    client.options.setSoundVolume(soundCategory, Float.parseFloat(string22)); break;
+                                    options.setSoundVolume(soundCategory, Float.parseFloat(string22)); break;
                                 }
                             } break;
                         case "modelPart":
                             for (PlayerModelPart playerModelPart : PlayerModelPart.values()) {
                                 if (string2.equals("modelPart_" + playerModelPart.getName())) {
-                                    client.options.setPlayerModelPart(playerModelPart, "true".equals(string22)); break;
+                                    options.setPlayerModelPart(playerModelPart, "true".equals(string22)); break;
                                 }
                             }
                     }
@@ -184,31 +189,31 @@ public class ResetSettings {
     }
 
     public static void CheckSettings(){
-        client.options.mouseSensitivity = Check("Sensitivity",client.options.mouseSensitivity,0,1);
-        client.options.fov = Check("FOV",client.options.fov,30,110);
-        client.options.gamma = Check("Brightness",client.options.gamma,0,5);
-        client.options.viewDistance = Check("Render Distance",client.options.viewDistance,2,32);
-        client.options.guiScale = Check("GUI Scale",client.options.guiScale,0,4);
+        options.mouseSensitivity = Check("Sensitivity",options.mouseSensitivity,0,1);
+        options.fov = Check("FOV",options.fov,30,110);
+        options.gamma = Check("Brightness",options.gamma,0,5);
+        options.viewDistance = Check("Render Distance",options.viewDistance,2,32);
+        options.guiScale = Check("GUI Scale",options.guiScale,0,4);
         //Because of DynamicFPS/SleepBackground I will not mess with adjusting FPS :)
-        client.options.biomeBlendRadius = Check("Biome Blend Radius",client.options.biomeBlendRadius,0,7);
-        client.options.chatOpacity = Check("Chat Opacity",client.options.chatOpacity,0,1);
-        client.options.textBackgroundOpacity = Check("Text Background Opacity",client.options.textBackgroundOpacity,0,1);
-        client.options.chatHeightFocused = Check("(Chat) Focused Height",client.options.chatHeightFocused,0,1);
-        client.options.chatHeightUnfocused = Check("(Chat) Unfocused Height",client.options.chatHeightUnfocused,0,1);
-        client.options.chatScale = Check("Chat Text Size",client.options.chatScale,0,1);
-        client.options.chatWidth = Check("ChatWidth",client.options.chatWidth,0,1);
-        client.options.mouseWheelSensitivity = Check("Scroll Sensitivity",client.options.mouseWheelSensitivity,0.01,10);
+        options.biomeBlendRadius = Check("Biome Blend Radius",options.biomeBlendRadius,0,7);
+        options.chatOpacity = Check("Chat Opacity",options.chatOpacity,0,1);
+        options.textBackgroundOpacity = Check("Text Background Opacity",options.textBackgroundOpacity,0,1);
+        options.chatHeightFocused = Check("(Chat) Focused Height",options.chatHeightFocused,0,1);
+        options.chatHeightUnfocused = Check("(Chat) Unfocused Height",options.chatHeightUnfocused,0,1);
+        options.chatScale = Check("Chat Text Size",options.chatScale,0,1);
+        options.chatWidth = Check("ChatWidth",options.chatWidth,0,1);
+        options.mouseWheelSensitivity = Check("Scroll Sensitivity",options.mouseWheelSensitivity,0.01,10);
         for(SoundCategory soundCategory : SoundCategory.values()){
-            float i = Check(soundCategory.getName(),client.options.getSoundVolume(soundCategory),0,1);
+            float i = Check(soundCategory.getName(),options.getSoundVolume(soundCategory),0,1);
             client.getSoundManager().updateSoundVolume(soundCategory, i);
-            client.options.setSoundVolume(soundCategory, i);
+            options.setSoundVolume(soundCategory, i);
         }
-        if(client.options.mipmapLevels<0){
-            LOGGER.warn("Mipmap Levels was too low! (" + client.options.mipmapLevels + ")");
+        if(options.mipmapLevels<0){
+            LOGGER.warn("Mipmap Levels was too low! (" + options.mipmapLevels + ")");
             LOGGER.error("Mipmap Levels can not be corrected!");
         }else {
-            if (client.options.mipmapLevels > 4) {
-                LOGGER.warn("Mipmap Levels was too high! (" + client.options.mipmapLevels + ")");
+            if (options.mipmapLevels > 4) {
+                LOGGER.warn("Mipmap Levels was too high! (" + options.mipmapLevels + ")");
                 LOGGER.error("Mipmap Levels can not be corrected!");
             }
         }
@@ -254,6 +259,10 @@ public class ResetSettings {
     public static void SetStandardSettings() {
         LOGGER.info("Saving StandardSettings...");
 
+        if(!new File("options.txt").exists()){
+            options.write();
+        }
+
         PrintWriter printer = null;
         try (Scanner scanner = new Scanner(new File("options.txt"))) {
             FileWriter writer = new FileWriter("standardoptions.txt");
@@ -264,7 +273,7 @@ public class ResetSettings {
                 printer.write(line);
             }
 
-            printer.write("perspective:" + client.options.perspective + System.lineSeparator());
+            printer.write("perspective:" + options.perspective + System.lineSeparator());
             printer.write("piedirectory:" + ((PieChartAccessor) client).getopenProfilerSection().replace("", ".") + System.lineSeparator());
             client.debugRenderer.toggleShowChunkBorder();
             printer.write("chunkborders:" + client.debugRenderer.toggleShowChunkBorder() + System.lineSeparator());
