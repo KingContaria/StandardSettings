@@ -12,4 +12,4 @@ It will be a copy of your current options.txt file plus some additional features
     hitboxes:true (Show/hide Hitboxes)
     chunkborders:false (Show/hide Chunkborders)
 
-If you don't want some settings to be reset you have manually remove the line from the file.
+If you don't want some settings to be reset you have to manually remove the line from the file.
