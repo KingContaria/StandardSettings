@@ -9,12 +9,10 @@
     "KingContaria"
   ],
   "contact": {
-    "homepage": "",
-    "sources": ""
+    "sources": "https://github.com/KingContaria/StandardSettings"
   },
 
   "license": "CC0-1.0",
-  "icon": "",
 
   "environment": "*",
   "entrypoints": {
@@ -28,8 +26,5 @@
   "depends": {
     "fabricloader": ">=0.12.0",
     "minecraft": "1.7.10"
-  },
-  "suggests": {
-    "another-mod": "*"
   }
 }

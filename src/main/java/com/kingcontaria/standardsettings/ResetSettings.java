@@ -3,6 +3,7 @@ package com.kingcontaria.standardsettings;
 import com.kingcontaria.standardsettings.mixins.PieChartAccessor;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.hud.ChatVisibility;
+import net.minecraft.client.options.GameOptions;
 import net.minecraft.client.options.KeyBinding;
 import net.minecraft.client.render.entity.EntityRenderDispatcher;
 import net.minecraft.client.sound.SoundCategory;
@@ -15,7 +16,8 @@ import java.util.Scanner;
 public class ResetSettings {
 
     private static final Logger LOGGER = StandardSettings.LOGGER;
-    protected static MinecraftClient client = MinecraftClient.getInstance();
+    private static final MinecraftClient client = MinecraftClient.getInstance();
+    private static final GameOptions options = client.options;
     private static final File standardoptionsFile = new File("standardoptions.txt");
 
     public static void LoadStandardSettings() {
@@ -32,50 +34,55 @@ public class ResetSettings {
                     String[] string0_split = strings[0].split("_");
 
                     switch (string0_split[0]){
-                        case "mouseSensitivity": client.options.sensitivity = Float.parseFloat(strings[1]); break;
-                        case "fov": client.options.fov = Float.parseFloat(strings[1]) * 40.0f + 70.0f; break;
-                        case "gamma": client.options.gamma = Float.parseFloat(strings[1]); break;
-                        case "invertYMouse": client.options.invertYMouse = strings[1].equals("true"); break;
-                        case "renderDistance": client.options.viewDistance = Integer.parseInt(strings[1]); break;
-                        case "guiScale": client.options.guiScale = Integer.parseInt(strings[1]); break;
-                        case "particles": client.options.particle = Integer.parseInt(strings[1]); break;
-                        case "bobView": client.options.bobView = strings[1].equals("true"); break;
-                        case "maxFps": client.options.maxFramerate = Integer.parseInt(strings[1]); break;
-                        case "difficulty": client.options.difficulty = Difficulty.byOrdinal(Integer.parseInt(strings[1])); break;
-                        case "fancyGraphics": client.options.fancyGraphics = strings[1].equals("true"); break;
-                        case "ao": client.options.ao = strings[1].equals("true") ? 2 : (strings[1].equals("false") ? 0 : Integer.parseInt(strings[1])); break;
-                        case "chatVisibility": client.options.field_7671 = ChatVisibility.get(Integer.parseInt(strings[1])); break;
-                        case "chatColors": client.options.chatColor = strings[1].equals("true"); break;
-                        case "chatLinks": client.options.chatLink = strings[1].equals("true"); break;
-                        case "chatLinksPrompt": client.options.chatLinkPrompt = strings[1].equals("true"); break;
-                        case "chatOpacity": client.options.chatOpacity = Float.parseFloat(strings[1]); break;
+                        case "mouseSensitivity": options.sensitivity = Float.parseFloat(strings[1]); break;
+                        case "fov": options.fov = Float.parseFloat(strings[1]) * 40.0f + 70.0f; break;
+                        case "gamma": options.gamma = Float.parseFloat(strings[1]); break;
+                        case "invertYMouse": options.invertYMouse = strings[1].equals("true"); break;
+                        case "renderDistance": options.viewDistance = Integer.parseInt(strings[1]); break;
+                        case "guiScale": options.guiScale = Integer.parseInt(strings[1]); break;
+                        case "particles": options.particle = Integer.parseInt(strings[1]); break;
+                        case "bobView": options.bobView = strings[1].equals("true"); break;
+                        case "maxFps": options.maxFramerate = Integer.parseInt(strings[1]); break;
+                        case "difficulty": options.difficulty = Difficulty.byOrdinal(Integer.parseInt(strings[1])); break;
+                        case "fancyGraphics": options.fancyGraphics = strings[1].equals("true"); break;
+                        case "ao": options.ao = strings[1].equals("true") ? 2 : (strings[1].equals("false") ? 0 : Integer.parseInt(strings[1])); break;
+                        case "chatVisibility": options.field_7671 = ChatVisibility.get(Integer.parseInt(strings[1])); break;
+                        case "chatColors": options.chatColor = strings[1].equals("true"); break;
+                        case "chatLinks": options.chatLink = strings[1].equals("true"); break;
+                        case "chatLinksPrompt": options.chatLinkPrompt = strings[1].equals("true"); break;
+                        case "chatOpacity": options.chatOpacity = Float.parseFloat(strings[1]); break;
                         case "fullscreen":
-                            if(client.options.fullscreen != strings[1].equals("true")) {
-                                client.toggleFullscreen();
-                            }
-                        case "enableVsync": client.options.vsync = strings[1].equals("true"); break;
-                        case "advancedItemTooltips": client.options.advancedItemTooltips = strings[1].equals("true"); break;
-                        case "pauseOnLostFocus": client.options.pauseOnLostFocus = strings[1].equals("true"); break;
-                        case "showCape": client.options.field_5053 = strings[1].equals("true"); break;
-                        case "touchscreen": client.options.touchScreen = strings[1].equals("true"); break;
-                        case "heldItemTooltips": client.options.heldItemTooltips = strings[1].equals("true"); break;
-                        case "chatHeightFocused": client.options.chatHeightFocused = Float.parseFloat(strings[1]); break;
-                        case "chatHeightUnfocused": client.options.chatHeightUnfocused = Float.parseFloat(strings[1]); break;
-                        case "chatScale": client.options.chatScale = Float.parseFloat(strings[1]); break;
-                        case "chatWidth": client.options.chatWidth = Float.parseFloat(strings[1]); break;
+                            if(options.fullscreen != strings[1].equals("true")){
+                                if(client.isWindowFocused()){
+                                    client.toggleFullscreen();
+                                    options.fullscreen = strings[1].equals("true");
+                                }else {
+                                    LOGGER.error("Could not reset fullscreen mode because window wasn't focused!");
+                                }
+                            } break;
+                        case "enableVsync": options.vsync = strings[1].equals("true"); break;
+                        case "advancedItemTooltips": options.advancedItemTooltips = strings[1].equals("true"); break;
+                        case "pauseOnLostFocus": options.pauseOnLostFocus = strings[1].equals("true"); break;
+                        case "showCape": options.field_5053 = strings[1].equals("true"); break;
+                        case "touchscreen": options.touchScreen = strings[1].equals("true"); break;
+                        case "heldItemTooltips": options.heldItemTooltips = strings[1].equals("true"); break;
+                        case "chatHeightFocused": options.chatHeightFocused = Float.parseFloat(strings[1]); break;
+                        case "chatHeightUnfocused": options.chatHeightUnfocused = Float.parseFloat(strings[1]); break;
+                        case "chatScale": options.chatScale = Float.parseFloat(strings[1]); break;
+                        case "chatWidth": options.chatWidth = Float.parseFloat(strings[1]); break;
                         //Doesnt work rn
                         /*
                         case "forceUnicodeFont":
-                            client.options.forceUnicode = strings[1].equals("true");
-                            client.options.setValue();
+                            options.forceUnicode = strings[1].equals("true");
+                            options.setValue();
                         */
-                        case "clouds": client.options.renderClouds = strings[1].equals("true"); break;
-                        case "perspective": client.options.perspective = Integer.parseInt(strings[1]); break;
+                        case "clouds": options.renderClouds = strings[1].equals("true"); break;
+                        case "perspective": options.perspective = Integer.parseInt(strings[1]); break;
                         case "hitboxes": EntityRenderDispatcher.field_5192 = strings[1].equals("true"); break;
                         case "piedirectory":
                             ((PieChartAccessor) client).setopenProfilerSection(strings[1]); break;
                         case "key":
-                            for (KeyBinding keyBinding : client.options.keysAll) {
+                            for (KeyBinding keyBinding : options.keysAll) {
                                 if (string0_split[1].equals(keyBinding.getTranslationKey())) {
                                     keyBinding.setCode(Integer.parseInt(strings[1])); break;
                                 }
@@ -83,7 +90,7 @@ public class ResetSettings {
                         case "soundCategory":
                             for (SoundCategory soundCategory : SoundCategory.values()) {
                                 if (string0_split[1].equals(soundCategory.getName())) {
-                                    client.options.setSoundVolume(soundCategory, Float.parseFloat(strings[1])); break;
+                                    options.setSoundVolume(soundCategory, Float.parseFloat(strings[1])); break;
                                 }
                             } break;
                     }
@@ -103,28 +110,28 @@ public class ResetSettings {
     }
 
     public static void CheckSettings(){
-        client.options.sensitivity = Check("Sensitivity",client.options.sensitivity,0,1);
-        client.options.fov = Check("FOV",client.options.fov,30,110);
-        client.options.gamma = Check("Brightness",client.options.gamma,0,5);
-        client.options.viewDistance = Check("Render Distance",client.options.viewDistance,2,32);
-        client.options.guiScale = Check("GUI Scale",client.options.guiScale,0,4);
+        options.sensitivity = Check("Sensitivity",options.sensitivity,0,1);
+        options.fov = Check("FOV",options.fov,30,110);
+        options.gamma = Check("Brightness",options.gamma,0,5);
+        options.viewDistance = Check("Render Distance",options.viewDistance,2,32);
+        options.guiScale = Check("GUI Scale",options.guiScale,0,4);
         //Because of DynamicFPS/SleepBackground I will not mess with adjusting FPS :)
-        client.options.chatOpacity = Check("Chat Opacity",client.options.chatOpacity,0,1);
-        client.options.chatHeightFocused = Check("(Chat) Focused Height",client.options.chatHeightFocused,0,1);
-        client.options.chatHeightUnfocused = Check("(Chat) Unfocused Height",client.options.chatHeightUnfocused,0,1);
-        client.options.chatScale = Check("Chat Text Size",client.options.chatScale,0,1);
-        client.options.chatWidth = Check("ChatWidth",client.options.chatWidth,0,1);
+        options.chatOpacity = Check("Chat Opacity",options.chatOpacity,0,1);
+        options.chatHeightFocused = Check("(Chat) Focused Height",options.chatHeightFocused,0,1);
+        options.chatHeightUnfocused = Check("(Chat) Unfocused Height",options.chatHeightUnfocused,0,1);
+        options.chatScale = Check("Chat Text Size",options.chatScale,0,1);
+        options.chatWidth = Check("ChatWidth",options.chatWidth,0,1);
         for(SoundCategory soundCategory : SoundCategory.values()){
-            float i = Check(soundCategory.getName(),client.options.getSoundVolume(soundCategory),0,1);
+            float i = Check(soundCategory.getName(),options.getSoundVolume(soundCategory),0,1);
             client.getSoundManager().updateSoundVolume(soundCategory, i);
-            client.options.setSoundVolume(soundCategory, i);
+            options.setSoundVolume(soundCategory, i);
         }
-        if(client.options.mipmapLevels<0){
-            LOGGER.warn("Mipmap Levels was too low! (" + client.options.mipmapLevels + ")");
+        if(options.mipmapLevels<0){
+            LOGGER.warn("Mipmap Levels was too low! (" + options.mipmapLevels + ")");
             LOGGER.error("Mipmap Levels can not be corrected!");
         }else {
-            if (client.options.mipmapLevels > 4) {
-                LOGGER.warn("Mipmap Levels was too high! (" + client.options.mipmapLevels + ")");
+            if (options.mipmapLevels > 4) {
+                LOGGER.warn("Mipmap Levels was too high! (" + options.mipmapLevels + ")");
                 LOGGER.error("Mipmap Levels can not be corrected!");
             }
         }
@@ -158,6 +165,10 @@ public class ResetSettings {
     public static void SetStandardSettings() {
         LOGGER.info("Saving StandardSettings...");
 
+        if(!new File("options.txt").exists()){
+            options.save();
+        }
+
         PrintWriter printer = null;
         try (Scanner scanner = new Scanner(new File("options.txt"))) {
             FileWriter writer = new FileWriter("standardoptions.txt");
@@ -168,7 +179,7 @@ public class ResetSettings {
                 printer.write(line);
             }
 
-            printer.write("perspective:" + client.options.perspective + System.lineSeparator());
+            printer.write("perspective:" + options.perspective + System.lineSeparator());
             printer.write("piedirectory:" + ((PieChartAccessor) client).getopenProfilerSection() + System.lineSeparator());
             printer.write("hitboxes:" + EntityRenderDispatcher.field_5192);
 
