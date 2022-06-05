@@ -12,4 +12,9 @@ It will be a copy of your current options.txt file plus some additional features
     piedirectory:root.tick.level.entities.blockEntities (Path of your Piechart)
     hitboxes:true (Show/hide Hitboxes)
 
+It will also add the following settings into the file to configure, that will determine what settings it gets set to once you join the world/instance, leave blank to use the normal standardsettings:
+
+    renderDistanceOnWorldJoin:
+    fovOnWorldJoin:
+
 If you don't want some settings to be reset you have to manually remove the line from the file.
