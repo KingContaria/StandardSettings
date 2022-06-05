@@ -15,11 +15,6 @@
   "license": "CC0-1.0",
 
   "environment": "*",
-  "entrypoints": {
-    "main": [
-      "com.kingcontaria.standardsettings.StandardSettings"
-    ]
-  },
   "mixins": [
     "standardsettings.mixins.json"
   ],
