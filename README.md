@@ -4,7 +4,7 @@ Resetting Mod for Minecraft Speedrunning
 
 This Mod will set your Settings to a preset standard when creating a new world. It will also check if your settings are within the allowed boundaries of the game / the speedrun.com rules.
 
-To set your standard settings, click the Book and Quill Button on the Titlescreen, this will create a 'standardoptions.txt' file in your Minecraft directory.
+To set your standard settings, click the Book and Quill Button on the Titlescreen, this will create a 'standardoptions.txt' file in your Minecraft directory. If you hold shift while clicking the button, it will open up the 'standardoptions.txt' file.
 
 It will be a copy of your current options.txt file plus some additional features:
 
