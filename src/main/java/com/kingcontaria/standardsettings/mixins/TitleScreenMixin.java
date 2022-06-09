@@ -6,7 +6,6 @@ import net.minecraft.client.gui.screen.TitleScreen;
 import net.minecraft.client.gui.widget.ButtonWidget;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.text.Text;
-import net.minecraft.text.TranslatableText;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.Util;
 import org.spongepowered.asm.mixin.Mixin;
@@ -26,7 +25,7 @@ public class TitleScreenMixin extends Screen {
 
     @Inject(method = "initWidgetsNormal", at = @At("HEAD"))
     private void addCustomButton(int y, int spacingY, CallbackInfo ci){
-        SetStandardSettingsButton = new ButtonWidget(this.width / 2 + 104, y, 20, 20, new TranslatableText(""), buttonWidget -> {
+        SetStandardSettingsButton = new ButtonWidget(this.width / 2 + 104, y, 20, 20, Text.translatable(""), buttonWidget -> {
             if(Screen.hasShiftDown() && StandardSettings.standardoptionsFile.exists()){
                 StandardSettings.LOGGER.info("Opening standardoptions.txt...");
                 Util.getOperatingSystem().open(StandardSettings.standardoptionsFile);
