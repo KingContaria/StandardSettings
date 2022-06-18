@@ -12,6 +12,9 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 
 @Mixin(WorldSaveHandler.class)
 
@@ -21,7 +24,11 @@ public class WorldSaveHandlerMixin {
 
     @Inject(method = "saveWorld(Lnet/minecraft/world/level/LevelProperties;Lnet/minecraft/nbt/CompoundTag;)V", at = @At("TAIL"))
     private void saveOptionsTxt(LevelProperties levelProperties, CompoundTag compoundTag, CallbackInfo ci){
-        StandardSettings.save(new File(this.worldDir,"options.txt"));
+        try{
+            Files.copy(StandardSettings.optionsFile.toPath(),new File(this.worldDir,"options.txt").toPath(), StandardCopyOption.REPLACE_EXISTING);
+        } catch (IOException e) {
+            StandardSettings.LOGGER.error("Couldn't save options.txt to world file");
+        }
     }
 
 }
