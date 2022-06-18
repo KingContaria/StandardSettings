@@ -295,6 +295,7 @@ public class StandardSettings {
                     case "fovOnWorldJoin" -> fov = line;
                 }
             }
+            standardoptionsTxt.close();
             Files.copy(optionsFile.toPath(), standardoptionsFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
             Files.write(standardoptionsFile.toPath(), ("perspective:" + options.getPerspective() + System.lineSeparator()).getBytes(), StandardOpenOption.APPEND);
             Files.write(standardoptionsFile.toPath(), ("piedirectory:" + ((MinecraftClientAccessor)client).getOpenProfilerSection().replace("",".") + System.lineSeparator()).getBytes(), StandardOpenOption.APPEND);
