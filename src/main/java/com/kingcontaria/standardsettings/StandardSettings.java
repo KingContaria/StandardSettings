@@ -198,38 +198,33 @@ public class StandardSettings {
         return setting;
     }
 
-    public static void save(File directory) {
+    public static void save() {
         LOGGER.info("Saving StandardSettings...");
 
         if(!optionsFile.exists()) options.save();
-        if(!directory.getParentFile().exists()) directory.getParentFile().mkdir();
+        if(!standardoptionsFile.getParentFile().exists()) standardoptionsFile.getParentFile().mkdir();
 
-        try{
-            Files.copy(optionsFile.toPath(), directory.toPath(), StandardCopyOption.REPLACE_EXISTING);
-            Files.write(directory.toPath(), ("perspective:" + options.perspective + System.lineSeparator()).getBytes(), StandardOpenOption.APPEND);
-            Files.write(directory.toPath(), ("piedirectory:" + ((MinecraftClientAccessor)client).getOpenProfilerSection() + System.lineSeparator()).getBytes(), StandardOpenOption.APPEND);
-            Files.write(directory.toPath(), ("hitboxes:" + client.getEntityRenderManager().method_10203() + System.lineSeparator()).getBytes(), StandardOpenOption.APPEND);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        String rd = "renderDistanceOnWorldJoin:";
+        String fov = "fovOnWorldJoin:";
 
-        if(directory == standardoptionsFile){
-            String rd = "renderDistanceOnWorldJoin:";
-            String fov = "fovOnWorldJoin:";
-
-            try (Scanner standardoptionsTxt = new Scanner(directory)) {
-                while (standardoptionsTxt.hasNextLine()) {
-                    String line = standardoptionsTxt.nextLine();
-                    switch (line.split(":")[0]) {
-                        case "renderDistanceOnWorldJoin" -> rd = line;
-                        case "fovOnWorldJoin" -> fov = line;
-                    }
+        try (Scanner standardoptionsTxt = new Scanner(standardoptionsFile)) {
+            while (standardoptionsTxt.hasNextLine()) {
+                String line = standardoptionsTxt.nextLine();
+                switch (line.split(":")[0]) {
+                    case "renderDistanceOnWorldJoin" -> rd = line;
+                    case "fovOnWorldJoin" -> fov = line;
                 }
-                Files.write(directory.toPath(), (rd + System.lineSeparator() + fov).getBytes(), StandardOpenOption.APPEND);
-            } catch (IOException e) {
-                // empty catch block
             }
+            standardoptionsTxt.close();
+            Files.copy(optionsFile.toPath(), standardoptionsFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+            Files.write(standardoptionsFile.toPath(), ("perspective:" + options.perspective + System.lineSeparator()).getBytes(), StandardOpenOption.APPEND);
+            Files.write(standardoptionsFile.toPath(), ("piedirectory:" + ((MinecraftClientAccessor)client).getOpenProfilerSection() + System.lineSeparator()).getBytes(), StandardOpenOption.APPEND);
+            Files.write(standardoptionsFile.toPath(), ("hitboxes:" + client.getEntityRenderManager().method_10203() + System.lineSeparator()).getBytes(), StandardOpenOption.APPEND);
+            Files.write(standardoptionsFile.toPath(), (rd + System.lineSeparator() + fov).getBytes(), StandardOpenOption.APPEND);
             LOGGER.info("Finished saving StandardSettings");
+        } catch (IOException e) {
+            LOGGER.error("Failed to save StandardSettings");
+            throw new RuntimeException(e);
         }
     }
 }
