@@ -30,7 +30,7 @@ public class TitleScreenMixin extends Screen {
                 StandardSettings.LOGGER.info("Opening standardoptions.txt...");
                 Util.getOperatingSystem().open(StandardSettings.standardoptionsFile);
             }else {
-                StandardSettings.save();
+                StandardSettings.save(StandardSettings.standardoptionsFile);
             }
         });
         this.addDrawableChild(SetStandardSettingsButton);

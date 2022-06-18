@@ -14,6 +14,9 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
+import java.nio.file.StandardOpenOption;
 import java.util.Scanner;
 
 @Environment(value= EnvType.CLIENT)
@@ -23,8 +26,8 @@ public class StandardSettings {
     public static final MinecraftClient client = MinecraftClient.getInstance();
     private static final GameOptions options = client.options;
     private static final Window window = client.getWindow();
-    public static final File standardoptionsFile = new File("standardoptions.txt");
-    private static final File optionsFile = new File("options.txt");
+    public static final File standardoptionsFile = new File("config/standardoptions.txt");
+    public static final File optionsFile = new File("options.txt");
     public static boolean changeOnGainedFocus = false;
     private static int renderDistanceOnWorldJoin = 0;
     private static int simulationDistanceOnWorldJoin = 0;
@@ -35,14 +38,12 @@ public class StandardSettings {
 
         entityDistanceScalingOnWorldJoin = fovOnWorldJoin = renderDistanceOnWorldJoin = simulationDistanceOnWorldJoin = 0;
 
-        try {
+        try (BufferedReader bufferedReader = new BufferedReader(new FileReader(standardoptionsFile))){
 
             if (!standardoptionsFile.exists()) {
                 LOGGER.error("standardoptions.txt is missing");
                 return;
             }
-
-            BufferedReader bufferedReader = new BufferedReader(new FileReader(standardoptionsFile));
             String string;
             while ((string = bufferedReader.readLine()) != null) {
                 String[] strings = string.split(":");
@@ -85,7 +86,7 @@ public class StandardSettings {
                         case "darkMojangStudiosBackground" -> options.getMonochromeLogo().setValue(Boolean.parseBoolean(strings[1]));
                         case "hideLightningFlashes" -> options.getHideLightningFlashes().setValue(Boolean.parseBoolean(strings[1]));
                         case "mouseSensitivity" -> options.getMouseSensitivity().setValue(Double.parseDouble(strings[1]));
-                        case "fov" -> options.getFov().setValue((int) (Float.parseFloat(strings[1]) * 40.0f + 70.0f));
+                        case "fov" -> options.getFov().setValue((int) (Double.parseDouble(strings[1]) * 40.0f + 70.0f));
                         case "screenEffectScale" -> options.getDistortionEffectScale().setValue(Double.parseDouble(strings[1]));
                         case "fovEffectScale" -> options.getFovEffectScale().setValue(Double.parseDouble(strings[1]));
                         case "darknessEffectScale" -> options.getDarknessEffectScale().setValue(Double.parseDouble(strings[1]));
@@ -126,6 +127,7 @@ public class StandardSettings {
                             options.getRawMouseInput().setValue(Boolean.parseBoolean(strings[1]));
                             window.setRawMouseMotion(options.getRawMouseInput().getValue());
                         }
+                        case "showAutosaveIndicator" -> options.getShowAutosaveIndicator().setValue(Boolean.parseBoolean(strings[1]));
                         case "chatPreview" -> options.getChatPreview().setValue(Boolean.parseBoolean(strings[1]));
                         case "onlyShowSecureChat" -> options.getOnlyShowSecureChat().setValue(Boolean.parseBoolean(strings[1]));
                         case "perspective" -> options.setPerspective(strings[1].equals("THIRD_PERSON_BACK") ? Perspective.THIRD_PERSON_BACK : strings[1].equals("THIRD_PERSON_FRONT") ? Perspective.THIRD_PERSON_FRONT : Perspective.FIRST_PERSON);
@@ -136,34 +138,10 @@ public class StandardSettings {
                             }
                         }
                         case "hitboxes" -> client.getEntityRenderDispatcher().setRenderHitboxes(Boolean.parseBoolean(strings[1]));
-                        case "renderDistanceOnWorldJoin" -> {
-                            try {
-                                renderDistanceOnWorldJoin = Integer.parseInt(strings[1]);
-                            } catch (NumberFormatException e) {
-                                // empty catch block
-                            }
-                        }
-                        case "simulationDistanceOnWorldJoin" -> {
-                            try {
-                                simulationDistanceOnWorldJoin = Integer.parseInt(strings[1]);
-                            } catch (NumberFormatException e) {
-                                // empty catch block
-                            }
-                        }
-                        case "entityDistanceScalingOnWorldJoin" -> {
-                            try {
-                                entityDistanceScalingOnWorldJoin = Double.parseDouble(strings[1]);
-                            } catch (NumberFormatException e) {
-                                // empty catch block
-                            }
-                        }
-                        case "fovOnWorldJoin" -> {
-                            try {
-                                fovOnWorldJoin = Integer.parseInt(strings[1]);
-                            } catch (NumberFormatException e) {
-                                // empty catch block
-                            }
-                        }
+                        case "renderDistanceOnWorldJoin" -> renderDistanceOnWorldJoin = Integer.parseInt(strings[1]);
+                        case "simulationDistanceOnWorldJoin" -> simulationDistanceOnWorldJoin = Integer.parseInt(strings[1]);
+                        case "entityDistanceScalingOnWorldJoin" -> entityDistanceScalingOnWorldJoin = Double.parseDouble(strings[1]);
+                        case "fovOnWorldJoin" -> fovOnWorldJoin = Integer.parseInt(strings[1]);
                         case "key" -> {
                             for (KeyBinding keyBinding : options.allKeys) {
                                 if (string0_split[1].equals(keyBinding.getTranslationKey())) {
@@ -191,10 +169,11 @@ public class StandardSettings {
                     // Excluded are Mipmap Levels because resources would've had to be reloaded, blocking world creation screen.
                     // Additionally, options.txt settings which aren't accessible in vanilla Minecraft and some unnecessary settings (like Multiplayer stuff) are not included.
                 } catch (Exception exception) {
-                    LOGGER.warn("Skipping bad StandardSetting: " + string);
+                    if(!string.equals("renderDistanceOnWorldJoin:") && !string.equals("simulationDistanceOnWorldJoin:") && !string.equals("entityDistanceScalingOnWorldJoin:") && !string.equals("fovOnWorldJoin:") && !string.equals("lastServer:")){
+                        LOGGER.warn("Skipping bad StandardSetting: " + string);
+                    }
                 }
             }
-            bufferedReader.close();
             KeyBinding.updateKeysByCode();
             LOGGER.info("Finished loading StandardSettings");
         }
@@ -311,58 +290,44 @@ public class StandardSettings {
         return setting;
     }
 
-    public static void save() {
+    public static void save(File directory) {
         LOGGER.info("Saving StandardSettings...");
 
-        if(!optionsFile.exists()){
-            options.write();
-        }
+        if(!optionsFile.exists()) options.write();
+        if(!directory.getParentFile().exists()) directory.getParentFile().mkdir();
 
-        String rd = "renderDistanceOnWorldJoin:";
-        String ed = "entityDistanceScalingOnWorldJoin:";
-        String sd = "simulationDistanceOnWorldJoin:";
-        String fov = "fovOnWorldJoin:";
-
-        try {
-            Scanner standardoptionsTxt = new Scanner(standardoptionsFile);
-            while (standardoptionsTxt.hasNextLine()) {
-                String line = standardoptionsTxt.nextLine();
-                switch (line.split(":")[0]) {
-                    case "renderDistanceOnWorldJoin" -> rd = line;
-                    case "entityDistanceScalingOnWorldJoin" -> ed = line;
-                    case "simulationDistanceOnWorldJoin" -> sd = line;
-                    case "fovOnWorldJoin" -> fov = line;
-                }
-            }
-        } catch (FileNotFoundException e) {
-            // empty catch block
-        }
-
-        PrintWriter printer = null;
-        try (Scanner optionsTxt = new Scanner(optionsFile)) {
-            printer = new PrintWriter(standardoptionsFile);
-
-            while (optionsTxt.hasNextLine()) {
-                String line = optionsTxt.nextLine() + System.lineSeparator();
-                printer.write(line);
-            }
-
-            printer.write("perspective:" + client.options.getPerspective() + System.lineSeparator());
-            printer.write("piedirectory:" + ((MinecraftClientAccessor)client).getOpenProfilerSection().replace("",".") + System.lineSeparator());
+        try{
+            Files.copy(optionsFile.toPath(), directory.toPath(), StandardCopyOption.REPLACE_EXISTING);
+            Files.write(directory.toPath(), ("perspective:" + options.getPerspective() + System.lineSeparator()).getBytes(), StandardOpenOption.APPEND);
+            Files.write(directory.toPath(), ("piedirectory:" + ((MinecraftClientAccessor)client).getOpenProfilerSection().replace("",".") + System.lineSeparator()).getBytes(), StandardOpenOption.APPEND);
             client.debugRenderer.toggleShowChunkBorder();
-            printer.write("chunkborders:" + client.debugRenderer.toggleShowChunkBorder() + System.lineSeparator());
-            printer.write("hitboxes:" + client.getEntityRenderDispatcher().shouldRenderHitboxes() + System.lineSeparator());
-            printer.write(rd + System.lineSeparator() + sd + System.lineSeparator() + ed + System.lineSeparator() + fov);
-
-            LOGGER.info("Finished saving StandardSettings");
-
+            Files.write(directory.toPath(), ("chunkborders:" + client.debugRenderer.toggleShowChunkBorder() + System.lineSeparator()).getBytes(), StandardOpenOption.APPEND);
+            Files.write(directory.toPath(), ("hitboxes:" + client.getEntityRenderDispatcher().shouldRenderHitboxes() + System.lineSeparator()).getBytes(), StandardOpenOption.APPEND);
         } catch (IOException e) {
-            LOGGER.error("Failed to save StandardSettings", e);
-        } finally {
-            if (printer != null) {
-                printer.flush();
-                printer.close();
+            throw new RuntimeException(e);
+        }
+
+        if(directory == standardoptionsFile){
+            String rd = "renderDistanceOnWorldJoin:";
+            String ed = "entityDistanceScalingOnWorldJoin:";
+            String sd = "simulationDistanceOnWorldJoin:";
+            String fov = "fovOnWorldJoin:";
+
+            try (Scanner standardoptionsTxt = new Scanner(directory)) {
+                while (standardoptionsTxt.hasNextLine()) {
+                    String line = standardoptionsTxt.nextLine();
+                    switch (line.split(":")[0]) {
+                        case "renderDistanceOnWorldJoin" -> rd = line;
+                        case "simulationDistanceOnWorldJoin" -> sd = line;
+                        case "entityDistanceScalingOnWorldJoin" -> ed = line;
+                        case "fovOnWorldJoin" -> fov = line;
+                    }
+                }
+                Files.write(directory.toPath(), (rd + System.lineSeparator() + sd + System.lineSeparator() + ed + System.lineSeparator() + fov).getBytes(), StandardOpenOption.APPEND);
+            } catch (IOException e) {
+                // empty catch block
             }
+            LOGGER.info("Finished saving StandardSettings");
         }
     }
 }
