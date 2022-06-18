@@ -56,7 +56,7 @@ public class TitleScreenMixin extends Screen {
                     StandardSettings.LOGGER.error("Couldn't open file because Operating System isn't supported");
                 }
             }else {
-                StandardSettings.save(StandardSettings.standardoptionsFile);
+                StandardSettings.save();
             }
         }
     }
