@@ -11,6 +11,9 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 
 @Mixin(WorldSaveHandler.class)
 
@@ -20,7 +23,11 @@ public class WorldSaveHandlerMixin {
 
     @Inject(method = "savePlayerData", at = @At("TAIL"))
     private void saveOptionsTxt(PlayerEntity playerEntity, CallbackInfo ci){
-        StandardSettings.save(new File(this.playerDataDir.getParentFile(),"options.txt"));
+        try{
+            Files.copy(StandardSettings.optionsFile.toPath(),new File(this.playerDataDir.getParentFile(),"options.txt").toPath(), StandardCopyOption.REPLACE_EXISTING);
+        } catch (IOException e) {
+            StandardSettings.LOGGER.error("Couldn't save options.txt to world file");
+        }
     }
 
 }
