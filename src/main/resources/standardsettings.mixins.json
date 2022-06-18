@@ -6,7 +6,8 @@
   "client": [
     "CreateWorldScreenMixin",
     "MinecraftClientMixin",
-    "TitleScreenMixin"
+    "TitleScreenMixin",
+    "WorldSaveHandlerMixin"
   ],
   "injectors": {
     "defaultRequire": 1
