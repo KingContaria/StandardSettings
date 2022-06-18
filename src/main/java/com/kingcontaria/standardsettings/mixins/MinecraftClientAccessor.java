@@ -1,6 +1,7 @@
 package com.kingcontaria.standardsettings.mixins;
 
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.resource.ReloadableResourceManagerImpl;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.gen.Accessor;
 import org.spongepowered.asm.mixin.gen.Invoker;
@@ -15,4 +16,7 @@ public interface MinecraftClientAccessor {
 
     @Invoker
     void callInitFont(boolean forcesUnicode);
+
+    @Accessor
+    ReloadableResourceManagerImpl getResourceManager();
 }

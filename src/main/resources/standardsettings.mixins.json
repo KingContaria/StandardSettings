@@ -4,8 +4,8 @@
   "package": "com.kingcontaria.standardsettings.mixins",
   "compatibilityLevel": "JAVA_16",
   "client": [
-    "MinecraftClientAccessor",
     "CreateWorldScreenMixin",
+    "MinecraftClientAccessor",
     "MinecraftClientMixin",
     "TitleScreenMixin",
     "WorldSaveHandlerMixin"
