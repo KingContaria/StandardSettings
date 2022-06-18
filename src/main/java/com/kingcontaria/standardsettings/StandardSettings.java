@@ -252,6 +252,7 @@ public class StandardSettings {
                     case "fovOnWorldJoin" -> fov = line;
                 }
             }
+            standardoptionsTxt.close();
             Files.copy(optionsFile.toPath(), standardoptionsFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
             Files.write(standardoptionsFile.toPath(), ("perspective:" + options.perspective + System.lineSeparator()).getBytes(), StandardOpenOption.APPEND);
             client.debugRenderer.toggleShowChunkBorder();
