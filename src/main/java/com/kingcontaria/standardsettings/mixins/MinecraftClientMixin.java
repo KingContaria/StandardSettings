@@ -10,6 +10,8 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
+import java.io.File;
+
 @Mixin(MinecraftClient.class)
 
 public abstract class MinecraftClientMixin {
@@ -19,8 +21,15 @@ public abstract class MinecraftClientMixin {
 
     @Inject(method = "initializeGame", at = @At("TAIL"))
     private void loadStandardSettings(CallbackInfo ci){
+        File oldStandardoptionsFile = new File("standardoptions.txt");
+        if(!StandardSettings.standardoptionsFile.exists() && oldStandardoptionsFile.exists()){
+            StandardSettings.LOGGER.info("Moving standardoptions.txt to config folder...");
+            if(!StandardSettings.standardoptionsFile.getParentFile().exists()) StandardSettings.standardoptionsFile.getParentFile().mkdir();
+            oldStandardoptionsFile.renameTo(StandardSettings.standardoptionsFile);
+        }
         StandardSettings.LOGGER.info("Loading StandardSettings...");
         StandardSettings.load();
+        StandardSettings.LOGGER.info("Checking StandardSettings...");
         StandardSettings.checkSettings();
         this.options.save();
     }

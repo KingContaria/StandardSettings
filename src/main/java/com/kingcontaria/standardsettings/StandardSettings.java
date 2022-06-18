@@ -11,6 +11,9 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
+import java.nio.file.StandardOpenOption;
 import java.util.Scanner;
 
 public class StandardSettings {
@@ -18,8 +21,8 @@ public class StandardSettings {
     public static final Logger LOGGER = LogManager.getLogger();
     private static final MinecraftClient client = MinecraftClient.getInstance();
     private static final GameOptions options = client.options;
-    public static final File standardoptionsFile = new File("standardoptions.txt");
-    private static final File optionsFile = new File("options.txt");
+    public static final File standardoptionsFile = new File("config/standardoptions.txt");
+    public static final File optionsFile = new File("options.txt");
     public static boolean changeOnGainedFocus = false;
     private static int renderDistanceOnWorldJoin = 0;
     private static float fovOnWorldJoin = 0;
@@ -28,18 +31,16 @@ public class StandardSettings {
 
         fovOnWorldJoin = renderDistanceOnWorldJoin = 0;
 
-        try {
+        try (BufferedReader bufferedReader = new BufferedReader(new FileReader(standardoptionsFile))){
             if (!standardoptionsFile.exists()) {
                 LOGGER.error("standardoptions.txt is missing");
                 return;
             }
-            BufferedReader bufferedReader = new BufferedReader(new FileReader(standardoptionsFile));
             String string;
             while ((string = bufferedReader.readLine()) != null) {
+                String[] strings = string.split(":");
+                String[] string0_split = strings[0].split("_");
                 try {
-                    String[] strings = string.split(":");
-                    String[] string0_split = strings[0].split("_");
-
                     switch (string0_split[0]){
                         case "mouseSensitivity" -> options.sensitivity = Float.parseFloat(strings[1]);
                         case "fov" -> options.fov = Float.parseFloat(strings[1]) * 40.0f + 70.0f;
@@ -83,20 +84,8 @@ public class StandardSettings {
                         case "perspective" -> options.perspective = Integer.parseInt(strings[1]);
                         case "piedirectory" -> ((MinecraftClientAccessor)client).setOpenProfilerSection(strings[1]);
                         case "hitboxes" -> client.getEntityRenderManager().method_10205(Boolean.parseBoolean(strings[1]));
-                        case "renderDistanceOnWorldJoin" -> {
-                            try {
-                                renderDistanceOnWorldJoin = Integer.parseInt(strings[1]);
-                            } catch (NumberFormatException e) {
-                                // empty catch block
-                            }
-                        }
-                        case "fovOnWorldJoin" -> {
-                            try {
-                                fovOnWorldJoin = Float.parseFloat(strings[1]);
-                            } catch (NumberFormatException e) {
-                                // empty catch block
-                            }
-                        }
+                        case "renderDistanceOnWorldJoin" -> renderDistanceOnWorldJoin = Integer.parseInt(strings[1]);
+                        case "fovOnWorldJoin" -> fovOnWorldJoin = Float.parseFloat(strings[1]);
                         case "key" -> {
                             for (KeyBinding keyBinding : options.keysAll) {
                                 if (string0_split[1].equals(keyBinding.getTranslationKey())) {
@@ -123,10 +112,11 @@ public class StandardSettings {
                     // Excluded are 3D Anaglyph and Mipmap Levels.
                     // Additionally, options.txt settings which aren't accessible in vanilla Minecraft and some unnecessary settings (like Multiplayer and Streaming stuff) are not included.
                 } catch (Exception exception) {
-                    LOGGER.warn("Skipping bad StandardSetting: " + string);
+                    if(!string.equals("renderDistanceOnWorldJoin:") && !string.equals("fovOnWorldJoin:") && !string.equals("lastServer:")){
+                        LOGGER.warn("Skipping bad StandardSetting: " + string);
+                    }
                 }
             }
-            bufferedReader.close();
             KeyBinding.updateKeysByCode();
             LOGGER.info("Finished loading StandardSettings");
         } catch (Exception exception2) {
@@ -208,52 +198,38 @@ public class StandardSettings {
         return setting;
     }
 
-    public static void save() {
+    public static void save(File directory) {
         LOGGER.info("Saving StandardSettings...");
 
-        if(!optionsFile.exists()){
-            options.save();
-        }
+        if(!optionsFile.exists()) options.save();
+        if(!directory.getParentFile().exists()) directory.getParentFile().mkdir();
 
-        String rd = "renderDistanceOnWorldJoin:";
-        String fov = "fovOnWorldJoin:";
-
-        try {
-            Scanner standardoptionsTxt = new Scanner(standardoptionsFile);
-            while (standardoptionsTxt.hasNextLine()) {
-                String line = standardoptionsTxt.nextLine();
-                switch (line.split(":")[0]) {
-                    case "renderDistanceOnWorldJoin" -> rd = line;
-                    case "fovOnWorldJoin" -> fov = line;
-                }
-            }
-        } catch (FileNotFoundException e) {
-            // empty catch block
-        }
-
-        PrintWriter printer = null;
-        try (Scanner scanner = new Scanner(optionsFile)) {
-            printer = new PrintWriter(standardoptionsFile);
-
-            while (scanner.hasNextLine()) {
-                String line = scanner.nextLine() + System.lineSeparator();
-                printer.write(line);
-            }
-
-            printer.write("perspective:" + options.perspective + System.lineSeparator());
-            printer.write("piedirectory:" + ((MinecraftClientAccessor)client).getOpenProfilerSection() + System.lineSeparator());
-            printer.write("hitboxes:" + client.getEntityRenderManager().method_10203() + System.lineSeparator());
-            printer.write(rd + System.lineSeparator() + fov);
-
-            LOGGER.info("Finished saving StandardSettings");
-
+        try{
+            Files.copy(optionsFile.toPath(), directory.toPath(), StandardCopyOption.REPLACE_EXISTING);
+            Files.write(directory.toPath(), ("perspective:" + options.perspective + System.lineSeparator()).getBytes(), StandardOpenOption.APPEND);
+            Files.write(directory.toPath(), ("piedirectory:" + ((MinecraftClientAccessor)client).getOpenProfilerSection() + System.lineSeparator()).getBytes(), StandardOpenOption.APPEND);
+            Files.write(directory.toPath(), ("hitboxes:" + client.getEntityRenderManager().method_10203() + System.lineSeparator()).getBytes(), StandardOpenOption.APPEND);
         } catch (IOException e) {
-            LOGGER.error("Failed to save StandardSettings", e);
-        } finally {
-            if (printer != null) {
-                printer.flush();
-                printer.close();
+            throw new RuntimeException(e);
+        }
+
+        if(directory == standardoptionsFile){
+            String rd = "renderDistanceOnWorldJoin:";
+            String fov = "fovOnWorldJoin:";
+
+            try (Scanner standardoptionsTxt = new Scanner(directory)) {
+                while (standardoptionsTxt.hasNextLine()) {
+                    String line = standardoptionsTxt.nextLine();
+                    switch (line.split(":")[0]) {
+                        case "renderDistanceOnWorldJoin" -> rd = line;
+                        case "fovOnWorldJoin" -> fov = line;
+                    }
+                }
+                Files.write(directory.toPath(), (rd + System.lineSeparator() + fov).getBytes(), StandardOpenOption.APPEND);
+            } catch (IOException e) {
+                // empty catch block
             }
+            LOGGER.info("Finished saving StandardSettings");
         }
     }
 }
