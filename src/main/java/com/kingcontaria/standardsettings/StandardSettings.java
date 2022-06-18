@@ -74,6 +74,7 @@ public class StandardSettings {
                         case "bobView" -> options.bobView = Boolean.parseBoolean(strings[1]);
                         case "toggleCrouch" -> options.sneakToggled = Boolean.parseBoolean(strings[1]);
                         case "toggleSprint" -> options.sprintToggled = Boolean.parseBoolean(strings[1]);
+                        case "darkMojangStudiosBackground" -> options.monochromeLogo = Boolean.parseBoolean(strings[1]);
                         case "mouseSensitivity" -> options.mouseSensitivity = Double.parseDouble(strings[1]);
                         case "fov" -> options.fov = Double.parseDouble(strings[1]) * 40.0f + 70.0f;
                         case "screenEffectScale" -> options.distortionEffectScale = Float.parseFloat(strings[1]);
@@ -138,7 +139,7 @@ public class StandardSettings {
                         case "modelPart" -> {
                             for (PlayerModelPart playerModelPart : PlayerModelPart.values()) {
                                 if (strings[0].equals("modelPart_" + playerModelPart.getName())) {
-                                    options.setPlayerModelPart(playerModelPart, Boolean.parseBoolean(strings[1])); break;
+                                    options.togglePlayerModelPart(playerModelPart, Boolean.parseBoolean(strings[1])); break;
                                 }
                             }
                         }
@@ -160,7 +161,7 @@ public class StandardSettings {
         }
     }
 
-    public static void changeSettingsOnJoin() {
+    public static void changeSettingsOnJoin(){
         if (renderDistanceOnWorldJoin != 0) {
             Option.RENDER_DISTANCE.set(options, renderDistanceOnWorldJoin);
         }
