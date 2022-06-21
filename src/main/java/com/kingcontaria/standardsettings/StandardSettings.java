@@ -1,5 +1,6 @@
 package com.kingcontaria.standardsettings;
 
+import com.kingcontaria.standardsettings.mixins.BakedModelManagerAccessor;
 import com.kingcontaria.standardsettings.mixins.MinecraftClientAccessor;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
@@ -29,12 +30,13 @@ public class StandardSettings {
     public static final File standardoptionsFile = new File("config/standardoptions.txt");
     public static final File optionsFile = new File("options.txt");
     public static boolean changeOnGainedFocus = false;
-    private static int renderDistanceOnWorldJoin = 0;
-    private static int simulationDistanceOnWorldJoin = 0;
-    private static float entityDistanceScalingOnWorldJoin = 0;
-    private static double fovOnWorldJoin = 0;
+    private static int renderDistanceOnWorldJoin;
+    private static int simulationDistanceOnWorldJoin;
+    private static float entityDistanceScalingOnWorldJoin;
+    private static double fovOnWorldJoin;
 
     public static void load() {
+        long start = System.nanoTime();
 
         fovOnWorldJoin = entityDistanceScalingOnWorldJoin = renderDistanceOnWorldJoin = simulationDistanceOnWorldJoin = 0;
 
@@ -108,6 +110,12 @@ public class StandardSettings {
                         case "chatHeightUnfocused" -> options.chatHeightUnfocused = Double.parseDouble(strings[1]);
                         case "chatScale" -> options.chatScale = Double.parseDouble(strings[1]);
                         case "chatWidth" -> options.chatWidth = Double.parseDouble(strings[1]);
+                        case "mipmapLevels" -> {
+                            if(options.mipmapLevels != Integer.parseInt(strings[1])){
+                                client.setMipmapLevels(options.mipmapLevels = Integer.parseInt(strings[1]));
+                                ((BakedModelManagerAccessor)client.getBakedModelManager()).callApply(((BakedModelManagerAccessor)client.getBakedModelManager()).callPrepare(client.getResourceManager(), client.getProfiler()), client.getResourceManager(), client.getProfiler());
+                            }
+                        }
                         case "mainHand" -> options.mainArm = "left".equals(strings[1]) ? Arm.LEFT : Arm.RIGHT;
                         case "narrator" -> options.narrator = NarratorMode.byId(Integer.parseInt(strings[1]));
                         case "biomeBlendRadius" -> options.biomeBlendRadius = Integer.parseInt(strings[1]);
@@ -159,7 +167,7 @@ public class StandardSettings {
                 }
             }
             KeyBinding.updateKeysByCode();
-            LOGGER.info("Finished loading StandardSettings");
+            LOGGER.info("Finished loading StandardSettings ({} ms)", (System.nanoTime()-start)/1000000.0f);
         }
         catch (Exception exception2) {
             LOGGER.error("Failed to load StandardSettings", exception2);
@@ -167,6 +175,8 @@ public class StandardSettings {
     }
 
     public static void changeSettingsOnJoin(){
+        long start = System.nanoTime();
+
         if (renderDistanceOnWorldJoin != 0) {
             Option.RENDER_DISTANCE.set(options, renderDistanceOnWorldJoin);
         }
@@ -181,11 +191,13 @@ public class StandardSettings {
         }
         if (fovOnWorldJoin != 0 || renderDistanceOnWorldJoin != 0 || simulationDistanceOnWorldJoin != 0 || entityDistanceScalingOnWorldJoin != 0){
             options.write();
-            LOGGER.info("Changed Settings on World Join");
+            LOGGER.info("Changed Settings on World Join ({} ms)", (System.nanoTime()-start)/1000000.0f);
         }
     }
 
     public static void checkSettings(){
+        long start = System.nanoTime();
+
         options.mouseSensitivity = Check("Sensitivity",options.mouseSensitivity,0,1);
         options.fov = Math.round(Check("FOV",options.fov,30,110));
         options.distortionEffectScale = Check("Distortion Effects",options.distortionEffectScale,0,1);
@@ -211,14 +223,9 @@ public class StandardSettings {
             client.getSoundManager().updateSoundVolume(soundCategory, i);
             options.setSoundVolume(soundCategory, i);
         }
-        if(options.mipmapLevels<0){
-            LOGGER.warn("Mipmap Levels was too low! (" + options.mipmapLevels + ")");
-            LOGGER.error("Mipmap Levels can not be corrected!");
-        }else {
-            if (options.mipmapLevels > 4) {
-                LOGGER.warn("Mipmap Levels was too high! (" + options.mipmapLevels + ")");
-                LOGGER.error("Mipmap Levels can not be corrected!");
-            }
+        if(options.mipmapLevels < 0 || options.mipmapLevels > 4) {
+            client.setMipmapLevels(options.mipmapLevels = Check("Mipmap Levels", options.mipmapLevels, 0, 4));
+            ((BakedModelManagerAccessor)client.getBakedModelManager()).callApply(((BakedModelManagerAccessor)client.getBakedModelManager()).callPrepare(client.getResourceManager(), client.getProfiler()), client.getResourceManager(), client.getProfiler());
         }
 
         if(renderDistanceOnWorldJoin != 0){
@@ -235,16 +242,16 @@ public class StandardSettings {
         }
 
         window.setScaleFactor(window.calculateScaleFactor(options.guiScale, client.forcesUnicodeFont()));
-        LOGGER.info("Finished checking Settings");
+        LOGGER.info("Finished checking Settings ({} ms)", (System.nanoTime()-start)/1000000.0f);
     }
 
     private static double Check(String settingName, double setting, double min, double max){
         if(setting<min){
-            LOGGER.warn(settingName + " was too low! (" + setting + ")");
+            LOGGER.warn(settingName + " was too low! ({})",setting);
             return min;
         }
         if(setting>max){
-            LOGGER.warn(settingName + " was too high! (" + setting + ")");
+            LOGGER.warn(settingName + " was too high! ({})",setting);
             return max;
         }
         return setting;
@@ -252,11 +259,11 @@ public class StandardSettings {
 
     private static float Check(String settingName, float setting, float min, float max){
         if(setting<min){
-            LOGGER.warn(settingName + " was too low! (" + setting + ")");
+            LOGGER.warn(settingName + " was too low! ({})",setting);
             return min;
         }
         if(setting>max){
-            LOGGER.warn(settingName + " was too high! (" + setting + ")");
+            LOGGER.warn(settingName + " was too high! ({})",setting);
             return max;
         }
         return setting;
@@ -264,11 +271,11 @@ public class StandardSettings {
 
     private static int Check(String settingName, int setting, int min, int max){
         if(setting<min){
-            LOGGER.warn(settingName + " was too low! (" + setting + ")");
+            LOGGER.warn(settingName + " was too low! ({})",setting);
             return min;
         }
         if(setting>max){
-            LOGGER.warn(settingName + " was too high! (" + setting + ")");
+            LOGGER.warn(settingName + " was too high! ({})",setting);
             return max;
         }
         return setting;
@@ -276,6 +283,8 @@ public class StandardSettings {
 
     public static void save() {
         LOGGER.info("Saving StandardSettings...");
+
+        long start = System.nanoTime();
 
         if(!optionsFile.exists()) options.write();
         if(!standardoptionsFile.getParentFile().exists()) standardoptionsFile.getParentFile().mkdir();
@@ -285,17 +294,23 @@ public class StandardSettings {
         String ed = "entityDistanceScalingOnWorldJoin:";
         String fov = "fovOnWorldJoin:";
 
-        try (Scanner standardoptionsTxt = new Scanner(standardoptionsFile)) {
-            while (standardoptionsTxt.hasNextLine()) {
-                String line = standardoptionsTxt.nextLine();
-                switch (line.split(":")[0]) {
-                    case "renderDistanceOnWorldJoin" -> rd = line;
-                    case "simulationDistanceOnWorldJoin:" -> sd = line;
-                    case "entityDistanceScalingOnWorldJoin:" -> ed = line;
-                    case "fovOnWorldJoin" -> fov = line;
+        if(standardoptionsFile.exists()) {
+            try (Scanner standardoptionsTxt = new Scanner(standardoptionsFile)) {
+                while (standardoptionsTxt.hasNextLine()) {
+                    String line = standardoptionsTxt.nextLine();
+                    switch (line.split(":")[0]) {
+                        case "renderDistanceOnWorldJoin" -> rd = line;
+                        case "simulationDistanceOnWorldJoin:" -> sd = line;
+                        case "entityDistanceScalingOnWorldJoin:" -> ed = line;
+                        case "fovOnWorldJoin" -> fov = line;
+                    }
                 }
+            } catch (FileNotFoundException e) {
+                throw new RuntimeException(e);
             }
-            standardoptionsTxt.close();
+        }
+
+        try {
             Files.copy(optionsFile.toPath(), standardoptionsFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
             Files.write(standardoptionsFile.toPath(), ("perspective:" + options.getPerspective() + System.lineSeparator()).getBytes(), StandardOpenOption.APPEND);
             Files.write(standardoptionsFile.toPath(), ("piedirectory:" + ((MinecraftClientAccessor)client).getOpenProfilerSection().replace("",".") + System.lineSeparator()).getBytes(), StandardOpenOption.APPEND);
@@ -303,7 +318,7 @@ public class StandardSettings {
             Files.write(standardoptionsFile.toPath(), ("chunkborders:" + client.debugRenderer.toggleShowChunkBorder() + System.lineSeparator()).getBytes(), StandardOpenOption.APPEND);
             Files.write(standardoptionsFile.toPath(), ("hitboxes:" + client.getEntityRenderDispatcher().shouldRenderHitboxes() + System.lineSeparator()).getBytes(), StandardOpenOption.APPEND);
             Files.write(standardoptionsFile.toPath(), (rd + System.lineSeparator() + sd + System.lineSeparator() + ed + System.lineSeparator() + fov).getBytes(), StandardOpenOption.APPEND);
-            LOGGER.info("Finished saving StandardSettings");
+            LOGGER.info("Finished saving StandardSettings ({} ms)", (System.nanoTime()-start)/1000000.0f);
         } catch (IOException e) {
             LOGGER.error("Failed to save StandardSettings");
             throw new RuntimeException(e);
