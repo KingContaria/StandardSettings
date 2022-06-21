@@ -15,7 +15,7 @@ import java.io.IOException;
 @Mixin(TitleScreen.class)
 
 public class TitleScreenMixin extends Screen {
-    private static final Identifier SET_STANDARDSETTINGS_BUTTON_TEXTURE = new Identifier("textures/items/book_writable.png");
+    private final Identifier SET_STANDARDSETTINGS_BUTTON_TEXTURE = new Identifier("textures/items/book_writable.png");
     private ButtonWidget SetStandardSettingsButton;
 
     @Inject(method = "initWidgetsNormal", at = @At("HEAD"))
