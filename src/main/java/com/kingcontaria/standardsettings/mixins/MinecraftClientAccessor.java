@@ -12,7 +12,4 @@ public interface MinecraftClientAccessor {
     String getOpenProfilerSection();
     @Accessor
     void setOpenProfilerSection(String value);
-
-    @Invoker
-    void callInitFont(boolean forcesUnicode);
 }
