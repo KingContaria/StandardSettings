@@ -1,6 +1,7 @@
 package com.kingcontaria.standardsettings.mixins;
 
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.render.model.BakedModelManager;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.gen.Accessor;
 
@@ -11,4 +12,7 @@ public interface MinecraftClientAccessor {
     String getOpenProfilerSection();
     @Accessor
     void setOpenProfilerSection(String value);
+
+    @Accessor
+    BakedModelManager getModelManager();
 }
