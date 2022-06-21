@@ -20,7 +20,7 @@ public class TitleScreenMixin extends Screen {
     protected TitleScreenMixin(Text title) {
         super(title);
     }
-    private static final Identifier SET_STANDARDSETTINGS_BUTTON_TEXTURE = new Identifier("textures/item/writable_book.png");
+    private final Identifier SET_STANDARDSETTINGS_BUTTON_TEXTURE = new Identifier("textures/item/writable_book.png");
     private ButtonWidget SetStandardSettingsButton = null;
 
     @Inject(method = "initWidgetsNormal", at = @At("HEAD"))
@@ -38,8 +38,7 @@ public class TitleScreenMixin extends Screen {
 
     @Inject(method = "render", at = @At("TAIL"))
     private void writableBookOverlay(MatrixStack matrices, int mouseX, int mouseY, float delta, CallbackInfo ci) {
-        assert this.client != null;
-        this.client.getTextureManager().bindTexture(SET_STANDARDSETTINGS_BUTTON_TEXTURE);
+        StandardSettings.client.getTextureManager().bindTexture(SET_STANDARDSETTINGS_BUTTON_TEXTURE);
         drawTexture(matrices, SetStandardSettingsButton.x+2, SetStandardSettingsButton.y+2, 0.0f, 0.0f, 16, 16, 16, 16);
     }
 }

@@ -4,6 +4,7 @@
   "package": "com.kingcontaria.standardsettings.mixins",
   "compatibilityLevel": "JAVA_8",
   "client": [
+    "BakedModelManagerAccessor",
     "MinecraftClientAccessor",
     "CreateWorldScreenMixin",
     "MinecraftClientMixin",
