@@ -19,7 +19,7 @@ public class TitleScreenMixin extends Screen {
     protected TitleScreenMixin(Text title) {
         super(title);
     }
-    private static final Identifier SET_STANDARDSETTINGS_BUTTON_TEXTURE = new Identifier("textures/item/writable_book.png");
+    private final Identifier SET_STANDARDSETTINGS_BUTTON_TEXTURE = new Identifier("textures/item/writable_book.png");
     private ButtonWidget SetStandardSettingsButton;
 
     @Inject(method = "initWidgetsNormal", at = @At("HEAD"))
@@ -37,7 +37,7 @@ public class TitleScreenMixin extends Screen {
 
     @Inject(method = "render", at = @At("TAIL"))
     private void writableBookOverlay(int mouseX, int mouseY, float delta, CallbackInfo ci) {
-        MinecraftClient.getInstance().getTextureManager().bindTexture(SET_STANDARDSETTINGS_BUTTON_TEXTURE);
+        StandardSettings.client.getTextureManager().bindTexture(SET_STANDARDSETTINGS_BUTTON_TEXTURE);
         blit(SetStandardSettingsButton.x+2, SetStandardSettingsButton.y+2, 0.0f, 0.0f, 16, 16, 16, 16);
     }
 }
