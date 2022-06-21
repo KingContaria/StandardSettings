@@ -7,6 +7,7 @@ import net.minecraft.client.options.GameOptions;
 import net.minecraft.client.options.KeyBinding;
 import net.minecraft.client.render.entity.EntityRenderDispatcher;
 import net.minecraft.client.sound.SoundCategory;
+import net.minecraft.client.texture.SpriteAtlasTexture;
 import net.minecraft.world.Difficulty;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -25,10 +26,11 @@ public class StandardSettings {
     public static final File standardoptionsFile = new File("config/standardoptions.txt");
     public static final File optionsFile = new File("options.txt");
     public static boolean changeOnGainedFocus = false;
-    private static int renderDistanceOnWorldJoin = 0;
-    private static float fovOnWorldJoin = 0;
+    private static int renderDistanceOnWorldJoin;
+    private static float fovOnWorldJoin;
 
     public static void load() {
+        long start = System.nanoTime();
 
         fovOnWorldJoin = renderDistanceOnWorldJoin = 0;
 
@@ -79,25 +81,19 @@ public class StandardSettings {
                         case "chatHeightUnfocused" -> options.chatHeightUnfocused = Float.parseFloat(strings[1]);
                         case "chatScale" -> options.chatScale = Float.parseFloat(strings[1]);
                         case "chatWidth" -> options.chatWidth = Float.parseFloat(strings[1]);
+                        case "mipmapLevels" -> {
+                            if(options.mipmapLevels != Integer.parseInt(strings[1])){
+                                client.getSpriteAtlasTexture().setMaxTextureSize(options.mipmapLevels = Integer.parseInt(strings[1]));
+                                client.getSpriteAtlasTexture().load(client.getResourceManager());
+                            }
+                        }
                         case "forceUnicodeFont" -> client.textRenderer.method_960(options.forceUnicode = Boolean.parseBoolean(strings[1]));
                         case "clouds" -> options.renderClouds = Boolean.parseBoolean(strings[1]);
                         case "perspective" -> options.perspective = Integer.parseInt(strings[1]);
                         case "piedirectory" -> ((MinecraftClientAccessor)client).setOpenProfilerSection(strings[1]);
                         case "hitboxes" -> EntityRenderDispatcher.field_5192 = Boolean.parseBoolean(strings[1]);
-                        case "renderDistanceOnWorldJoin" -> {
-                            try {
-                                renderDistanceOnWorldJoin = Integer.parseInt(strings[1]);
-                            } catch (NumberFormatException e) {
-                                // empty catch block
-                            }
-                        }
-                        case "fovOnWorldJoin" -> {
-                            try {
-                                fovOnWorldJoin = Float.parseFloat(strings[1]);
-                            } catch (NumberFormatException e) {
-                                // empty catch block
-                            }
-                        }
+                        case "renderDistanceOnWorldJoin" -> renderDistanceOnWorldJoin = Integer.parseInt(strings[1]);
+                        case "fovOnWorldJoin" -> fovOnWorldJoin = Float.parseFloat(strings[1]);
                         case "key" -> {
                             for (KeyBinding keyBinding : options.keysAll) {
                                 if (string0_split[1].equals(keyBinding.getTranslationKey())) {
@@ -123,13 +119,15 @@ public class StandardSettings {
                 }
             }
             KeyBinding.updateKeysByCode();
-            LOGGER.info("Finished loading StandardSettings");
+            LOGGER.info("Finished loading StandardSettings ({} ms)", (System.nanoTime()-start)/1000000.0f);
         } catch (Exception exception2) {
             LOGGER.error("Failed to load StandardSettings", exception2);
         }
     }
 
     public static void changeSettingsOnJoin(){
+        long start = System.nanoTime();
+
         if (renderDistanceOnWorldJoin != 0) {
             options.viewDistance = renderDistanceOnWorldJoin;
         }
@@ -138,11 +136,13 @@ public class StandardSettings {
         }
         if (fovOnWorldJoin != 0 || renderDistanceOnWorldJoin != 0) {
             options.save();
-            LOGGER.info("Changed Settings on World Join");
+            LOGGER.info("Changed Settings on World Join ({} ms)", (System.nanoTime()-start)/1000000.0f);
         }
     }
 
     public static void checkSettings(){
+        long start = System.nanoTime();
+
         options.sensitivity = Check("Sensitivity",options.sensitivity,0,1);
         options.fov = Math.round(Check("FOV",options.fov,30,110));
         options.gamma = Check("Brightness",options.gamma,0,5);
@@ -160,13 +160,11 @@ public class StandardSettings {
             options.setSoundVolume(soundCategory, i);
         }
         if(options.mipmapLevels < 0){
-            LOGGER.warn("Mipmap Levels was too low! (" + options.mipmapLevels + ")");
+            LOGGER.warn("Mipmap Levels was too low! ({})",options.mipmapLevels);
             LOGGER.error("Mipmap Levels can not be corrected!");
-        }else {
-            if (options.mipmapLevels > 4) {
-                LOGGER.warn("Mipmap Levels was too high! (" + options.mipmapLevels + ")");
-                LOGGER.error("Mipmap Levels can not be corrected!");
-            }
+        }else if (options.mipmapLevels > 4) {
+            LOGGER.warn("Mipmap Levels was too high! ({})",options.mipmapLevels);
+            LOGGER.error("Mipmap Levels can not be corrected!");
         }
 
         if(renderDistanceOnWorldJoin != 0){
@@ -176,16 +174,16 @@ public class StandardSettings {
             fovOnWorldJoin = Math.round(Check("FOV (On World Join)",fovOnWorldJoin,30,110));
         }
 
-        LOGGER.info("Finished checking Settings");
+        LOGGER.info("Finished checking Settings ({} ms)", (System.nanoTime()-start)/1000000.0f);
     }
 
     private static float Check(String settingName, float setting, float min, float max){
         if(setting<min){
-            LOGGER.warn(settingName + " was too low! (" + setting + ")");
+            LOGGER.warn(settingName + " was too low! ({})",setting);
             return min;
         }
         if(setting>max){
-            LOGGER.warn(settingName + " was too high! (" + setting + ")");
+            LOGGER.warn(settingName + " was too high! ({})",setting);
             return max;
         }
         return setting;
@@ -193,11 +191,11 @@ public class StandardSettings {
 
     private static int Check(String settingName, int setting, int min, int max){
         if(setting<min){
-            LOGGER.warn(settingName + " was too low! (" + setting + ")");
+            LOGGER.warn(settingName + " was too low! ({})",setting);
             return min;
         }
         if(setting>max){
-            LOGGER.warn(settingName + " was too high! (" + setting + ")");
+            LOGGER.warn(settingName + " was too high! ({})",setting);
             return max;
         }
         return setting;
@@ -206,27 +204,35 @@ public class StandardSettings {
     public static void save() {
         LOGGER.info("Saving StandardSettings...");
 
+        long start = System.nanoTime();
+
         if(!optionsFile.exists()) options.save();
         if(!standardoptionsFile.getParentFile().exists()) standardoptionsFile.getParentFile().mkdir();
 
         String rd = "renderDistanceOnWorldJoin:";
         String fov = "fovOnWorldJoin:";
 
-        try (Scanner standardoptionsTxt = new Scanner(standardoptionsFile)) {
-            while (standardoptionsTxt.hasNextLine()) {
-                String line = standardoptionsTxt.nextLine();
-                switch (line.split(":")[0]) {
-                    case "renderDistanceOnWorldJoin" -> rd = line;
-                    case "fovOnWorldJoin" -> fov = line;
+        if(standardoptionsFile.exists()) {
+            try (Scanner standardoptionsTxt = new Scanner(standardoptionsFile)) {
+                while (standardoptionsTxt.hasNextLine()) {
+                    String line = standardoptionsTxt.nextLine();
+                    switch (line.split(":")[0]) {
+                        case "renderDistanceOnWorldJoin" -> rd = line;
+                        case "fovOnWorldJoin" -> fov = line;
+                    }
                 }
+            } catch (FileNotFoundException e) {
+                throw new RuntimeException(e);
             }
-            standardoptionsTxt.close();
+        }
+
+        try {
             Files.copy(optionsFile.toPath(), standardoptionsFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
             Files.write(standardoptionsFile.toPath(), ("perspective:" + options.perspective + System.lineSeparator()).getBytes(), StandardOpenOption.APPEND);
             Files.write(standardoptionsFile.toPath(), ("piedirectory:" + ((MinecraftClientAccessor)client).getOpenProfilerSection() + System.lineSeparator()).getBytes(), StandardOpenOption.APPEND);
             Files.write(standardoptionsFile.toPath(), ("hitboxes:" + EntityRenderDispatcher.field_5192 + System.lineSeparator()).getBytes(), StandardOpenOption.APPEND);
             Files.write(standardoptionsFile.toPath(), (rd + System.lineSeparator() + fov).getBytes(), StandardOpenOption.APPEND);
-            LOGGER.info("Finished saving StandardSettings");
+            LOGGER.info("Finished saving StandardSettings ({} ms)", (System.nanoTime()-start)/1000000.0f);
         } catch (IOException e) {
             LOGGER.error("Failed to save StandardSettings");
             throw new RuntimeException(e);
