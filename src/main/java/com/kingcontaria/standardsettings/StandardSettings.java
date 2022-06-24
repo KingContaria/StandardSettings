@@ -7,7 +7,6 @@ import net.minecraft.client.options.GameOptions;
 import net.minecraft.client.options.KeyBinding;
 import net.minecraft.client.render.entity.EntityRenderDispatcher;
 import net.minecraft.client.sound.SoundCategory;
-import net.minecraft.client.texture.SpriteAtlasTexture;
 import net.minecraft.world.Difficulty;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
