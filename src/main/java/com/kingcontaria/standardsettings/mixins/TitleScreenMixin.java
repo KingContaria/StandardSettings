@@ -19,7 +19,7 @@ public class TitleScreenMixin extends Screen {
     protected TitleScreenMixin(Text title) {
         super(title);
     }
-    private final Identifier SET_STANDARDSETTINGS_BUTTON_TEXTURE = new Identifier("textures/item/writable_book.png");
+    private static final Identifier SET_STANDARDSETTINGS_BUTTON_TEXTURE = new Identifier("textures/item/writable_book.png");
     private ButtonWidget SetStandardSettingsButton;
 
     @Inject(method = "initWidgetsNormal", at = @At("HEAD"))
@@ -32,7 +32,7 @@ public class TitleScreenMixin extends Screen {
                 StandardSettings.save();
             }
         });
-        this.addButton(SetStandardSettingsButton);
+        addButton(SetStandardSettingsButton);
     }
 
     @Inject(method = "render", at = @At("TAIL"))
