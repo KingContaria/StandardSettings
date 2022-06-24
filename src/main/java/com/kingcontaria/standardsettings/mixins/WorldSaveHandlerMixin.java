@@ -25,9 +25,18 @@ public class WorldSaveHandlerMixin {
     @Inject(method = "saveWorld(Lnet/minecraft/world/level/LevelProperties;Lnet/minecraft/nbt/NbtCompound;)V", at = @At("TAIL"))
     private void saveOptionsTxt(LevelProperties nbt, NbtCompound par2, CallbackInfo ci){
         try{
-            Files.copy(StandardSettings.optionsFile.toPath(),new File(this.worldDir,"options.txt").toPath(), StandardCopyOption.REPLACE_EXISTING);
+            Files.copy(StandardSettings.optionsFile.toPath(),new File(worldDir,"options.txt").toPath(), StandardCopyOption.REPLACE_EXISTING);
         } catch (IOException e) {
             StandardSettings.LOGGER.error("Couldn't save options.txt to world file");
+        }
+        File optifineOptions = new File("optionsof.txt");
+        if(!optifineOptions.exists()) {
+            return;
+        }
+        try{
+            Files.copy(optifineOptions.toPath(),new File(worldDir,"options.txt").toPath(), StandardCopyOption.REPLACE_EXISTING);
+        } catch (IOException e) {
+            StandardSettings.LOGGER.error("Couldn't save optionsof.txt to world file");
         }
     }
 

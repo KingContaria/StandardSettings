@@ -31,7 +31,7 @@ public abstract class MinecraftClientMixin {
         StandardSettings.load();
         StandardSettings.LOGGER.info("Checking StandardSettings...");
         StandardSettings.checkSettings();
-        this.options.save();
+        options.save();
     }
 
     @Inject(method = "startGame", at = @At("HEAD"))
@@ -40,7 +40,7 @@ public abstract class MinecraftClientMixin {
         StandardSettings.load();
         StandardSettings.LOGGER.info("Checking Settings...");
         StandardSettings.checkSettings();
-        this.options.save();
+        options.save();
     }
 
     @Inject(method = "startGame", at = @At("TAIL"))
