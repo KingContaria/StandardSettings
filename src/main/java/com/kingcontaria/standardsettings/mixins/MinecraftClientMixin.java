@@ -31,7 +31,7 @@ public class MinecraftClientMixin {
         StandardSettings.load();
         StandardSettings.LOGGER.info("Checking StandardSettings...");
         StandardSettings.checkSettings();
-        this.options.write();
+        options.write();
     }
 
     @Inject(method = "onWindowFocusChanged", at = @At("TAIL"))
