@@ -23,12 +23,12 @@ public class TitleScreenMixin extends Screen {
     private ButtonWidget SetStandardSettingsButton;
 
     @Inject(method = "initWidgetsNormal", at = @At("HEAD"))
-    private void addCustomButton(int y, int spacingY, CallbackInfo ci){
+    private void addCustomButton(int y, int spacingY, CallbackInfo ci) {
         SetStandardSettingsButton = new ButtonWidget(this.width / 2 + 104, y, 20, 20, "", buttonWidget -> {
-            if(Screen.hasShiftDown() && StandardSettings.standardoptionsFile.exists()){
+            if (Screen.hasShiftDown() && StandardSettings.standardoptionsFile.exists()) {
                 StandardSettings.LOGGER.info("Opening standardoptions.txt...");
                 Util.getOperatingSystem().open(StandardSettings.standardoptionsFile);
-            }else {
+            } else {
                 StandardSettings.save();
             }
         });
@@ -38,6 +38,7 @@ public class TitleScreenMixin extends Screen {
     @Inject(method = "render", at = @At("TAIL"))
     private void writableBookOverlay(int mouseX, int mouseY, float delta, CallbackInfo ci) {
         StandardSettings.client.getTextureManager().bindTexture(SET_STANDARDSETTINGS_BUTTON_TEXTURE);
-        blit(SetStandardSettingsButton.x+2, SetStandardSettingsButton.y+2, 0.0f, 0.0f, 16, 16, 16, 16);
+        blit(SetStandardSettingsButton.x + 2, SetStandardSettingsButton.y + 2, 0.0f, 0.0f, 16, 16, 16, 16);
     }
+
 }
