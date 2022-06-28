@@ -12,8 +12,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public class GameRendererMixin {
 
     @Inject(method = "method_1331", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/MouseInput;updateMouse()V"))
-    private void changeSettingsOnJoin(float par1, CallbackInfo ci){
-        if(StandardSettings.changeOnGainedFocus){
+    private void changeSettingsOnJoin(float par1, CallbackInfo ci) {
+        if (StandardSettings.changeOnGainedFocus) {
             StandardSettings.changeOnGainedFocus = false;
             StandardSettings.changeSettingsOnJoin();
         }

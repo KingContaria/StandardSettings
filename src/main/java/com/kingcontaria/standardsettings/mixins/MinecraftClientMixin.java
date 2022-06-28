@@ -20,11 +20,11 @@ public abstract class MinecraftClientMixin {
     @Shadow public abstract boolean isWindowFocused();
 
     @Inject(method = "initializeGame", at = @At("TAIL"))
-    private void loadStandardSettings(CallbackInfo ci){
+    private void loadStandardSettings(CallbackInfo ci) {
         File oldStandardoptionsFile = new File("standardoptions.txt");
-        if(!StandardSettings.standardoptionsFile.exists() && oldStandardoptionsFile.exists()){
+        if (!StandardSettings.standardoptionsFile.exists() && oldStandardoptionsFile.exists()){
             StandardSettings.LOGGER.info("Moving standardoptions.txt to config folder...");
-            if(!StandardSettings.standardoptionsFile.getParentFile().exists()) StandardSettings.standardoptionsFile.getParentFile().mkdir();
+            if (!StandardSettings.standardoptionsFile.getParentFile().exists()) StandardSettings.standardoptionsFile.getParentFile().mkdir();
             oldStandardoptionsFile.renameTo(StandardSettings.standardoptionsFile);
         }
         StandardSettings.LOGGER.info("Loading StandardSettings...");
@@ -44,11 +44,12 @@ public abstract class MinecraftClientMixin {
     }
 
     @Inject(method = "startGame", at = @At("TAIL"))
-    private void onWorldJoin(String string, String levelInfo, LevelInfo par3, CallbackInfo ci){
-        if(this.isWindowFocused()){
+    private void onWorldJoin(String string, String levelInfo, LevelInfo par3, CallbackInfo ci) {
+        if (this.isWindowFocused()) {
             StandardSettings.changeSettingsOnJoin();
-        }else {
+        } else {
             StandardSettings.changeOnGainedFocus = true;
         }
     }
+
 }
