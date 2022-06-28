@@ -33,7 +33,7 @@ public class StandardSettings {
 
         fovOnWorldJoin = renderDistanceOnWorldJoin = 0;
 
-        try (BufferedReader bufferedReader = new BufferedReader(new FileReader(standardoptionsFile))){
+        try (BufferedReader bufferedReader = new BufferedReader(new FileReader(standardoptionsFile))) {
             if (!standardoptionsFile.exists()) {
                 LOGGER.error("standardoptions.txt is missing");
                 return;
@@ -43,7 +43,7 @@ public class StandardSettings {
                 String[] strings = string.split(":");
                 String[] string0_split = strings[0].split("_");
                 try {
-                    switch (string0_split[0]){
+                    switch (string0_split[0]) {
                         case "mouseSensitivity" -> options.sensitivity = Float.parseFloat(strings[1]);
                         case "fov" -> options.fov = Float.parseFloat(strings[1]) * 40.0f + 70.0f;
                         case "gamma" -> options.gamma = Float.parseFloat(strings[1]);
@@ -52,6 +52,12 @@ public class StandardSettings {
                         case "guiScale" -> options.guiScale = Integer.parseInt(strings[1]);
                         case "particles" -> options.particle = Integer.parseInt(strings[1]);
                         case "bobView" -> options.bobView = Boolean.parseBoolean(strings[1]);
+                        case "anaglyph3d" -> {
+                            if (options.anaglyph3d != Boolean.parseBoolean(strings[1])) {
+                                options.anaglyph3d = Boolean.parseBoolean(strings[1]);
+                                client.stitchTextures();
+                            }
+                        }
                         case "maxFps" -> options.maxFramerate = Integer.parseInt(strings[1]);
                         case "fancyGraphics" -> options.fancyGraphics = Boolean.parseBoolean(strings[1]);
                         case "ao" -> options.ao = strings[1].equals("true") ? 2 : (strings[1].equals("false") ? 0 : Integer.parseInt(strings[1]));
@@ -81,7 +87,7 @@ public class StandardSettings {
                         case "chatScale" -> options.chatScale = Float.parseFloat(strings[1]);
                         case "chatWidth" -> options.chatWidth = Float.parseFloat(strings[1]);
                         case "mipmapLevels" -> {
-                            if(options.mipmapLevels != Integer.parseInt(strings[1])){
+                            if (options.mipmapLevels != Integer.parseInt(strings[1])) {
                                 client.getSpriteAtlasTexture().setMaxTextureSize(options.mipmapLevels = Integer.parseInt(strings[1]));
                                 client.getTextureManager().bindTexture(SpriteAtlasTexture.BLOCK_ATLAS_TEX);
                                 client.getSpriteAtlasTexture().setFilter(false, options.mipmapLevels > 0);
@@ -119,17 +125,16 @@ public class StandardSettings {
                             }
                         }
                     }
-
-                    // Excluded are 3D Anaglyph and Mipmap Levels.
+                    // Excluded is the 3D Anaglyph.
                     // Additionally, options.txt settings which aren't accessible in vanilla Minecraft and some unnecessary settings (like Multiplayer and Streaming stuff) are not included.
                 } catch (Exception exception) {
-                    if(!string.equals("renderDistanceOnWorldJoin:") && !string.equals("fovOnWorldJoin:") && !string.equals("lastServer:")){
+                    if (!string.equals("renderDistanceOnWorldJoin:") && !string.equals("fovOnWorldJoin:") && !string.equals("lastServer:")) {
                         LOGGER.warn("Skipping bad StandardSetting: " + string);
                     }
                 }
             }
             KeyBinding.updateKeysByCode();
-            LOGGER.info("Finished loading StandardSettings ({} ms)", (System.nanoTime()-start)/1000000.0f);
+            LOGGER.info("Finished loading StandardSettings ({} ms)", (System.nanoTime() - start) / 1000000.0f);
         } catch (Exception exception2) {
             LOGGER.error("Failed to load StandardSettings", exception2);
         }
@@ -146,53 +151,51 @@ public class StandardSettings {
         }
         if (fovOnWorldJoin != 0 || renderDistanceOnWorldJoin != 0) {
             options.save();
-            LOGGER.info("Changed Settings on World Join ({} ms)", (System.nanoTime()-start)/1000000.0f);
+            LOGGER.info("Changed Settings on World Join ({} ms)", (System.nanoTime() - start) / 1000000.0f);
         }
     }
 
-    public static void checkSettings(){
+    public static void checkSettings() {
         long start = System.nanoTime();
 
-        options.sensitivity = Check("Sensitivity",options.sensitivity,0,1);
-        options.fov = Math.round(Check("FOV",options.fov,30,110));
-        options.gamma = Check("Brightness",options.gamma,0,5);
-        options.viewDistance = Check("Render Distance",options.viewDistance,2,32);
-        options.guiScale = Check("GUI Scale",options.guiScale,0,4);
-        //Because of DynamicFPS/SleepBackground I will not mess with adjusting FPS :)
-        options.chatOpacity = Check("Chat Opacity",options.chatOpacity,0,1);
-        options.chatHeightFocused = Check("(Chat) Focused Height",options.chatHeightFocused,0,1);
-        options.chatHeightUnfocused = Check("(Chat) Unfocused Height",options.chatHeightUnfocused,0,1);
-        options.chatScale = Check("Chat Text Size",options.chatScale,0,1);
-        options.chatWidth = Check("ChatWidth",options.chatWidth,0,1);
-        for(SoundCategory soundCategory : SoundCategory.values()){
-            float i = Check(soundCategory.getName(),options.getSoundVolume(soundCategory),0,1);
-            client.getSoundManager().updateSoundVolume(soundCategory, i);
-            options.setSoundVolume(soundCategory, i);
+        options.sensitivity = Check("Sensitivity", options.sensitivity, 0, 1);
+        options.fov = Math.round(Check("FOV", options.fov, 30, 110));
+        options.gamma = Check("Brightness", options.gamma, 0, 5);
+        options.viewDistance = Check("Render Distance", options.viewDistance, 2, 32);
+        options.guiScale = Check("GUI Scale", options.guiScale, 0, 4);
+        // Because of DynamicFPS/SleepBackground I will not mess with adjusting FPS :)
+        options.chatOpacity = Check("Chat Opacity", options.chatOpacity, 0, 1);
+        options.chatHeightFocused = Check("(Chat) Focused Height", options.chatHeightFocused, 0, 1);
+        options.chatHeightUnfocused = Check("(Chat) Unfocused Height", options.chatHeightUnfocused, 0, 1);
+        options.chatScale = Check("Chat Text Size", options.chatScale, 0, 1);
+        options.chatWidth = Check("Chat Width", options.chatWidth, 0, 1);
+        for (SoundCategory soundCategory : SoundCategory.values()) {
+            client.getSoundManager().updateSoundVolume(soundCategory, Check(soundCategory.getName(), options.getSoundVolume(soundCategory), 1, 1));
+            options.setSoundVolume(soundCategory, options.getSoundVolume(soundCategory));
         }
-        if(options.mipmapLevels < 0){
-            LOGGER.warn("Mipmap Levels was too low! ({})",options.mipmapLevels);
-            LOGGER.error("Mipmap Levels can not be corrected!");
-        }else if (options.mipmapLevels > 4) {
-            LOGGER.warn("Mipmap Levels was too high! ({})",options.mipmapLevels);
-            LOGGER.error("Mipmap Levels can not be corrected!");
+        if (options.mipmapLevels < 0 || options.mipmapLevels > 4) {
+            client.getSpriteAtlasTexture().setMaxTextureSize(options.mipmapLevels = Check("Mipmap Levels", options.mipmapLevels, 0, 4));
+            client.getTextureManager().bindTexture(SpriteAtlasTexture.BLOCK_ATLAS_TEX);
+            client.getSpriteAtlasTexture().setFilter(false, options.mipmapLevels > 0);
+            ((MinecraftClientAccessor)client).getModelManager().reload(client.getResourceManager());
         }
 
-        if(renderDistanceOnWorldJoin != 0){
-            renderDistanceOnWorldJoin = Check("Render Distance (On World Join)",renderDistanceOnWorldJoin,2,32);
+        if (renderDistanceOnWorldJoin != 0) {
+            renderDistanceOnWorldJoin = Check("Render Distance (On World Join)", renderDistanceOnWorldJoin, 2, 32);
         }
-        if(fovOnWorldJoin != 0){
-            fovOnWorldJoin = Math.round(Check("FOV (On World Join)",fovOnWorldJoin,30,110));
+        if (fovOnWorldJoin != 0) {
+            fovOnWorldJoin = Math.round(Check("FOV (On World Join)", fovOnWorldJoin, 30, 110));
         }
 
-        LOGGER.info("Finished checking Settings ({} ms)", (System.nanoTime()-start)/1000000.0f);
+        LOGGER.info("Finished checking Settings ({} ms)", (System.nanoTime() - start) / 1000000.0f);
     }
 
-    private static float Check(String settingName, float setting, float min, float max){
-        if(setting<min){
+    private static float Check(String settingName, float setting, float min, float max) {
+        if (setting < min) {
             LOGGER.warn(settingName + " was too low! ({})", setting);
             return min;
         }
-        if(setting>max){
+        if (setting > max) {
             LOGGER.warn(settingName + " was too high! ({})", setting);
             return max;
         }
@@ -200,11 +203,11 @@ public class StandardSettings {
     }
 
     private static int Check(String settingName, int setting, int min, int max){
-        if(setting<min){
+        if (setting < min) {
             LOGGER.warn(settingName + " was too low! ({})", setting);
             return min;
         }
-        if(setting>max){
+        if (setting > max) {
             LOGGER.warn(settingName + " was too high! ({})", setting);
             return max;
         }
@@ -216,13 +219,13 @@ public class StandardSettings {
 
         long start = System.nanoTime();
 
-        if(!optionsFile.exists()) options.save();
-        if(!standardoptionsFile.getParentFile().exists()) standardoptionsFile.getParentFile().mkdir();
+        if (!optionsFile.exists()) options.save();
+        if (!standardoptionsFile.getParentFile().exists()) standardoptionsFile.getParentFile().mkdir();
 
         String rd = "renderDistanceOnWorldJoin:";
         String fov = "fovOnWorldJoin:";
 
-        if(standardoptionsFile.exists()) {
+        if (standardoptionsFile.exists()) {
             try (Scanner standardoptionsTxt = new Scanner(standardoptionsFile)) {
                 while (standardoptionsTxt.hasNextLine()) {
                     String line = standardoptionsTxt.nextLine();
@@ -242,10 +245,9 @@ public class StandardSettings {
             Files.write(standardoptionsFile.toPath(), ("piedirectory:" + ((MinecraftClientAccessor)client).getOpenProfilerSection() + System.lineSeparator()).getBytes(), StandardOpenOption.APPEND);
             Files.write(standardoptionsFile.toPath(), ("hitboxes:" + client.getEntityRenderManager().method_10203() + System.lineSeparator()).getBytes(), StandardOpenOption.APPEND);
             Files.write(standardoptionsFile.toPath(), (rd + System.lineSeparator() + fov).getBytes(), StandardOpenOption.APPEND);
-            LOGGER.info("Finished saving StandardSettings ({} ms)", (System.nanoTime()-start)/1000000.0f);
+            LOGGER.info("Finished saving StandardSettings ({} ms)", (System.nanoTime() - start) / 1000000.0f);
         } catch (IOException e) {
-            LOGGER.error("Failed to save StandardSettings");
-            throw new RuntimeException(e);
+            LOGGER.error("Failed to save StandardSettings", e);
         }
     }
 }

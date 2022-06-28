@@ -15,25 +15,26 @@ import java.io.IOException;
 @Mixin(TitleScreen.class)
 
 public class TitleScreenMixin extends Screen {
+
     private static final Identifier SET_STANDARDSETTINGS_BUTTON_TEXTURE = new Identifier("textures/items/book_writable.png");
     private ButtonWidget SetStandardSettingsButton;
 
     @Inject(method = "initWidgetsNormal", at = @At("HEAD"))
-    private void addCustomButton(int y, int spacingY, CallbackInfo ci){
-        SetStandardSettingsButton = new ButtonWidget(420,this.width / 2 + 104, y, 20, 20, "");
+    private void addCustomButton(int y, int spacingY, CallbackInfo ci) {
+        SetStandardSettingsButton = new ButtonWidget(420, this.width / 2 + 104, y, 20, 20, "");
         buttons.add(SetStandardSettingsButton);
     }
 
     @Inject(method = "render", at = @At("TAIL"))
     private void writableBookOverlay(int mouseX, int mouseY, float delta, CallbackInfo ci) {
         client.getTextureManager().bindTexture(SET_STANDARDSETTINGS_BUTTON_TEXTURE);
-        drawTexture(SetStandardSettingsButton.x+2, SetStandardSettingsButton.y+2, 0.0f, 0.0f, 16, 16, 16, 16);
+        drawTexture(SetStandardSettingsButton.x + 2, SetStandardSettingsButton.y + 2, 0.0f, 0.0f, 16, 16, 16, 16);
     }
 
     @Inject(method = "buttonClicked", at = @At("TAIL"))
-    private void standardsettingsButtonPressed(ButtonWidget button, CallbackInfo ci){
-        if(button.id == 420){
-            if(Screen.hasShiftDown() && StandardSettings.standardoptionsFile.exists()){
+    private void standardsettingsButtonPressed(ButtonWidget button, CallbackInfo ci) {
+        if (button.id == 420) {
+            if (Screen.hasShiftDown() && StandardSettings.standardoptionsFile.exists()) {
                 String string = StandardSettings.standardoptionsFile.getAbsolutePath();
                 if (Util.getOperatingSystem() == Util.OperatingSystem.MACOS) {
                     try {
@@ -43,7 +44,7 @@ public class TitleScreenMixin extends Screen {
                     catch (IOException iOException) {
                         StandardSettings.LOGGER.error("Couldn't open file", iOException);
                     }
-                }else if (Util.getOperatingSystem() == Util.OperatingSystem.WINDOWS) {
+                } else if (Util.getOperatingSystem() == Util.OperatingSystem.WINDOWS) {
                     String string2 = String.format("cmd.exe /C start \"Open file\" \"%s\"", string);
                     try {
                         StandardSettings.LOGGER.info("Opening standardoptions.txt...");
@@ -52,12 +53,13 @@ public class TitleScreenMixin extends Screen {
                     catch (IOException iOException2) {
                         StandardSettings.LOGGER.error("Couldn't open file", iOException2);
                     }
-                }else {
+                } else {
                     StandardSettings.LOGGER.error("Couldn't open file because Operating System isn't supported");
                 }
-            }else {
+            } else {
                 StandardSettings.save();
             }
         }
     }
+
 }

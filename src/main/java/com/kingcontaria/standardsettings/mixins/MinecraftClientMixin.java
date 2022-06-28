@@ -51,4 +51,5 @@ public abstract class MinecraftClientMixin {
             StandardSettings.changeOnGainedFocus = true;
         }
     }
+
 }
