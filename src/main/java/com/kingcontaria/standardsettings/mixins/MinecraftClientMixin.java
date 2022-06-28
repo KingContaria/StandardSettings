@@ -20,23 +20,23 @@ public class MinecraftClientMixin {
     @Shadow @Final public GameOptions options;
 
     @Inject(method = "<init>", at = @At("TAIL"))
-    private void loadStandardSettings(RunArgs args, CallbackInfo ci){
+    private void loadStandardSettings(RunArgs args, CallbackInfo ci) {
         File oldStandardoptionsFile = new File("standardoptions.txt");
-        if(!StandardSettings.standardoptionsFile.exists() && oldStandardoptionsFile.exists()){
+        if (!StandardSettings.standardoptionsFile.exists() && oldStandardoptionsFile.exists()) {
             StandardSettings.LOGGER.info("Moving standardoptions.txt to config folder...");
-            if(!StandardSettings.standardoptionsFile.getParentFile().exists()) StandardSettings.standardoptionsFile.getParentFile().mkdir();
+            if (!StandardSettings.standardoptionsFile.getParentFile().exists()) StandardSettings.standardoptionsFile.getParentFile().mkdir();
             oldStandardoptionsFile.renameTo(StandardSettings.standardoptionsFile);
         }
         StandardSettings.LOGGER.info("Loading StandardSettings...");
         StandardSettings.load();
         StandardSettings.LOGGER.info("Checking StandardSettings...");
         StandardSettings.checkSettings();
-        this.options.write();
+        options.write();
     }
 
     @Inject(method = "onWindowFocusChanged", at = @At("TAIL"))
-    private void changeSettingsOnJoin(boolean focused, CallbackInfo ci){
-        if(focused && StandardSettings.changeOnGainedFocus){
+    private void changeSettingsOnJoin(boolean focused, CallbackInfo ci) {
+        if (focused && StandardSettings.changeOnGainedFocus) {
             StandardSettings.changeOnGainedFocus = false;
             StandardSettings.changeSettingsOnJoin();
         }

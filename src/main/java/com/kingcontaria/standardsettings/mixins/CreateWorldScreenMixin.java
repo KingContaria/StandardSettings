@@ -14,8 +14,8 @@ public class CreateWorldScreenMixin {
     private static boolean bl = true;
 
     @Inject(method = "createLevel()V", at = @At("HEAD"))
-    private void createLevel(CallbackInfo info){
-        if(bl) {
+    private void createLevel(CallbackInfo info) {
+        if (bl) {
             StandardSettings.LOGGER.info("Reset to StandardSettings...");
             StandardSettings.load();
             StandardSettings.LOGGER.info("Checking Settings...");
@@ -26,10 +26,10 @@ public class CreateWorldScreenMixin {
     }
 
     @Inject(method = "createLevel", at = @At("TAIL"))
-    private void setCondition(CallbackInfo ci){
-        if(StandardSettings.client.isWindowFocused()){
+    private void setCondition(CallbackInfo ci) {
+        if (StandardSettings.client.isWindowFocused()) {
             StandardSettings.changeSettingsOnJoin();
-        }else {
+        } else {
             StandardSettings.changeOnGainedFocus = true;
         }
         bl = true;

@@ -23,11 +23,11 @@ public class WorldSaveHandlerMixin {
     @Shadow @Final private File worldDir;
 
     @Inject(method = "saveWorld(Lnet/minecraft/world/level/LevelProperties;Lnet/minecraft/nbt/CompoundTag;)V", at = @At("TAIL"))
-    private void saveOptionsTxt(LevelProperties levelProperties, CompoundTag compoundTag, CallbackInfo ci){
-        try{
-            Files.copy(StandardSettings.optionsFile.toPath(),new File(this.worldDir,"options.txt").toPath(), StandardCopyOption.REPLACE_EXISTING);
+    private void saveOptionsTxt(LevelProperties levelProperties, CompoundTag compoundTag, CallbackInfo ci) {
+        try {
+            Files.copy(StandardSettings.optionsFile.toPath(), new File(worldDir, "options.txt").toPath(), StandardCopyOption.REPLACE_EXISTING);
         } catch (IOException e) {
-            StandardSettings.LOGGER.error("Couldn't save options.txt to world file");
+            StandardSettings.LOGGER.error("Couldn't save options.txt to world file", e);
         }
     }
 
