@@ -3,35 +3,49 @@ package com.kingcontaria.standardsettings.mixins;
 import com.kingcontaria.standardsettings.StandardSettings;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.RunArgs;
-import net.minecraft.client.options.GameOptions;
-import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
+import java.nio.file.StandardOpenOption;
 
 @Mixin(MinecraftClient.class)
 
 public class MinecraftClientMixin {
 
-    @Shadow @Final public GameOptions options;
-
     @Inject(method = "<init>", at = @At("TAIL"))
-    private void loadStandardSettings(RunArgs args, CallbackInfo ci) {
-        File oldStandardoptionsFile = new File("standardoptions.txt");
-        if (!StandardSettings.standardoptionsFile.exists() && oldStandardoptionsFile.exists()) {
-            StandardSettings.LOGGER.info("Moving standardoptions.txt to config folder...");
-            if (!StandardSettings.standardoptionsFile.getParentFile().exists()) StandardSettings.standardoptionsFile.getParentFile().mkdir();
-            oldStandardoptionsFile.renameTo(StandardSettings.standardoptionsFile);
+    private void initializeStandardSettings(RunArgs args, CallbackInfo ci) {
+        if (StandardSettings.standardoptionsFile.exists()) {
+            StandardSettings.LOGGER.info("Loading StandardSettings...");
+            StandardSettings.load();
+            StandardSettings.LOGGER.info("Checking StandardSettings...");
+            StandardSettings.checkSettings();
+            StandardSettings.options.write();
+        } else {
+            StandardSettings.LOGGER.info("Create StandardSettings File...");
+
+            long start = System.nanoTime();
+
+            if (!StandardSettings.optionsFile.exists()) {
+                StandardSettings.options.write();
+            }
+            if (!StandardSettings.standardoptionsFile.getParentFile().exists()) {
+                StandardSettings.standardoptionsFile.getParentFile().mkdir();
+            }
+
+            try {
+                String l = System.lineSeparator();
+                Files.copy(StandardSettings.optionsFile.toPath(), StandardSettings.standardoptionsFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+                Files.write(StandardSettings.standardoptionsFile.toPath(), ("chunkborders:" + l + "hitboxes" + l + "perspective:" + l + "piedirectory:" + l + "renderDistanceOnWorldJoin:" + l + "fovOnWorldJoin:").getBytes(), StandardOpenOption.APPEND);
+                StandardSettings.LOGGER.info("Finished creating StandardSettings File ({} ms)", (System.nanoTime() - start) / 1000000.0f);
+            } catch (IOException e) {
+                StandardSettings.LOGGER.error("Failed to create StandardSettings File", e);
+            }
         }
-        StandardSettings.LOGGER.info("Loading StandardSettings...");
-        StandardSettings.load();
-        StandardSettings.LOGGER.info("Checking StandardSettings...");
-        StandardSettings.checkSettings();
-        options.write();
     }
 
     @Inject(method = "onWindowFocusChanged", at = @At("TAIL"))

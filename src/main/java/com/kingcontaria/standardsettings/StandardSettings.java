@@ -15,17 +15,13 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.*;
-import java.nio.file.Files;
-import java.nio.file.StandardCopyOption;
-import java.nio.file.StandardOpenOption;
-import java.util.Scanner;
 
 @Environment(value= EnvType.CLIENT)
 public class StandardSettings {
 
     public static final Logger LOGGER = LogManager.getLogger();
     public static final MinecraftClient client = MinecraftClient.getInstance();
-    private static final GameOptions options = client.options;
+    public static final GameOptions options = client.options;
     private static final Window window = client.getWindow();
     public static final File standardoptionsFile = new File("config/standardoptions.txt");
     public static final File optionsFile = new File("options.txt");
@@ -38,13 +34,22 @@ public class StandardSettings {
 
         fovOnWorldJoin = renderDistanceOnWorldJoin = 0;
 
-        try (BufferedReader bufferedReader = new BufferedReader(new FileReader(standardoptionsFile))) {
+        try {
             if (!standardoptionsFile.exists()) {
                 LOGGER.error("standardoptions.txt is missing");
                 return;
             }
-            String string;
-            while ((string = bufferedReader.readLine()) != null) {
+
+            BufferedReader bufferedReader = new BufferedReader(new FileReader(standardoptionsFile));
+
+            String string = bufferedReader.readLine();
+
+            if (new File(string).exists()) {
+                bufferedReader = new BufferedReader(new FileReader(string));
+                string = bufferedReader.readLine();
+            }
+
+            do {
                 String[] strings = string.split(":");
                 String[] string0_split = strings[0].split("_");
                 try {
@@ -111,16 +116,16 @@ public class StandardSettings {
                         case "biomeBlendRadius" -> options.biomeBlendRadius = Integer.parseInt(strings[1]);
                         case "mouseWheelSensitivity" -> options.mouseWheelSensitivity = Double.parseDouble(strings[1]);
                         case "rawMouseInput" -> Option.RAW_MOUSE_INPUT.set(options, strings[1]);
-                        case "perspective" -> options.perspective = Integer.parseInt(strings[1]);
-                        case "piedirectory" -> ((MinecraftClientAccessor)client).setOpenProfilerSection(strings[1].replace(".",""));
                         case "chunkborders" -> {
                             if (client.debugRenderer.toggleShowChunkBorder() != Boolean.parseBoolean(strings[1])) {
                                 client.debugRenderer.toggleShowChunkBorder();
                             }
                         }
                         case "hitboxes" -> client.getEntityRenderManager().setRenderHitboxes(Boolean.parseBoolean(strings[1]));
-                        case "renderDistanceOnWorldJoin" -> renderDistanceOnWorldJoin = Integer.parseInt(strings[1]);
+                        case "perspective" -> options.perspective = Integer.parseInt(strings[1]);
+                        case "piedirectory" -> ((MinecraftClientAccessor)client).setOpenProfilerSection(strings[1].replace(".",""));
                         case "fovOnWorldJoin" -> fovOnWorldJoin = Double.parseDouble(strings[1]);
+                        case "renderDistanceOnWorldJoin" -> renderDistanceOnWorldJoin = Integer.parseInt(strings[1]);
                         case "key" -> {
                             for (KeyBinding keyBinding : options.keysAll) {
                                 if (string0_split[1].equals(keyBinding.getId())) {
@@ -132,7 +137,6 @@ public class StandardSettings {
                             for (SoundCategory soundCategory : SoundCategory.values()) {
                                 if (string0_split[1].equals(soundCategory.getName())) {
                                     options.setSoundVolume(soundCategory, Float.parseFloat(strings[1]));
-                                    client.getSoundManager().updateSoundVolume(soundCategory, options.getSoundVolume(soundCategory)); break;
                                 }
                             }
                         }
@@ -146,12 +150,13 @@ public class StandardSettings {
                         // Some options.txt settings which aren't accessible in vanilla Minecraft and some unnecessary settings (like Multiplayer stuff) are not included.
                     }
                 } catch (Exception exception) {
-                    if (!string.equals("renderDistanceOnWorldJoin:") && !string.equals("fovOnWorldJoin:") && !string.equals("lastServer:")) {
+                    if (!string.equals("chunkborders:") && !string.equals("hitboxes:") && !string.equals("perspective:") && !string.equals("piedirectory:") && !string.equals("renderDistanceOnWorldJoin:") && !string.equals("fovOnWorldJoin:") && !string.equals("lastServer:")) {
                         LOGGER.warn("Skipping bad StandardSetting: " + string);
                     }
                 }
-            }
+            } while ((string = bufferedReader.readLine()) != null);
             KeyBinding.updateKeysByCode();
+            bufferedReader.close();
             LOGGER.info("Finished loading StandardSettings ({} ms)", (System.nanoTime() - start) / 1000000.0f);
         } catch (Exception exception2) {
             LOGGER.error("Failed to load StandardSettings", exception2);
@@ -189,14 +194,13 @@ public class StandardSettings {
         options.chatHeightUnfocused = Check("(Chat) Unfocused Height", options.chatHeightUnfocused, 0, 1);
         options.chatScale = Check("Chat Text Size", options.chatScale, 0, 1);
         options.chatWidth = Check("Chat Width", options.chatWidth, 0, 1);
+        if (options.mipmapLevels != (options.mipmapLevels = Check("Mipmap Levels", options.mipmapLevels, 0, 4))) {
+            client.resetMipmapLevels(options.mipmapLevels);
+            ((BakedModelManagerAccessor)client.getBakedModelManager()).callApply(((BakedModelManagerAccessor)client.getBakedModelManager()).callPrepare(client.getResourceManager(), client.getProfiler()), client.getResourceManager(), client.getProfiler());
+        }
         options.mouseWheelSensitivity = Check("Scroll Sensitivity", options.mouseWheelSensitivity, 0.01, 10);
         for (SoundCategory soundCategory : SoundCategory.values()) {
-            client.getSoundManager().updateSoundVolume(soundCategory, Check(soundCategory.getName(), options.getSoundVolume(soundCategory)));
-            options.setSoundVolume(soundCategory, options.getSoundVolume(soundCategory));
-        }
-        if (options.mipmapLevels < 0 || options.mipmapLevels > 4) {
-            client.resetMipmapLevels(options.mipmapLevels = Check("Mipmap Levels", options.mipmapLevels, 0, 4));
-            ((BakedModelManagerAccessor)client.getBakedModelManager()).callApply(((BakedModelManagerAccessor)client.getBakedModelManager()).callPrepare(client.getResourceManager(), client.getProfiler()), client.getResourceManager(), client.getProfiler());
+            options.setSoundVolume(soundCategory, Check(soundCategory.getName(), options.getSoundVolume(soundCategory)));
         }
 
         if (renderDistanceOnWorldJoin != 0) {
@@ -244,44 +248,5 @@ public class StandardSettings {
             return max;
         }
         return setting;
-    }
-
-    public static void save() {
-        LOGGER.info("Saving StandardSettings...");
-
-        long start = System.nanoTime();
-
-        if (!optionsFile.exists()) options.write();
-        if (!standardoptionsFile.getParentFile().exists()) standardoptionsFile.getParentFile().mkdir();
-
-        String rd = "renderDistanceOnWorldJoin:";
-        String fov = "fovOnWorldJoin:";
-
-        if (standardoptionsFile.exists()) {
-            try (Scanner standardoptionsTxt = new Scanner(standardoptionsFile)) {
-                while (standardoptionsTxt.hasNextLine()) {
-                    String line = standardoptionsTxt.nextLine();
-                    switch (line.split(":")[0]) {
-                        case "renderDistanceOnWorldJoin" -> rd = line;
-                        case "fovOnWorldJoin" -> fov = line;
-                    }
-                }
-            } catch (FileNotFoundException e) {
-                throw new RuntimeException(e);
-            }
-        }
-
-        try {
-            Files.copy(optionsFile.toPath(), standardoptionsFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
-            Files.write(standardoptionsFile.toPath(), ("perspective:" + options.perspective + System.lineSeparator()).getBytes(), StandardOpenOption.APPEND);
-            Files.write(standardoptionsFile.toPath(), ("piedirectory:" + ((MinecraftClientAccessor)client).getOpenProfilerSection().replace("",".") + System.lineSeparator()).getBytes(), StandardOpenOption.APPEND);
-            client.debugRenderer.toggleShowChunkBorder();
-            Files.write(standardoptionsFile.toPath(), ("chunkborders:" + client.debugRenderer.toggleShowChunkBorder() + System.lineSeparator()).getBytes(), StandardOpenOption.APPEND);
-            Files.write(standardoptionsFile.toPath(), ("hitboxes:" + client.getEntityRenderManager().shouldRenderHitboxes() + System.lineSeparator()).getBytes(), StandardOpenOption.APPEND);
-            Files.write(standardoptionsFile.toPath(), (rd + System.lineSeparator() + fov).getBytes(), StandardOpenOption.APPEND);
-            LOGGER.info("Finished saving StandardSettings ({} ms)", (System.nanoTime() - start) / 1000000.0f);
-        } catch (IOException e) {
-            LOGGER.error("Failed to save StandardSettings", e);
-        }
     }
 }
