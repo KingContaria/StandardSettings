@@ -7,7 +7,6 @@
     "BakedModelManagerAccessor",
     "CreateWorldScreenMixin",
     "MinecraftClientMixin",
-    "TitleScreenMixin",
     "WorldSaveHandlerMixin"
   ],
   "injectors": {
