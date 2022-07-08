@@ -22,11 +22,17 @@ public class WorldSaveHandlerMixin {
     @Shadow @Final private File playerDataDir;
 
     @Inject(method = "savePlayerData", at = @At("TAIL"))
-    private void saveOptionsTxt(PlayerEntity playerEntity, CallbackInfo ci){
-        try {
-            Files.copy(StandardSettings.optionsFile.toPath(), new File(playerDataDir.getParentFile(), "options.txt").toPath(), StandardCopyOption.REPLACE_EXISTING);
-        } catch (IOException e) {
-            StandardSettings.LOGGER.error("Couldn't save options.txt to world file", e);
+    private void saveStandardoptionsTxt(PlayerEntity playerEntity, CallbackInfo ci) {
+        if (!new File(playerDataDir.getParentFile(), "standardoptions.txt").exists() && StandardSettings.lastUsedFile != null) {
+            if (StandardSettings.fileLastModified != StandardSettings.lastUsedFile.lastModified()) {
+                StandardSettings.LOGGER.warn("standardoptions.txt has been modified since it's been applied");
+            }
+            try {
+                Files.copy(StandardSettings.lastUsedFile.toPath(), new File(playerDataDir.getParentFile(), "standardoptions.txt").toPath(), StandardCopyOption.REPLACE_EXISTING);
+                StandardSettings.LOGGER.info("Saved standardoptions.txt to world file");
+            } catch (IOException e) {
+                StandardSettings.LOGGER.error("Failed to save standardoptions.txt to world file", e);
+            }
         }
     }
 
