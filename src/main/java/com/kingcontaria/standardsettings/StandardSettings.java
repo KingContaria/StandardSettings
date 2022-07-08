@@ -24,6 +24,8 @@ public class StandardSettings {
     public static final GameOptions options = client.options;
     private static final Window window = client.getWindow();
     public static final File standardoptionsFile = new File("config/standardoptions.txt");
+    public static File lastUsedFile;
+    public static long fileLastModified;
     public static final File optionsFile = new File("options.txt");
     public static boolean changeOnGainedFocus = false;
     private static int renderDistanceOnWorldJoin;
@@ -46,9 +48,14 @@ public class StandardSettings {
             String string = bufferedReader.readLine();
 
             if (new File(string).exists()) {
-                bufferedReader = new BufferedReader(new FileReader(string));
+                LOGGER.info("Using global standardoptions file");
+                bufferedReader.close();
+                bufferedReader = new BufferedReader(new FileReader(lastUsedFile = new File(string)));
                 string = bufferedReader.readLine();
+            } else {
+                lastUsedFile = standardoptionsFile;
             }
+            fileLastModified = lastUsedFile.lastModified();
 
             do {
                 String[] strings = string.split(":");
@@ -182,6 +189,7 @@ public class StandardSettings {
             Option.FOV.set(options, fovOnWorldJoin);
         }
         if (fovOnWorldJoin != 0 || renderDistanceOnWorldJoin != 0 || entityDistanceScalingOnWorldJoin != 0) {
+            fovOnWorldJoin = entityDistanceScalingOnWorldJoin = renderDistanceOnWorldJoin = 0;
             options.write();
             LOGGER.info("Changed Settings on World Join ({} ms)", (System.nanoTime() - start) / 1000000.0f);
         }
@@ -212,7 +220,7 @@ public class StandardSettings {
         }
         options.mouseWheelSensitivity = Check("Scroll Sensitivity",options.mouseWheelSensitivity, 0.01, 10);
         for (SoundCategory soundCategory : SoundCategory.values()) {
-            options.setSoundVolume(soundCategory, Check(soundCategory.getName(), options.getSoundVolume(soundCategory), 1, 1));
+            options.setSoundVolume(soundCategory, Check(soundCategory.getName(), options.getSoundVolume(soundCategory), 0, 1));
         }
 
         if (renderDistanceOnWorldJoin != 0) {
