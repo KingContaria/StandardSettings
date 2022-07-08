@@ -8,7 +8,5 @@ import org.spongepowered.asm.mixin.gen.Accessor;
 
 public interface MinecraftClientAccessor {
     @Accessor
-    String getOpenProfilerSection();
-    @Accessor
     void setOpenProfilerSection(String value);
 }
