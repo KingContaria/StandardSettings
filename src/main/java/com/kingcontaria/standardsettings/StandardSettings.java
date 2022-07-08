@@ -188,7 +188,7 @@ public class StandardSettings {
             ((MinecraftClientAccessor)client).getModelManager().reload(client.getResourceManager());
         }
         for (SoundCategory soundCategory : SoundCategory.values()) {
-            options.setSoundVolume(soundCategory, Check(soundCategory.getName(), options.getSoundVolume(soundCategory), 1, 1));
+            options.setSoundVolume(soundCategory, Check(soundCategory.getName(), options.getSoundVolume(soundCategory), 0, 1));
         }
 
         if (renderDistanceOnWorldJoin != 0) {
