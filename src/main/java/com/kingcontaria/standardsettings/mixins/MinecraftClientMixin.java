@@ -18,9 +18,10 @@ import java.nio.file.StandardOpenOption;
 
 public abstract class MinecraftClientMixin {
 
+    private static boolean bl = true;
     @Shadow public abstract boolean isWindowFocused();
 
-    @Inject(method = "initializeGame", at = @At("TAIL"))
+    @Inject(method = "initializeGame", at = @At("RETURN"))
     private void initializeStandardSettings(CallbackInfo ci) {
         if (StandardSettings.standardoptionsFile.exists()) {
             StandardSettings.LOGGER.info("Loading StandardSettings...");
@@ -43,7 +44,7 @@ public abstract class MinecraftClientMixin {
             try {
                 String l = System.lineSeparator();
                 Files.copy(StandardSettings.optionsFile.toPath(), StandardSettings.standardoptionsFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
-                Files.write(StandardSettings.standardoptionsFile.toPath(), ("hitboxes" + l + "perspective:" + l + "piedirectory:" + l + "renderDistanceOnWorldJoin:" + l + "fovOnWorldJoin:").getBytes(), StandardOpenOption.APPEND);
+                Files.write(StandardSettings.standardoptionsFile.toPath(), ("hitboxes:" + l + "perspective:" + l + "piedirectory:" + l + "renderDistanceOnWorldJoin:" + l + "fovOnWorldJoin:").getBytes(), StandardOpenOption.APPEND);
                 StandardSettings.LOGGER.info("Finished creating StandardSettings File ({} ms)", (System.nanoTime() - start) / 1000000.0f);
             } catch (IOException e) {
                 StandardSettings.LOGGER.error("Failed to create StandardSettings File", e);
@@ -53,20 +54,24 @@ public abstract class MinecraftClientMixin {
 
     @Inject(method = "startGame", at = @At("HEAD"))
     private void resetSettings(String string, String levelInfo, LevelInfo par3, CallbackInfo ci) {
-        StandardSettings.LOGGER.info("Reset to StandardSettings...");
-        StandardSettings.load();
-        StandardSettings.LOGGER.info("Checking Settings...");
-        StandardSettings.checkSettings();
-        StandardSettings.options.save();
+        if (bl) {
+            StandardSettings.LOGGER.info("Reset to StandardSettings...");
+            StandardSettings.load();
+            StandardSettings.LOGGER.info("Checking Settings...");
+            StandardSettings.checkSettings();
+            StandardSettings.options.save();
+            bl = false;
+        }
     }
 
-    @Inject(method = "startGame", at = @At("TAIL"))
+    @Inject(method = "startGame", at = @At("RETURN"))
     private void onWorldJoin(String string, String levelInfo, LevelInfo par3, CallbackInfo ci) {
         if (this.isWindowFocused()) {
             StandardSettings.changeSettingsOnJoin();
         } else {
             StandardSettings.changeOnGainedFocus = true;
         }
+        bl = true;
     }
 
 }
