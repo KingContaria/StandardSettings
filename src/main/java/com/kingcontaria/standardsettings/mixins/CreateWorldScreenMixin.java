@@ -26,7 +26,7 @@ public class CreateWorldScreenMixin {
         }
     }
 
-    @Inject(method = "createLevel", at = @At("TAIL"))
+    @Inject(method = "createLevel", at = @At("RETURN"))
     private void onWorldJoin(CallbackInfo ci) {
         if (StandardSettings.client.isWindowFocused()) {
             StandardSettings.changeSettingsOnJoin();
