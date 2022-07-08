@@ -38,6 +38,8 @@ public class StandardSettings {
 
         fovOnWorldJoin = entityDistanceScalingOnWorldJoin = renderDistanceOnWorldJoin = simulationDistanceOnWorldJoin = 0;
 
+        System.out.println(options.soundDevice);
+
         try {
             if (!standardoptionsFile.exists()) {
                 LOGGER.error("standardoptions.txt is missing");
@@ -169,7 +171,7 @@ public class StandardSettings {
                     }
                     // Some options.txt settings which aren't accessible in vanilla Minecraft and some unnecessary settings (like Multiplayer stuff) are not included.
                 } catch (Exception exception) {
-                    if (!string.equals("renderDistanceOnWorldJoin:") && !string.equals("simulationDistanceOnWorldJoin:") && !string.equals("entityDistanceScalingOnWorldJoin:") && !string.equals("fovOnWorldJoin:") && !string.equals("lastServer:")) {
+                    if (!string.equals("chunkborders:") && !string.equals("hitboxes:") && !string.equals("perspective:") && !string.equals("piedirectory:") && !string.equals("renderDistanceOnWorldJoin:") && !string.equals("simulationDistanceOnWorldJoin:") && !string.equals("entityDistanceScalingOnWorldJoin:") && !string.equals("fovOnWorldJoin:") && !string.equals("lastServer:")) {
                         LOGGER.warn("Skipping bad StandardSetting: " + string);
                     }
                 }
@@ -233,7 +235,7 @@ public class StandardSettings {
         }
         options.mouseWheelSensitivity = Check("Scroll Sensitivity", options.mouseWheelSensitivity, 0.01, 10);
         for (SoundCategory soundCategory : SoundCategory.values()) {
-            options.setSoundVolume(soundCategory, Check(soundCategory.getName(), options.getSoundVolume(soundCategory), 1, 1));
+            options.setSoundVolume(soundCategory, Check(soundCategory.getName(), options.getSoundVolume(soundCategory), 0, 1));
         }
 
         if (renderDistanceOnWorldJoin != 0) {
