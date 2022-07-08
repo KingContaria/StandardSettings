@@ -1,7 +1,6 @@
 package com.kingcontaria.standardsettings;
 
-import com.kingcontaria.standardsettings.mixins.BakedModelManagerAccessor;
-import com.kingcontaria.standardsettings.mixins.MinecraftClientAccessor;
+import com.kingcontaria.standardsettings.mixins.*;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.MinecraftClient;
@@ -218,7 +217,7 @@ public class StandardSettings {
             client.resetMipmapLevels(options.mipmapLevels);
             ((BakedModelManagerAccessor)client.getBakedModelManager()).callApply(((BakedModelManagerAccessor)client.getBakedModelManager()).callPrepare(client.getResourceManager(), client.getProfiler()), client.getResourceManager(), client.getProfiler());
         }
-        options.mouseWheelSensitivity = Check("Scroll Sensitivity",options.mouseWheelSensitivity, 0.01, 10);
+        options.mouseWheelSensitivity = Check("Scroll Sensitivity", options.mouseWheelSensitivity, 0.01, 10);
         for (SoundCategory soundCategory : SoundCategory.values()) {
             options.setSoundVolume(soundCategory, Check(soundCategory.getName(), options.getSoundVolume(soundCategory), 0, 1));
         }
