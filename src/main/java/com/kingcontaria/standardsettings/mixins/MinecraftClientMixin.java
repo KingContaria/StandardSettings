@@ -16,7 +16,7 @@ import java.nio.file.StandardOpenOption;
 
 public class MinecraftClientMixin {
 
-    @Inject(method = "init", at = @At("TAIL"))
+    @Inject(method = "init", at = @At("RETURN"))
     private void initializeStandardSettings(CallbackInfo ci) {
         if (StandardSettings.standardoptionsFile.exists()) {
             StandardSettings.LOGGER.info("Loading StandardSettings...");
@@ -39,7 +39,7 @@ public class MinecraftClientMixin {
             try {
                 String l = System.lineSeparator();
                 Files.copy(StandardSettings.optionsFile.toPath(), StandardSettings.standardoptionsFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
-                Files.write(StandardSettings.standardoptionsFile.toPath(), ("chunkborders:" + l + "hitboxes" + l + "perspective:" + l + "renderDistanceOnWorldJoin:" + l + "fovOnWorldJoin:").getBytes(), StandardOpenOption.APPEND);
+                Files.write(StandardSettings.standardoptionsFile.toPath(), ("chunkborders:" + l + "hitboxes:" + l + "perspective:" + l + "renderDistanceOnWorldJoin:" + l + "fovOnWorldJoin:").getBytes(), StandardOpenOption.APPEND);
                 StandardSettings.LOGGER.info("Finished creating StandardSettings File ({} ms)", (System.nanoTime() - start) / 1000000.0f);
             } catch (IOException e) {
                 StandardSettings.LOGGER.error("Failed to create StandardSettings File", e);
@@ -47,7 +47,7 @@ public class MinecraftClientMixin {
         }
     }
 
-    @Inject(method = "onWindowFocusChanged", at = @At("TAIL"))
+    @Inject(method = "onWindowFocusChanged", at = @At("RETURN"))
     private void changeSettingsOnJoin(boolean focused, CallbackInfo ci) {
         if (focused && StandardSettings.changeOnGainedFocus) {
             StandardSettings.changeOnGainedFocus = false;

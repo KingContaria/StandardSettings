@@ -22,6 +22,8 @@ public class StandardSettings {
     public static final MinecraftClient client = MinecraftClient.getInstance();
     public static final GameOptions options = client.options;
     public static final File standardoptionsFile = new File("config/standardoptions.txt");
+    public static File lastUsedFile;
+    public static long fileLastModified;
     public static final File optionsFile = new File("options.txt");
     public static boolean changeOnGainedFocus = false;
     private static int renderDistanceOnWorldJoin;
@@ -43,9 +45,14 @@ public class StandardSettings {
             String string = bufferedReader.readLine();
 
             if (new File(string).exists()) {
-                bufferedReader = new BufferedReader(new FileReader(string));
+                LOGGER.info("Using global standardoptions file");
+                bufferedReader.close();
+                bufferedReader = new BufferedReader(new FileReader(lastUsedFile = new File(string)));
                 string = bufferedReader.readLine();
+            } else {
+                lastUsedFile = standardoptionsFile;
             }
+            fileLastModified = lastUsedFile.lastModified();
 
             do {
                 String[] strings = string.split(":");
@@ -170,6 +177,7 @@ public class StandardSettings {
             Option.FOV.set(options, fovOnWorldJoin);
         }
         if (fovOnWorldJoin != 0 || renderDistanceOnWorldJoin != 0) {
+            fovOnWorldJoin = renderDistanceOnWorldJoin = 0;
             options.write();
             LOGGER.info("Changed Settings on World Join ({} ms)", (System.nanoTime() - start) / 1000000.0f);
         }
