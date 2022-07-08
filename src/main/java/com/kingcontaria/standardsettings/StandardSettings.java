@@ -225,7 +225,7 @@ public class StandardSettings {
         }
         options.mouseWheelSensitivity = Check("Scroll Sensitivity", options.mouseWheelSensitivity, 0.01, 10);
         for (SoundCategory soundCategory : SoundCategory.values()) {
-            options.setSoundVolume(soundCategory, Check(soundCategory.getName(), options.getSoundVolume(soundCategory), 1, 1));
+            options.setSoundVolume(soundCategory, Check(soundCategory.getName(), options.getSoundVolume(soundCategory), 0, 1));
         }
 
         if (renderDistanceOnWorldJoin != 0) {
