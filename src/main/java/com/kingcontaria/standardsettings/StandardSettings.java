@@ -1,10 +1,12 @@
 package com.kingcontaria.standardsettings;
 
+import com.kingcontaria.standardsettings.mixins.LanguageManagerAccessor;
 import com.kingcontaria.standardsettings.mixins.MinecraftClientAccessor;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.options.GameOptions;
 import net.minecraft.client.options.KeyBinding;
 import net.minecraft.client.render.entity.PlayerModelPart;
+import net.minecraft.client.resource.language.LanguageDefinition;
 import net.minecraft.client.sound.SoundCategory;
 import net.minecraft.client.texture.SpriteAtlasTexture;
 import net.minecraft.entity.player.PlayerEntity;
@@ -12,6 +14,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.*;
+import java.util.Map;
+import java.util.Objects;
 
 public class StandardSettings {
 
@@ -52,8 +56,8 @@ public class StandardSettings {
             fileLastModified = lastUsedFile.lastModified();
 
             do {
-                String[] strings = string.split(":");
-                String[] string0_split = strings[0].split("_");
+                String[] strings = string.split(":", 2);
+                String[] string0_split = strings[0].split("_", 2);
                 try {
                     switch (string0_split[0]) {
                         case "mouseSensitivity" -> options.sensitivity = Float.parseFloat(strings[1]);
@@ -74,6 +78,12 @@ public class StandardSettings {
                         case "fancyGraphics" -> options.fancyGraphics = Boolean.parseBoolean(strings[1]);
                         case "ao" -> options.ao = strings[1].equals("true") ? 2 : (strings[1].equals("false") ? 0 : Integer.parseInt(strings[1]));
                         case "renderClouds" -> options.cloudMode = strings[1].equals("true") ? 2 : strings[1].equals("false") ? 0 : 1;
+                        case "lang" -> {
+                            if (!options.language.equals(strings[1]) && ((LanguageManagerAccessor)client.getLanguageManager()).getField_6653().containsKey(strings[1])) {
+                                client.getLanguageManager().method_5939(((LanguageManagerAccessor)client.getLanguageManager()).getField_6653().get(options.language = strings[1]));
+                                client.getLanguageManager().reload(client.getResourceManager());
+                            }
+                        }
                         case "chatVisibility" -> options.chatVisibilityType = PlayerEntity.ChatVisibilityType.getById(Integer.parseInt(strings[1]));
                         case "chatColors" -> options.chatColor = Boolean.parseBoolean(strings[1]);
                         case "chatLinks" -> options.chatLink = Boolean.parseBoolean(strings[1]);
@@ -131,7 +141,7 @@ public class StandardSettings {
                         }
                         case "modelPart" -> {
                             for (PlayerModelPart playerModelPart : PlayerModelPart.values()) {
-                                if (strings[0].equals("modelPart_" + playerModelPart.getName())) {
+                                if (string0_split[1].equals(playerModelPart.getName())) {
                                     options.setPlayerModelPart(playerModelPart, Boolean.parseBoolean(strings[1])); break;
                                 }
                             }
@@ -171,38 +181,38 @@ public class StandardSettings {
     public static void checkSettings() {
         long start = System.nanoTime();
 
-        options.sensitivity = Check("Sensitivity", options.sensitivity, 0, 1);
-        options.fov = Math.round(Check("FOV", options.fov, 30, 110));
-        options.gamma = Check("Brightness", options.gamma, 0, 5);
-        options.viewDistance = Check("Render Distance", options.viewDistance, 2, 32);
-        options.guiScale = Check("GUI Scale", options.guiScale, 0, 4);
+        options.sensitivity = check("Sensitivity", options.sensitivity, 0, 1);
+        options.fov = Math.round(check("FOV", options.fov, 30, 110));
+        options.gamma = check("Brightness", options.gamma, 0, 5);
+        options.viewDistance = check("Render Distance", options.viewDistance, 2, 32);
+        options.guiScale = check("GUI Scale", options.guiScale, 0, 4);
         // Because of DynamicFPS/SleepBackground I will not mess with adjusting FPS :)
-        options.chatOpacity = Check("Chat Opacity", options.chatOpacity, 0, 1);
-        options.chatHeightFocused = Check("(Chat) Focused Height", options.chatHeightFocused, 0, 1);
-        options.chatHeightUnfocused = Check("(Chat) Unfocused Height", options.chatHeightUnfocused, 0, 1);
-        options.chatScale = Check("Chat Text Size", options.chatScale, 0, 1);
-        options.chatWidth = Check("Chat Width", options.chatWidth, 0, 1);
-        if (options.mipmapLevels != (options.mipmapLevels = Check("Mipmap Levels", options.mipmapLevels, 0, 4))) {
+        options.chatOpacity = check("Chat Opacity", options.chatOpacity, 0, 1);
+        options.chatHeightFocused = check("(Chat) Focused Height", options.chatHeightFocused, 0, 1);
+        options.chatHeightUnfocused = check("(Chat) Unfocused Height", options.chatHeightUnfocused, 0, 1);
+        options.chatScale = check("Chat Text Size", options.chatScale, 0, 1);
+        options.chatWidth = check("Chat Width", options.chatWidth, 0, 1);
+        if (options.mipmapLevels != (options.mipmapLevels = check("Mipmap Levels", options.mipmapLevels, 0, 4))) {
             client.getSpriteAtlasTexture().setMaxTextureSize(options.mipmapLevels);
             client.getTextureManager().bindTexture(SpriteAtlasTexture.BLOCK_ATLAS_TEX);
             client.getSpriteAtlasTexture().setFilter(false, options.mipmapLevels > 0);
             ((MinecraftClientAccessor)client).getModelManager().reload(client.getResourceManager());
         }
         for (SoundCategory soundCategory : SoundCategory.values()) {
-            options.setSoundVolume(soundCategory, Check(soundCategory.getName(), options.getSoundVolume(soundCategory), 0, 1));
+            options.setSoundVolume(soundCategory, check(soundCategory.getName(), options.getSoundVolume(soundCategory), 0, 1));
         }
 
         if (renderDistanceOnWorldJoin != 0) {
-            renderDistanceOnWorldJoin = Check("Render Distance (On World Join)", renderDistanceOnWorldJoin, 2, 32);
+            renderDistanceOnWorldJoin = check("Render Distance (On World Join)", renderDistanceOnWorldJoin, 2, 32);
         }
         if (fovOnWorldJoin != 0) {
-            fovOnWorldJoin = Math.round(Check("FOV (On World Join)", fovOnWorldJoin, 30, 110));
+            fovOnWorldJoin = Math.round(check("FOV (On World Join)", fovOnWorldJoin, 30, 110));
         }
 
         LOGGER.info("Finished checking Settings ({} ms)", (System.nanoTime() - start) / 1000000.0f);
     }
 
-    private static float Check(String settingName, float setting, float min, float max) {
+    private static float check(String settingName, float setting, float min, float max) {
         if (setting < min) {
             LOGGER.warn(settingName + " was too low! ({})", setting);
             return min;
@@ -214,7 +224,7 @@ public class StandardSettings {
         return setting;
     }
 
-    private static int Check(String settingName, int setting, int min, int max){
+    private static int check(String settingName, int setting, int min, int max){
         if (setting < min) {
             LOGGER.warn(settingName + " was too low! ({})", setting);
             return min;

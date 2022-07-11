@@ -2,6 +2,8 @@ package com.kingcontaria.standardsettings.mixins;
 
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.render.model.BakedModelManager;
+import net.minecraft.client.resource.language.LanguageManager;
+import net.minecraft.util.MetadataSerializer;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.gen.Accessor;
 

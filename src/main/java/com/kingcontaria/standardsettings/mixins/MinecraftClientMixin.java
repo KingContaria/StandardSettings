@@ -30,7 +30,7 @@ public abstract class MinecraftClientMixin {
             StandardSettings.checkSettings();
             StandardSettings.options.save();
         } else {
-            StandardSettings.LOGGER.info("Create StandardSettings File...");
+            StandardSettings.LOGGER.info("Creating StandardSettings File...");
 
             long start = System.nanoTime();
 
