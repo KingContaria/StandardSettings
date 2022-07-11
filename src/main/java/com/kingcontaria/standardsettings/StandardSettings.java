@@ -55,8 +55,8 @@ public class StandardSettings {
             fileLastModified = lastUsedFile.lastModified();
 
             do {
-                String[] strings = string.split(":");
-                String[] string0_split = strings[0].split("_");
+                String[] strings = string.split(":", 2);
+                String[] string0_split = strings[0].split("_", 2);
                 try {
                     switch (string0_split[0]) {
                         case "autoJump" -> options.autoJump = Boolean.parseBoolean(strings[1]);
@@ -146,7 +146,7 @@ public class StandardSettings {
                         }
                         case "modelPart" -> {
                             for (PlayerModelPart playerModelPart : PlayerModelPart.values()) {
-                                if (strings[0].equals("modelPart_" + playerModelPart.getName())) {
+                                if (string0_split[1].equals(playerModelPart.getName())) {
                                     options.setPlayerModelPart(playerModelPart, Boolean.parseBoolean(strings[1])); break;
                                 }
                             }
@@ -186,42 +186,42 @@ public class StandardSettings {
     public static void checkSettings() {
         long start = System.nanoTime();
 
-        options.mouseSensitivity = Check("Sensitivity", options.mouseSensitivity, 0, 1);
-        options.fov = Math.round(Check("FOV", options.fov, 30, 110));
-        options.gamma = Check("Brightness", options.gamma, 0, 5);
-        options.viewDistance = Check("Render Distance", options.viewDistance, 2, 32);
-        options.guiScale = Check("GUI Scale", options.guiScale, 0, 4);
+        options.mouseSensitivity = check("Sensitivity", options.mouseSensitivity, 0, 1);
+        options.fov = Math.round(check("FOV", options.fov, 30, 110));
+        options.gamma = check("Brightness", options.gamma, 0, 5);
+        options.viewDistance = check("Render Distance", options.viewDistance, 2, 32);
+        options.guiScale = check("GUI Scale", options.guiScale, 0, 4);
         // Because of DynamicFPS/SleepBackground I will not mess with adjusting FPS :)
-        options.biomeBlendRadius = Check("Biome Blend Radius", options.biomeBlendRadius, 0, 7);
-        options.chatOpacity = Check("Chat Opacity", options.chatOpacity, 0, 1);
-        options.textBackgroundOpacity = Check("Text Background Opacity", options.textBackgroundOpacity, 0, 1);
-        options.chatHeightFocused = Check("(Chat) Focused Height", options.chatHeightFocused, 0, 1);
-        options.chatHeightUnfocused = Check("(Chat) Unfocused Height", options.chatHeightUnfocused, 0, 1);
-        options.chatScale = Check("Chat Text Size", options.chatScale, 0, 1);
-        options.chatWidth = Check("Chat Width", options.chatWidth, 0, 1);
-        if (options.mipmapLevels != (options.mipmapLevels = Check("Mipmap Levels", options.mipmapLevels, 0, 4))) {
+        options.biomeBlendRadius = check("Biome Blend Radius", options.biomeBlendRadius, 0, 7);
+        options.chatOpacity = check("Chat Opacity", options.chatOpacity, 0, 1);
+        options.textBackgroundOpacity = check("Text Background Opacity", options.textBackgroundOpacity, 0, 1);
+        options.chatHeightFocused = check("(Chat) Focused Height", options.chatHeightFocused, 0, 1);
+        options.chatHeightUnfocused = check("(Chat) Unfocused Height", options.chatHeightUnfocused, 0, 1);
+        options.chatScale = check("Chat Text Size", options.chatScale, 0, 1);
+        options.chatWidth = check("Chat Width", options.chatWidth, 0, 1);
+        if (options.mipmapLevels != (options.mipmapLevels = check("Mipmap Levels", options.mipmapLevels, 0, 4))) {
             client.getSpriteAtlas().setMipLevel(options.mipmapLevels);
             client.getTextureManager().bindTexture(SpriteAtlasTexture.BLOCK_ATLAS_TEX);
             client.getSpriteAtlas().setFilter(false, options.mipmapLevels > 0);
             ((BakedModelManagerAccessor)client.getBakedModelManager()).callApply(((BakedModelManagerAccessor)client.getBakedModelManager()).callPrepare(client.getResourceManager(), client.getProfiler()), client.getResourceManager(), client.getProfiler());
         }
-        options.mouseWheelSensitivity = Check("Scroll Sensitivity", options.mouseWheelSensitivity, 0.01, 10);
+        options.mouseWheelSensitivity = check("Scroll Sensitivity", options.mouseWheelSensitivity, 0.01, 10);
         for (SoundCategory soundCategory : SoundCategory.values()) {
-            options.setSoundVolume(soundCategory, Check(soundCategory.getName(), options.getSoundVolume(soundCategory)));
+            options.setSoundVolume(soundCategory, check(soundCategory.getName(), options.getSoundVolume(soundCategory)));
         }
 
         if (renderDistanceOnWorldJoin != 0) {
-            renderDistanceOnWorldJoin = Check("Render Distance (On World Join)", renderDistanceOnWorldJoin, 2, 32);
+            renderDistanceOnWorldJoin = check("Render Distance (On World Join)", renderDistanceOnWorldJoin, 2, 32);
         }
         if (fovOnWorldJoin != 0) {
-            fovOnWorldJoin = Math.round(Check("FOV (On World Join)", fovOnWorldJoin, 30, 110));
+            fovOnWorldJoin = Math.round(check("FOV (On World Join)", fovOnWorldJoin, 30, 110));
         }
 
         client.window.setScaleFactor(client.window.calculateScaleFactor(options.guiScale, client.forcesUnicodeFont()));
         LOGGER.info("Finished checking Settings ({} ms)", (System.nanoTime() - start) / 1000000.0f);
     }
 
-    private static double Check(String settingName, double setting, double min, double max) {
+    private static double check(String settingName, double setting, double min, double max) {
         if (setting < min) {
             LOGGER.warn(settingName + " was too low! ({})", setting);
             return min;
@@ -233,7 +233,7 @@ public class StandardSettings {
         return setting;
     }
 
-    private static float Check(String settingName, float setting) {
+    private static float check(String settingName, float setting) {
         if (setting < 0) {
             LOGGER.warn(settingName + " was too low! ({})", setting);
             return 0;
@@ -245,7 +245,7 @@ public class StandardSettings {
         return setting;
     }
 
-    private static int Check(String settingName, int setting, int min, int max) {
+    private static int check(String settingName, int setting, int min, int max) {
         if (setting < min) {
             LOGGER.warn(settingName + " was too low! ({})", setting);
             return min;
