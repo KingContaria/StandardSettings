@@ -11,6 +11,7 @@ import org.spongepowered.asm.mixin.gen.Invoker;
 public interface BakedModelManagerAccessor {
     @Invoker
     ModelLoader callPrepare(ResourceManager resourceManager, Profiler profiler);
+
     @Invoker
     void callApply(ModelLoader modelLoader, ResourceManager resourceManager, Profiler profiler);
 }
