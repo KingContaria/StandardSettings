@@ -59,8 +59,8 @@ public class StandardSettings {
             fileLastModified = lastUsedFile.lastModified();
 
             do {
-                String[] strings = string.split(":");
-                String[] string0_split = strings[0].split("_");
+                String[] strings = string.split(":", 2);
+                String[] string0_split = strings[0].split("_", 2);
                 try {
                     switch (string0_split[0]) {
                         case "autoJump" -> options.getAutoJump().setValue(Boolean.parseBoolean(strings[1]));
@@ -160,13 +160,13 @@ public class StandardSettings {
                         case "soundCategory" -> {
                             for (SoundCategory soundCategory : SoundCategory.values()) {
                                 if (string0_split[1].equals(soundCategory.getName())) {
-                                    options.setSoundVolume(soundCategory, Float.parseFloat(strings[1]));
+                                    options.setSoundVolume(soundCategory, Float.parseFloat(strings[1])); break;
                                 }
                             }
                         }
                         case "modelPart" -> {
                             for (PlayerModelPart playerModelPart : PlayerModelPart.values()) {
-                                if (strings[0].equals("modelPart_" + playerModelPart.getName())) {
+                                if (string0_split[1].equals(playerModelPart.getName())) {
                                     options.togglePlayerModelPart(playerModelPart, Boolean.parseBoolean(strings[1])); break;
                                 }
                             }
@@ -213,53 +213,53 @@ public class StandardSettings {
     public static void checkSettings() {
         long start = System.nanoTime();
 
-        options.getMouseSensitivity().setValue(Check("Sensitivity", options.getMouseSensitivity().getValue(), 0, 1));
-        options.getFov().setValue(Math.round(Check("FOV", options.getFov().getValue(), 30, 110)));
-        options.getDistortionEffectScale().setValue(Check("Distortion Effects", options.getDistortionEffectScale().getValue(), 0, 1));
-        options.getFovEffectScale().setValue(Check("FOV Effects", options.getFovEffectScale().getValue(),0,1));
-        options.getGamma().setValue(Check("Brightness", options.getGamma().getValue(), 0, 1));
-        options.getViewDistance().setValue(Check("Render Distance", options.getViewDistance().getValue(), 2, 32));
-        options.getSimulationDistance().setValue(Check("Simulation Distance", options.getSimulationDistance().getValue(), 5, 32));
-        options.getEntityDistanceScaling().setValue((double) Math.round(Check("Entity Distance", options.getEntityDistanceScaling().getValue(), 0.5f, 5) * 4) / 4);
-        options.getGuiScale().setValue(Check("GUI Scale", options.getGuiScale().getValue(), 0, 4));
+        options.getMouseSensitivity().setValue(check("Sensitivity", options.getMouseSensitivity().getValue(), 0, 1));
+        options.getFov().setValue(Math.round(check("FOV", options.getFov().getValue(), 30, 110)));
+        options.getDistortionEffectScale().setValue(check("Distortion Effects", options.getDistortionEffectScale().getValue(), 0, 1));
+        options.getFovEffectScale().setValue(check("FOV Effects", options.getFovEffectScale().getValue(),0,1));
+        options.getGamma().setValue(check("Brightness", options.getGamma().getValue(), 0, 1));
+        options.getViewDistance().setValue(check("Render Distance", options.getViewDistance().getValue(), 2, 32));
+        options.getSimulationDistance().setValue(check("Simulation Distance", options.getSimulationDistance().getValue(), 5, 32));
+        options.getEntityDistanceScaling().setValue((double) Math.round(check("Entity Distance", options.getEntityDistanceScaling().getValue(), 0.5f, 5) * 4) / 4);
+        options.getGuiScale().setValue(check("GUI Scale", options.getGuiScale().getValue(), 0, 4));
         // Because of DynamicFPS/SleepBackground I will not mess with adjusting FPS :)
-        options.getBiomeBlendRadius().setValue(Check("Biome Blend Radius", options.getBiomeBlendRadius().getValue(), 0, 7));
-        options.getChtOpacity().setValue(Check("Chat Opacity", options.getChtOpacity().getValue(), 0, 1));
-        options.getChatLineSpacing().setValue(Check("Line Spacing", options.getChatLineSpacing().getValue(), 0, 1));
-        options.getTextBackgroundOpacity().setValue(Check("Text Background Opacity", options.getTextBackgroundOpacity().getValue(), 0, 1));
-        options.getChatHeightFocused().setValue(Check("(Chat) Focused Height", options.getChatHeightFocused().getValue(), 0, 1));
-        options.getChatDelay().setValue(Check("Chat Delay", options.getChatDelay().getValue(), 0, 6));
-        options.getChatHeightUnfocused().setValue(Check("(Chat) Unfocused Height", options.getChatHeightUnfocused().getValue(), 0, 1));
-        options.getChatScale().setValue(Check("Chat Text Size", options.getChatScale().getValue(), 0, 1));
-        options.getChatWidth().setValue(Check("Chat Width", options.getChatWidth().getValue(), 0, 1));
+        options.getBiomeBlendRadius().setValue(check("Biome Blend Radius", options.getBiomeBlendRadius().getValue(), 0, 7));
+        options.getChtOpacity().setValue(check("Chat Opacity", options.getChtOpacity().getValue(), 0, 1));
+        options.getChatLineSpacing().setValue(check("Line Spacing", options.getChatLineSpacing().getValue(), 0, 1));
+        options.getTextBackgroundOpacity().setValue(check("Text Background Opacity", options.getTextBackgroundOpacity().getValue(), 0, 1));
+        options.getChatHeightFocused().setValue(check("(Chat) Focused Height", options.getChatHeightFocused().getValue(), 0, 1));
+        options.getChatDelay().setValue(check("Chat Delay", options.getChatDelay().getValue(), 0, 6));
+        options.getChatHeightUnfocused().setValue(check("(Chat) Unfocused Height", options.getChatHeightUnfocused().getValue(), 0, 1));
+        options.getChatScale().setValue(check("Chat Text Size", options.getChatScale().getValue(), 0, 1));
+        options.getChatWidth().setValue(check("Chat Width", options.getChatWidth().getValue(), 0, 1));
         if (options.getMipmapLevels().getValue() < 0 || options.getMipmapLevels().getValue() > 4) {
-            options.getMipmapLevels().setValue(Check("Mipmap Levels", options.getMipmapLevels().getValue(), 0, 4));
+            options.getMipmapLevels().setValue(check("Mipmap Levels", options.getMipmapLevels().getValue(), 0, 4));
             client.setMipmapLevels(options.getMipmapLevels().getValue());
             ((BakedModelManagerAccessor)client.getBakedModelManager()).callApply(((BakedModelManagerAccessor)client.getBakedModelManager()).callPrepare(client.getResourceManager(), client.getProfiler()), client.getResourceManager(), client.getProfiler());
         }
-        options.getMouseWheelSensitivity().setValue(Check("Scroll Sensitivity", options.getMouseWheelSensitivity().getValue(), 0.01, 10));
+        options.getMouseWheelSensitivity().setValue(check("Scroll Sensitivity", options.getMouseWheelSensitivity().getValue(), 0.01, 10));
         for (SoundCategory soundCategory : SoundCategory.values()) {
-            options.setSoundVolume(soundCategory, Check(soundCategory.getName(), options.getSoundVolume(soundCategory)));
+            options.setSoundVolume(soundCategory, check(soundCategory.getName(), options.getSoundVolume(soundCategory)));
         }
 
         if (renderDistanceOnWorldJoin != 0) {
-            renderDistanceOnWorldJoin = Check("Render Distance (On World Join)", renderDistanceOnWorldJoin, 2, 32);
+            renderDistanceOnWorldJoin = check("Render Distance (On World Join)", renderDistanceOnWorldJoin, 2, 32);
         }
         if (simulationDistanceOnWorldJoin != 0) {
-            simulationDistanceOnWorldJoin = Check("Simulation Distance (On World Join)", simulationDistanceOnWorldJoin, 5, 32);
+            simulationDistanceOnWorldJoin = check("Simulation Distance (On World Join)", simulationDistanceOnWorldJoin, 5, 32);
         }
         if (entityDistanceScalingOnWorldJoin != 0) {
-            entityDistanceScalingOnWorldJoin = (double) Math.round(Check("Entity Distance (On World Join)", entityDistanceScalingOnWorldJoin, 0.5f, 5) * 4) / 4;
+            entityDistanceScalingOnWorldJoin = (double) Math.round(check("Entity Distance (On World Join)", entityDistanceScalingOnWorldJoin, 0.5f, 5) * 4) / 4;
         }
         if (fovOnWorldJoin != 0) {
-            fovOnWorldJoin = Math.round(Check("FOV (On World Join)", fovOnWorldJoin, 30, 110));
+            fovOnWorldJoin = Math.round(check("FOV (On World Join)", fovOnWorldJoin, 30, 110));
         }
 
         window.setScaleFactor(window.calculateScaleFactor(options.getGuiScale().getValue(), client.forcesUnicodeFont()));
         LOGGER.info("Finished checking Settings ({} ms)", (System.nanoTime() - start) / 1000000.0f);
     }
 
-    private static double Check(String settingName, double setting, double min, double max) {
+    private static double check(String settingName, double setting, double min, double max) {
         if (setting < min) {
             LOGGER.warn(settingName + " was too low! ({})", setting);
             return min;
@@ -271,7 +271,7 @@ public class StandardSettings {
         return setting;
     }
 
-    private static float Check(String settingName, float setting) {
+    private static float check(String settingName, float setting) {
         if (setting < 0) {
             LOGGER.warn(settingName + " was too low! ({})", setting);
             return 0;
@@ -283,7 +283,7 @@ public class StandardSettings {
         return setting;
     }
 
-    private static int Check(String settingName, int setting, int min, int max) {
+    private static int check(String settingName, int setting, int min, int max) {
         if (setting < min) {
             LOGGER.warn(settingName + " was too low! ({})", setting);
             return min;
