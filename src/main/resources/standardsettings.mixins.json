@@ -8,7 +8,10 @@
     "MinecraftClientAccessor",
     "CreateWorldScreenMixin",
     "MinecraftClientMixin",
-    "WorldSaveHandlerMixin"
+    "WorldSaveHandlerMixin",
+
+    "betterreloads.LanguageOptionsScreenMixin",
+    "betterreloads.VideoOptionsScreenMixin"
   ],
   "injectors": {
     "defaultRequire": 1
