@@ -69,7 +69,7 @@ public class StandardSettings {
                         case "anaglyph3d" -> {
                             if (options.anaglyph3d != Boolean.parseBoolean(strings[1])) {
                                 options.anaglyph3d = Boolean.parseBoolean(strings[1]);
-                                client.stitchTextures();
+                                client.getTextureManager().reload(client.getResourceManager());
                             }
                         }
                         case "maxFps" -> options.maxFramerate = Integer.parseInt(strings[1]);

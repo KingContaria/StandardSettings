@@ -8,9 +8,7 @@
     "MinecraftClientAccessor",
     "GameRendererMixin",
     "MinecraftClientMixin",
-    "WorldSaveHandlerMixin",
-
-    "betterreloads.LanguageOptionsScreenMixin"
+    "WorldSaveHandlerMixin"
   ],
   "injectors": {
     "defaultRequire": 1

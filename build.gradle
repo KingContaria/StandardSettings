@@ -22,11 +22,11 @@ loom {
 	customMinecraftManifest.set("https://meta.legacyfabric.net/v2/manifest/${minecraft_version}")
 
 	// Required by 1.7.x
-	// runs {
-	// 	client {
-	// 		programArgs "--userProperties", "{}"
-	// 	}
-	// }
+	 runs {
+	 	client {
+	 		programArgs "--userProperties", "{}"
+	 	}
+	 }
 }
 
 dependencies {
