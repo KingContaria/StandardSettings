@@ -76,7 +76,7 @@ public class StandardSettings {
                             if (client.window.isFullscreen() != Boolean.parseBoolean(strings[1])) {
                                 if (client.isWindowFocused()) {
                                     client.window.toggleFullscreen();
-                                    options.fullscreen = Boolean.parseBoolean(strings[1]);
+                                    options.fullscreen = client.window.isFullscreen();
                                 } else {
                                     LOGGER.error("Could not reset fullscreen mode because window wasn't focused!");
                                 }
@@ -110,17 +110,17 @@ public class StandardSettings {
                         case "chatWidth" -> options.chatWidth = Double.parseDouble(strings[1]);
                         case "mipmapLevels" -> {
                             if (options.mipmapLevels != Integer.parseInt(strings[1])) {
-                                    client.getSpriteAtlas().setMipLevel(options.mipmapLevels = Integer.parseInt(strings[1]));
-                                    client.getTextureManager().bindTexture(SpriteAtlasTexture.BLOCK_ATLAS_TEX);
-                                    client.getSpriteAtlas().setFilter(false, options.mipmapLevels > 0);
-                                    ((BakedModelManagerAccessor)client.getBakedModelManager()).callApply(((BakedModelManagerAccessor)client.getBakedModelManager()).callPrepare(client.getResourceManager(), client.getProfiler()), client.getResourceManager(), client.getProfiler());
+                                client.getSpriteAtlas().setMipLevel(options.mipmapLevels = Integer.parseInt(strings[1]));
+                                client.getTextureManager().bindTexture(SpriteAtlasTexture.BLOCK_ATLAS_TEX);
+                                client.getSpriteAtlas().setFilter(false, options.mipmapLevels > 0);
+                                ((BakedModelManagerAccessor)client.getBakedModelManager()).callApply(((BakedModelManagerAccessor)client.getBakedModelManager()).callPrepare(client.getResourceManager(), client.getProfiler()), client.getResourceManager(), client.getProfiler());
                             }
                         }
-                        case "mainHand" -> options.mainArm = "left".equals(strings[1]) ? Arm.LEFT : Arm.RIGHT;
+                        case "mainHand" -> options.mainArm = "left".equalsIgnoreCase(strings[1]) ? Arm.LEFT : Arm.RIGHT;
                         case "narrator" -> options.narrator = NarratorOption.byId(Integer.parseInt(strings[1]));
                         case "biomeBlendRadius" -> options.biomeBlendRadius = Integer.parseInt(strings[1]);
                         case "mouseWheelSensitivity" -> options.mouseWheelSensitivity = Double.parseDouble(strings[1]);
-                        case "rawMouseInput" -> Option.RAW_MOUSE_INPUT.set(options, strings[1]);
+                        case "rawMouseInput" -> client.window.method_21668(options.field_20308 = Boolean.parseBoolean(strings[1]));
                         case "chunkborders" -> {
                             if (client.debugRenderer.shouldRender() != Boolean.parseBoolean(strings[1])) {
                                 client.debugRenderer.toggleShowChunkBorder();

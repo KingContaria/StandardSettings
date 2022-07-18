@@ -7,10 +7,7 @@
     "BakedModelManagerAccessor",
     "CreateWorldScreenMixin",
     "MinecraftClientMixin",
-    "WorldSaveHandlerMixin",
-
-    "betterreloads.LanguageOptionsScreenMixin",
-    "betterreloads.VideoOptionsScreenMixin"
+    "WorldSaveHandlerMixin"
   ],
   "injectors": {
     "defaultRequire": 1
