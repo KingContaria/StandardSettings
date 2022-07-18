@@ -40,7 +40,7 @@ public class MinecraftClientMixin {
             try {
                 String l = System.lineSeparator();
                 Files.copy(StandardSettings.optionsFile.toPath(), StandardSettings.standardoptionsFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
-                Files.write(StandardSettings.standardoptionsFile.toPath(), ("chunkborders:" + l + "hitboxes:" + l + "perspective:" + l + "piedirectory:" + l + "renderDistanceOnWorldJoin:" + l + "entityDistanceScalingOnWorldJoin:" + l + "fovOnWorldJoin:").getBytes(), StandardOpenOption.APPEND);
+                Files.write(StandardSettings.standardoptionsFile.toPath(), ("sneaking:" + l + "sprinting:" + l + "chunkborders:" + l + "hitboxes:" + l + "perspective:" + l + "piedirectory:" + l + "renderDistanceOnWorldJoin:" + l + "entityDistanceScalingOnWorldJoin:" + l + "fovOnWorldJoin:").getBytes(), StandardOpenOption.APPEND);
                 StandardSettings.LOGGER.info("Finished creating StandardSettings File ({} ms)", (System.nanoTime() - start) / 1000000.0f);
             } catch (IOException e) {
                 StandardSettings.LOGGER.error("Failed to create StandardSettings File", e);

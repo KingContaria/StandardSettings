@@ -3,7 +3,6 @@ package com.kingcontaria.standardsettings.mixins;
 import com.kingcontaria.standardsettings.StandardSettings;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.world.WorldSaveHandler;
-import org.apache.logging.log4j.Logger;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -30,6 +29,7 @@ public class WorldSaveHandlerMixin {
             }
             try {
                 Files.copy(StandardSettings.lastUsedFile.toPath(), new File(playerDataDir.getParentFile(), "standardoptions.txt").toPath(), StandardCopyOption.REPLACE_EXISTING);
+                StandardSettings.lastUsedFile = null;
                 StandardSettings.LOGGER.info("Saved standardoptions.txt to world file");
             } catch (IOException e) {
                 StandardSettings.LOGGER.error("Failed to save standardoptions.txt to world file", e);
