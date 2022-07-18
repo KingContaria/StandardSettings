@@ -6,7 +6,6 @@ import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.options.GameOptions;
 import net.minecraft.client.options.KeyBinding;
 import net.minecraft.client.render.entity.PlayerModelPart;
-import net.minecraft.client.resource.language.LanguageDefinition;
 import net.minecraft.client.sound.SoundCategory;
 import net.minecraft.client.texture.SpriteAtlasTexture;
 import net.minecraft.entity.player.PlayerEntity;
@@ -14,8 +13,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.*;
-import java.util.Map;
-import java.util.Objects;
 
 public class StandardSettings {
 
@@ -71,7 +68,7 @@ public class StandardSettings {
                         case "anaglyph3d" -> {
                             if (options.anaglyph3d != Boolean.parseBoolean(strings[1])) {
                                 options.anaglyph3d = Boolean.parseBoolean(strings[1]);
-                                client.stitchTextures();
+                                client.getTextureManager().reload(client.getResourceManager());
                             }
                         }
                         case "maxFps" -> options.maxFramerate = Integer.parseInt(strings[1]);
@@ -93,7 +90,6 @@ public class StandardSettings {
                             if (options.fullscreen != Boolean.parseBoolean(strings[1])) {
                                 if (client.isWindowFocused()) {
                                     client.toggleFullscreen();
-                                    options.fullscreen = Boolean.parseBoolean(strings[1]);
                                 } else {
                                     LOGGER.error("Could not reset fullscreen mode because window wasn't focused!");
                                 }
@@ -113,7 +109,7 @@ public class StandardSettings {
                                 client.getSpriteAtlasTexture().setMaxTextureSize(options.mipmapLevels = Integer.parseInt(strings[1]));
                                 client.getTextureManager().bindTexture(SpriteAtlasTexture.BLOCK_ATLAS_TEX);
                                 client.getSpriteAtlasTexture().setFilter(false, options.mipmapLevels > 0);
-                                ((MinecraftClientAccessor)client).getModelManager().reload(client.getResourceManager());
+                                client.getTextureManager().reload(client.getResourceManager());
                             }
                         }
                         case "forceUnicodeFont" -> client.textRenderer.method_960(options.forceUnicode = Boolean.parseBoolean(strings[1]));
