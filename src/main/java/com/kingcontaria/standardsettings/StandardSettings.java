@@ -68,7 +68,7 @@ public class StandardSettings {
                         case "anaglyph3d" -> {
                             if (options.anaglyph3d != Boolean.parseBoolean(strings[1])) {
                                 options.anaglyph3d = Boolean.parseBoolean(strings[1]);
-                                client.stitchTextures();
+                                client.getTextureManager().reload(client.getResourceManager());
                             }
                         }
                         case "maxFps" -> options.maxFramerate = Integer.parseInt(strings[1]);
@@ -89,7 +89,6 @@ public class StandardSettings {
                             if (options.fullscreen != Boolean.parseBoolean(strings[1])) {
                                 if (client.isWindowFocused()) {
                                     client.toggleFullscreen();
-                                    options.fullscreen = Boolean.parseBoolean(strings[1]);
                                 } else {
                                     LOGGER.error("Could not reset fullscreen mode because window wasn't focused!");
                                 }
