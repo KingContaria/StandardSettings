@@ -29,6 +29,7 @@ public class WorldSaveHandlerMixin {
             }
             try {
                 Files.copy(StandardSettings.lastUsedFile.toPath(), new File(playerDataDir.getParentFile(), "standardoptions.txt").toPath(), StandardCopyOption.REPLACE_EXISTING);
+                StandardSettings.lastUsedFile = null;
                 StandardSettings.LOGGER.info("Saved standardoptions.txt to world file");
             } catch (IOException e) {
                 StandardSettings.LOGGER.error("Failed to save standardoptions.txt to world file", e);
