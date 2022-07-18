@@ -82,7 +82,7 @@ public class StandardSettings {
                             if (window.isFullscreen() != Boolean.parseBoolean(strings[1])) {
                                 if (client.isWindowFocused()) {
                                     window.toggleFullscreen();
-                                    options.fullscreen = Boolean.parseBoolean(strings[1]);
+                                    options.fullscreen = window.isFullscreen();
                                 } else {
                                     LOGGER.error("Could not reset fullscreen mode because window wasn't focused!");
                                 }
@@ -129,12 +129,14 @@ public class StandardSettings {
                                 ((BakedModelManagerAccessor)client.getBakedModelManager()).callApply(((BakedModelManagerAccessor)client.getBakedModelManager()).callPrepare(client.getResourceManager(), client.getProfiler()), client.getResourceManager(), client.getProfiler());
                             }
                         }
-                        case "mainHand" -> options.mainArm = "left".equals(strings[1]) ? Arm.LEFT : Arm.RIGHT;
+                        case "mainHand" -> options.mainArm = "left".equalsIgnoreCase(strings[1]) ? Arm.LEFT : Arm.RIGHT;
                         case "narrator" -> options.narrator = NarratorMode.byId(Integer.parseInt(strings[1]));
                         case "biomeBlendRadius" -> options.biomeBlendRadius = Integer.parseInt(strings[1]);
                         case "mouseWheelSensitivity" -> options.mouseWheelSensitivity = Double.parseDouble(strings[1]);
                         case "rawMouseInput" -> window.setRawMouseMotion(options.rawMouseInput = Boolean.parseBoolean(strings[1]));
                         case "showAutosaveIndicator" -> options.showAutosaveIndicator = Boolean.parseBoolean(strings[1]);
+                        case "sneaking" -> options.sneakKey.setPressed(options.sneakToggled && Boolean.parseBoolean(strings[1]));
+                        case "sprinting" -> options.sprintKey.setPressed(options.sprintToggled && Boolean.parseBoolean(strings[1]));
                         case "chunkborders" -> {
                             if (client.debugRenderer.toggleShowChunkBorder() != Boolean.parseBoolean(strings[1])) {
                                 client.debugRenderer.toggleShowChunkBorder();
@@ -171,7 +173,7 @@ public class StandardSettings {
                     }
                     // Some options.txt settings which aren't accessible in vanilla Minecraft and some unnecessary settings (like Multiplayer stuff) are not included.
                 } catch (Exception exception) {
-                    if (!string.equals("chunkborders:") && !string.equals("hitboxes:") && !string.equals("perspective:") && !string.equals("piedirectory:") && !string.equals("renderDistanceOnWorldJoin:") && !string.equals("simulationDistanceOnWorldJoin:") && !string.equals("entityDistanceScalingOnWorldJoin:") && !string.equals("fovOnWorldJoin:") && !string.equals("lastServer:")) {
+                    if (!string.equals("sneaking:") && !string.equals("sprinting:") && !string.equals("chunkborders:") && !string.equals("hitboxes:") && !string.equals("perspective:") && !string.equals("piedirectory:") && !string.equals("renderDistanceOnWorldJoin:") && !string.equals("simulationDistanceOnWorldJoin:") && !string.equals("entityDistanceScalingOnWorldJoin:") && !string.equals("fovOnWorldJoin:") && !string.equals("lastServer:")) {
                         LOGGER.warn("Skipping bad StandardSetting: " + string);
                     }
                 }
