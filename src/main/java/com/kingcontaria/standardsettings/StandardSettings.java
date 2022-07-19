@@ -176,10 +176,10 @@ public class StandardSettings {
         long start = System.nanoTime();
 
         if (renderDistanceOnWorldJoin != 0) {
-            Option.RENDER_DISTANCE.set(options, renderDistanceOnWorldJoin);
+            options.viewDistance = renderDistanceOnWorldJoin;
         }
         if (fovOnWorldJoin != 0) {
-            Option.FOV.set(options, fovOnWorldJoin);
+            options.fov = fovOnWorldJoin;
         }
         if (fovOnWorldJoin != 0 || renderDistanceOnWorldJoin != 0) {
             fovOnWorldJoin = renderDistanceOnWorldJoin = 0;
@@ -196,7 +196,7 @@ public class StandardSettings {
         options.gamma = check("Brightness", options.gamma, 0, 5);
         options.viewDistance = check("Render Distance", options.viewDistance, 2, 32);
         options.guiScale = check("GUI Scale", options.guiScale, 0, 4);
-        // Because of DynamicFPS/SleepBackground I will not mess with adjusting FPS :)
+        options.maxFps = check("Max FPS", options.maxFps, 1, 260);
         options.biomeBlendRadius = check("Biome Blend Radius", options.biomeBlendRadius, 0, 7);
         options.chatOpacity = check("Chat Opacity", options.chatOpacity, 0, 1);
         options.textBackgroundOpacity = check("Text Background Opacity", options.textBackgroundOpacity, 0, 1);
