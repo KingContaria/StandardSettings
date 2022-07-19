@@ -58,10 +58,10 @@ public class StandardSettings {
                 String[] string0_split = strings[0].split("_", 2);
                 try {
                     switch (string0_split[0]) {
+                        case "invertYMouse" -> options.invertYMouse = Boolean.parseBoolean(strings[1]);
                         case "mouseSensitivity" -> options.sensitivity = Float.parseFloat(strings[1]);
                         case "fov" -> options.fov = Float.parseFloat(strings[1]) * 40.0f + 70.0f;
                         case "gamma" -> options.gamma = Float.parseFloat(strings[1]);
-                        case "invertYMouse" -> options.invertYMouse = Boolean.parseBoolean(strings[1]);
                         case "renderDistance" -> options.viewDistance = Integer.parseInt(strings[1]);
                         case "guiScale" -> options.guiScale = Integer.parseInt(strings[1]);
                         case "particles" -> options.particle = Integer.parseInt(strings[1]);
@@ -182,7 +182,7 @@ public class StandardSettings {
         options.gamma = check("Brightness", options.gamma, 0, 5);
         options.viewDistance = check("Render Distance", options.viewDistance, 2, 32);
         options.guiScale = check("GUI Scale", options.guiScale, 0, 4);
-        // Because of DynamicFPS/SleepBackground I will not mess with adjusting FPS :)
+        options.maxFramerate = check("Max FPS", options.maxFramerate, 1, 260);
         options.chatOpacity = check("Chat Opacity", options.chatOpacity, 0, 1);
         options.chatHeightFocused = check("(Chat) Focused Height", options.chatHeightFocused, 0, 1);
         options.chatHeightUnfocused = check("(Chat) Unfocused Height", options.chatHeightUnfocused, 0, 1);
