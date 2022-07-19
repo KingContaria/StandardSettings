@@ -181,13 +181,13 @@ public class StandardSettings {
         long start = System.nanoTime();
 
         if (renderDistanceOnWorldJoin != 0) {
-            Option.RENDER_DISTANCE.set(options, renderDistanceOnWorldJoin);
+            options.viewDistance = renderDistanceOnWorldJoin;
         }
         if (entityDistanceScalingOnWorldJoin != 0) {
-            Option.ENTITY_DISTANCE_SCALING.set(options, entityDistanceScalingOnWorldJoin);
+            options.entityDistanceScaling = entityDistanceScalingOnWorldJoin;
         }
         if (fovOnWorldJoin != 0) {
-            Option.FOV.set(options, fovOnWorldJoin);
+            options.fov = fovOnWorldJoin;
         }
         if (fovOnWorldJoin != 0 || renderDistanceOnWorldJoin != 0 || entityDistanceScalingOnWorldJoin != 0) {
             fovOnWorldJoin = entityDistanceScalingOnWorldJoin = renderDistanceOnWorldJoin = 0;
@@ -203,9 +203,9 @@ public class StandardSettings {
         options.fov = Math.round(check("FOV", options.fov, 30, 110));
         options.gamma = check("Brightness", options.gamma, 0, 5);
         options.viewDistance = check("Render Distance", options.viewDistance, 2, 32);
-        options.entityDistanceScaling = (float) Math.round(check("Entity Distance", options.entityDistanceScaling, 0.5f, 5) * 4) / 4;
+        //options.entityDistanceScaling = (float) Math.round(check("Entity Distance", options.entityDistanceScaling, 0.5f, 5) * 4) / 4;
         options.guiScale = check("GUI Scale", options.guiScale, 0, 4);
-        // Because of DynamicFPS/SleepBackground I will not mess with adjusting FPS :)
+        options.maxFps = check("Max FPS", options.maxFps, 1, 260);
         options.biomeBlendRadius = check("Biome Blend Radius", options.biomeBlendRadius, 0, 7);
         options.chatOpacity = check("Chat Opacity", options.chatOpacity, 0, 1);
         options.chatLineSpacing = check("Line Spacing", options.chatLineSpacing, 0, 1);
