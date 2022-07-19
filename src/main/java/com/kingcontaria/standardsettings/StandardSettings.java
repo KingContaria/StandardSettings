@@ -15,6 +15,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.*;
+import java.util.Optional;
 
 @Environment(value= EnvType.CLIENT)
 public class StandardSettings {
@@ -112,6 +113,17 @@ public class StandardSettings {
                         case "chatLineSpacing" -> options.chatLineSpacing = Double.parseDouble(strings[1]);
                         case "textBackgroundOpacity" -> options.textBackgroundOpacity = Double.parseDouble(strings[1]);
                         case "backgroundForChatOnly" -> options.backgroundForChatOnly = Boolean.parseBoolean(strings[1]);
+                        case "fullscreenResolution" -> {
+                            if (!strings[1].equals(options.fullscreenResolution)) {
+                                for (int i = 0; i < window.getMonitor().getVideoModeCount(); i++) {
+                                    if (window.getMonitor().getVideoMode(i).asString().equals(strings[1])) {
+                                        window.setVideoMode(Optional.ofNullable(window.getMonitor().getVideoMode(i)));
+                                        window.applyVideoMode(); break;
+                                    }
+                                }
+                                LOGGER.warn("Could not find specified Fullscreen Resolution: " + strings[1]);
+                            }
+                        }
                         case "advancedItemTooltips" -> options.advancedItemTooltips = Boolean.parseBoolean(strings[1]);
                         case "pauseOnLostFocus" -> options.pauseOnLostFocus = Boolean.parseBoolean(strings[1]);
                         case "chatHeightFocused" -> options.chatHeightFocused = Double.parseDouble(strings[1]);
