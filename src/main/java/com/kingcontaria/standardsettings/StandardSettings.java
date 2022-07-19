@@ -224,7 +224,7 @@ public class StandardSettings {
         options.getSimulationDistance().setValue(check("Simulation Distance", options.getSimulationDistance().getValue(), 5, 32));
         options.getEntityDistanceScaling().setValue((double) Math.round(check("Entity Distance", options.getEntityDistanceScaling().getValue(), 0.5f, 5) * 4) / 4);
         options.getGuiScale().setValue(check("GUI Scale", options.getGuiScale().getValue(), 0, 4));
-        // Because of DynamicFPS/SleepBackground I will not mess with adjusting FPS :)
+        options.getMaxFps().setValue(check("Max FPS", options.getMaxFps().getValue(), 1, 260));
         options.getBiomeBlendRadius().setValue(check("Biome Blend Radius", options.getBiomeBlendRadius().getValue(), 0, 7));
         options.getChtOpacity().setValue(check("Chat Opacity", options.getChtOpacity().getValue(), 0, 1));
         options.getChatLineSpacing().setValue(check("Line Spacing", options.getChatLineSpacing().getValue(), 0, 1));
