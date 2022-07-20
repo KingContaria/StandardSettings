@@ -14,7 +14,7 @@
 
   "license": "CC0-1.0",
 
-  "environment": "*",
+  "environment": "client",
   "mixins": [
     "standardsettings.mixins.json"
   ],
