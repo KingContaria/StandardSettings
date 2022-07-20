@@ -1,18 +1,19 @@
 package com.kingcontaria.standardsettings;
 
-import com.kingcontaria.standardsettings.mixins.LanguageManagerAccessor;
 import com.kingcontaria.standardsettings.mixins.MinecraftClientAccessor;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.hud.ChatVisibility;
 import net.minecraft.client.options.GameOptions;
 import net.minecraft.client.options.KeyBinding;
 import net.minecraft.client.render.entity.EntityRenderDispatcher;
+import net.minecraft.client.resource.language.LanguageDefinition;
 import net.minecraft.client.sound.SoundCategory;
 import net.minecraft.world.Difficulty;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.*;
+import java.util.SortedSet;
 
 public class StandardSettings {
 
@@ -78,10 +79,14 @@ public class StandardSettings {
                         case "ao" -> options.ao = strings[1].equals("true") ? 2 : (strings[1].equals("false") ? 0 : Integer.parseInt(strings[1]));
                         case "clouds" -> options.renderClouds = Boolean.parseBoolean(strings[1]);
                         case "lang" -> {
-                            if (!options.language.equals(strings[1]) && ((LanguageManagerAccessor)client.getLanguageManager()).getField_6653().containsKey(strings[1])) {
-                                client.getLanguageManager().method_5939(((LanguageManagerAccessor)client.getLanguageManager()).getField_6653().get(options.language = strings[1]));
-                                client.getLanguageManager().reload(client.getResourceManager());
+                            for (LanguageDefinition languageDefinition : (SortedSet<LanguageDefinition>) client.getLanguageManager().method_5943()) {
+                                if (strings[1].equals(languageDefinition.method_5935())) {
+                                    client.getLanguageManager().method_5939(languageDefinition);
+                                    client.getLanguageManager().reload(client.getResourceManager());
+                                    options.language = languageDefinition.method_5935(); break;
+                                }
                             }
+                            LOGGER.warn("Could not resolve Language Code: " + strings[1]);
                         }
                         case "chatVisibility" -> options.field_7671 = ChatVisibility.get(Integer.parseInt(strings[1]));
                         case "chatColors" -> options.chatColor = Boolean.parseBoolean(strings[1]);
@@ -119,10 +124,13 @@ public class StandardSettings {
                                 reload = true;
                             }
                         }
-                        case "forceUnicodeFont" -> client.textRenderer.method_960(options.forceUnicode = Boolean.parseBoolean(strings[1]));
+                        case "forceUnicodeFont" -> client.textRenderer.method_960(client.getLanguageManager().method_5938() || (options.forceUnicode = Boolean.parseBoolean(strings[1])));
                         case "hitboxes" -> EntityRenderDispatcher.field_5192 = Boolean.parseBoolean(strings[1]);
-                        case "perspective" -> options.perspective = Integer.parseInt(strings[1]);
-                        case "piedirectory" -> ((MinecraftClientAccessor)client).setOpenProfilerSection(strings[1]);
+                        case "perspective" -> options.perspective = Integer.parseInt(strings[1]) % 3;
+                        case "piedirectory" -> {
+                            if (!strings[1].split("\\.")[0].equals("root")) break;
+                            ((MinecraftClientAccessor)client).setOpenProfilerSection(strings[1]);
+                        }
                         case "fovOnWorldJoin" -> fovOnWorldJoin = Float.parseFloat(strings[1]);
                         case "renderDistanceOnWorldJoin" -> renderDistanceOnWorldJoin = Integer.parseInt(strings[1]);
                         case "key" -> {
@@ -142,7 +150,7 @@ public class StandardSettings {
                     }
                     // Some options.txt settings which aren't accessible in vanilla Minecraft and some unnecessary settings (like Multiplayer and Streaming stuff) are not included.
                 } catch (Exception exception) {
-                    if (!string.equals("hitboxes:") && !string.equals("perspective:") && !string.equals("piedirectory:") && !string.equals("renderDistanceOnWorldJoin:") && !string.equals("fovOnWorldJoin:") && !string.equals("lastServer:")) {
+                    if (!string.equals("hitboxes:") && !string.equals("perspective:") && !string.equals("renderDistanceOnWorldJoin:") && !string.equals("fovOnWorldJoin:") && !string.equals("lastServer:")) {
                         LOGGER.warn("Skipping bad StandardSetting: " + string);
                     }
                 }
@@ -194,7 +202,7 @@ public class StandardSettings {
             client.getSpriteAtlasTexture().load(client.getResourceManager());
         }
         for (SoundCategory soundCategory : SoundCategory.values()) {
-            options.setSoundVolume(soundCategory, check(soundCategory.getName(), options.getSoundVolume(soundCategory), 0, 1));
+            options.setSoundVolume(soundCategory, check("(Music & Sounds) " + soundCategory.name(), options.getSoundVolume(soundCategory), 0, 1));
         }
 
         if (renderDistanceOnWorldJoin != 0) {
