@@ -4,7 +4,6 @@
   "package": "com.kingcontaria.standardsettings.mixins",
   "compatibilityLevel": "JAVA_8",
   "client": [
-    "LanguageManagerAccessor",
     "MinecraftClientAccessor",
     "GameRendererMixin",
     "MinecraftClientMixin",
