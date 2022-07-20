@@ -18,7 +18,7 @@ import java.nio.file.StandardOpenOption;
 public class MinecraftClientMixin {
 
     @Inject(method = "<init>", at = @At("RETURN"))
-    private void initializeStandardSettings(RunArgs args, CallbackInfo ci){
+    private void initializeStandardSettings(RunArgs args, CallbackInfo ci) {
         if (StandardSettings.standardoptionsFile.exists()) {
             StandardSettings.LOGGER.info("Loading StandardSettings...");
             StandardSettings.load();

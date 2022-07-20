@@ -14,7 +14,7 @@ public class CreateWorldScreenMixin {
     private static boolean bl = true;
 
     @Inject(method = "createLevel()V", at = @At("HEAD"))
-    private void resetSettings(CallbackInfo info){
+    private void resetSettings(CallbackInfo info) {
         if (bl) {
             StandardSettings.LOGGER.info("Reset to StandardSettings...");
             StandardSettings.load();
