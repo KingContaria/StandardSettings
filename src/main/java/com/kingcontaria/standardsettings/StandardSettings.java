@@ -39,8 +39,6 @@ public class StandardSettings {
 
         fovOnWorldJoin = entityDistanceScalingOnWorldJoin = renderDistanceOnWorldJoin = simulationDistanceOnWorldJoin = 0;
 
-        System.out.println(options.soundDevice);
-
         try {
             if (!standardoptionsFile.exists()) {
                 LOGGER.error("standardoptions.txt is missing");
@@ -73,8 +71,8 @@ public class StandardSettings {
                         case "chatLinksPrompt" -> options.chatLinksPrompt = Boolean.parseBoolean(strings[1]);
                         case "enableVsync" -> window.setVsync(options.enableVsync = Boolean.parseBoolean(strings[1]));
                         case "entityShadows" -> options.entityShadows = Boolean.parseBoolean(strings[1]);
-                        case "forceUnicodeFont" -> ((MinecraftClientAccessor) client).callInitFont(options.forceUnicodeFont = Boolean.parseBoolean(strings[1]));
-                        case "discrete_mouse_scroll" -> options.discreteMouseScroll = Boolean.parseBoolean(strings[1]);
+                        case "forceUnicodeFont" -> ((MinecraftClientAccessor)client).callInitFont(options.forceUnicodeFont = Boolean.parseBoolean(strings[1]));
+                        case "discrete" -> options.discreteMouseScroll = Boolean.parseBoolean(strings[1]);
                         case "invertYMouse" -> options.invertYMouse = Boolean.parseBoolean(strings[1]);
                         case "reducedDebugInfo" -> options.reducedDebugInfo = Boolean.parseBoolean(strings[1]);
                         case "showSubtitles" -> options.showSubtitles = Boolean.parseBoolean(strings[1]);
@@ -109,8 +107,9 @@ public class StandardSettings {
                         case "renderClouds" -> options.cloudRenderMode = strings[1].equals("true") ? CloudRenderMode.FANCY : strings[1].equals("false") ? CloudRenderMode.OFF : CloudRenderMode.FAST;
                         case "attackIndicator" -> options.attackIndicator = AttackIndicator.byId(Integer.parseInt(strings[1]));
                         case "lang" -> {
-                            client.getLanguageManager().setLanguage(client.getLanguageManager().getLanguage((options.language = strings[1])));
+                            client.getLanguageManager().setLanguage(client.getLanguageManager().getLanguage(strings[1]));
                             client.getLanguageManager().reload(client.getResourceManager());
+                            options.language = client.getLanguageManager().getLanguage().getCode();
                         }
                         case "chatVisibility" -> options.chatVisibility = ChatVisibility.byId(Integer.parseInt(strings[1]));
                         case "chatOpacity" -> options.chatOpacity = Double.parseDouble(strings[1]);
@@ -119,13 +118,17 @@ public class StandardSettings {
                         case "backgroundForChatOnly" -> options.backgroundForChatOnly = Boolean.parseBoolean(strings[1]);
                         case "fullscreenResolution" -> {
                             if (!strings[1].equals(options.fullscreenResolution)) {
+                                if (strings[1].equals("")) {
+                                    window.setVideoMode(Optional.empty());
+                                    window.applyVideoMode(); break;
+                                }
                                 for (int i = 0; i < window.getMonitor().getVideoModeCount(); i++) {
                                     if (window.getMonitor().getVideoMode(i).asString().equals(strings[1])) {
                                         window.setVideoMode(Optional.ofNullable(window.getMonitor().getVideoMode(i)));
                                         window.applyVideoMode(); break;
                                     }
                                 }
-                                LOGGER.warn("Could not find specified Fullscreen Resolution: " + strings[1]);
+                                LOGGER.warn("Could not resolve Fullscreen Resolution: " + strings[1]);
                             }
                         }
                         case "advancedItemTooltips" -> options.advancedItemTooltips = Boolean.parseBoolean(strings[1]);
@@ -155,8 +158,11 @@ public class StandardSettings {
                             }
                         }
                         case "hitboxes" -> client.getEntityRenderDispatcher().setRenderHitboxes(Boolean.parseBoolean(strings[1]));
-                        case "perspective" -> options.setPerspective(strings[1].equals("THIRD_PERSON_BACK") ? Perspective.THIRD_PERSON_BACK : strings[1].equals("THIRD_PERSON_FRONT") ? Perspective.THIRD_PERSON_FRONT : Perspective.FIRST_PERSON);
-                        case "piedirectory" -> ((MinecraftClientAccessor)client).setOpenProfilerSection(strings[1].replace(".",""));
+                        case "perspective" -> options.setPerspective(Perspective.values()[Integer.parseInt(strings[1]) % 3]);
+                        case "piedirectory" -> {
+                            if (!strings[1].split("\\.")[0].equals("root")) break;
+                            ((MinecraftClientAccessor)client).setOpenProfilerSection(strings[1].replace('.','\u001e'));
+                        }
                         case "fovOnWorldJoin" -> fovOnWorldJoin = Double.parseDouble(strings[1]);
                         case "renderDistanceOnWorldJoin" -> renderDistanceOnWorldJoin = Integer.parseInt(strings[1]);
                         case "simulationDistanceOnWorldJoin" -> simulationDistanceOnWorldJoin = Integer.parseInt(strings[1]);
@@ -185,7 +191,7 @@ public class StandardSettings {
                     }
                     // Some options.txt settings which aren't accessible in vanilla Minecraft and some unnecessary settings (like Multiplayer stuff) are not included.
                 } catch (Exception exception) {
-                    if (!string.equals("sneaking:") && !string.equals("sprinting:") && !string.equals("chunkborders:") && !string.equals("hitboxes:") && !string.equals("perspective:") && !string.equals("piedirectory:") && !string.equals("renderDistanceOnWorldJoin:") && !string.equals("simulationDistanceOnWorldJoin:") && !string.equals("entityDistanceScalingOnWorldJoin:") && !string.equals("fovOnWorldJoin:") && !string.equals("lastServer:")) {
+                    if (!string.equals("sneaking:") && !string.equals("sprinting:") && !string.equals("chunkborders:") && !string.equals("hitboxes:") && !string.equals("perspective:") && !string.equals("renderDistanceOnWorldJoin:") && !string.equals("simulationDistanceOnWorldJoin:") && !string.equals("entityDistanceScalingOnWorldJoin:") && !string.equals("fovOnWorldJoin:") && !string.equals("lastServer:")) {
                         LOGGER.warn("Skipping bad StandardSetting: " + string);
                     }
                 }
@@ -199,7 +205,7 @@ public class StandardSettings {
         }
     }
 
-    public static void changeSettingsOnJoin(){
+    public static void changeSettingsOnJoin() {
         long start = System.nanoTime();
 
         if (renderDistanceOnWorldJoin != 0) {
@@ -249,14 +255,14 @@ public class StandardSettings {
         }
         options.mouseWheelSensitivity = check("Scroll Sensitivity", options.mouseWheelSensitivity, 0.01, 10);
         for (SoundCategory soundCategory : SoundCategory.values()) {
-            options.setSoundVolume(soundCategory, check(soundCategory.getName(), options.getSoundVolume(soundCategory), 0, 1));
+            options.setSoundVolume(soundCategory, check("(Music & Sounds) " + soundCategory.name(), options.getSoundVolume(soundCategory), 0, 1));
         }
 
         if (renderDistanceOnWorldJoin != 0) {
             renderDistanceOnWorldJoin = check("Render Distance (On World Join)",renderDistanceOnWorldJoin,2,32);
         }
         if (simulationDistanceOnWorldJoin != 0) {
-            simulationDistanceOnWorldJoin = check("Simulation Distance", simulationDistanceOnWorldJoin, 5, 32);
+            simulationDistanceOnWorldJoin = check("Simulation Distance (On World Join)", simulationDistanceOnWorldJoin, 5, 32);
         }
         if (entityDistanceScalingOnWorldJoin != 0) {
             entityDistanceScalingOnWorldJoin = (float) Math.round(check("Entity Distance (On World Join)", entityDistanceScalingOnWorldJoin, 0.5f, 5) * 4) / 4;
@@ -265,7 +271,7 @@ public class StandardSettings {
             fovOnWorldJoin = Math.round(check("FOV (On World Join)", fovOnWorldJoin, 30, 110));
         }
 
-        window.setScaleFactor(window.calculateScaleFactor(options.guiScale, client.forcesUnicodeFont()));
+        window.setScaleFactor(window.calculateScaleFactor(options.guiScale, options.forceUnicodeFont));
         LOGGER.info("Finished checking Settings ({} ms)", (System.nanoTime() - start) / 1000000.0f);
     }
 
