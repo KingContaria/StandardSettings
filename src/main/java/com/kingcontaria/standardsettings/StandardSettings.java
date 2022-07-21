@@ -23,7 +23,6 @@ public class StandardSettings {
     public static final File standardoptionsFile = new File("config/standardoptions.txt");
     public static File lastUsedFile;
     public static long fileLastModified;
-    public static final File optionsFile = new File("options.txt");
     public static boolean changeOnGainedFocus = false;
     private static int renderDistanceOnWorldJoin;
     private static float fovOnWorldJoin;
@@ -44,7 +43,7 @@ public class StandardSettings {
             boolean reload = false;
             String string = bufferedReader.readLine();
 
-            if (new File(string).exists()) {
+            if (string != null && new File(string).exists()) {
                 LOGGER.info("Using global standardoptions file");
                 bufferedReader.close();
                 bufferedReader = new BufferedReader(new FileReader(lastUsedFile = new File(string)));
@@ -55,9 +54,9 @@ public class StandardSettings {
             fileLastModified = lastUsedFile.lastModified();
 
             do {
-                String[] strings = string.split(":", 2);
-                String[] string0_split = strings[0].split("_", 2);
                 try {
+                    String[] strings = string.split(":", 2);
+                    String[] string0_split = strings[0].split("_", 2);
                     switch (string0_split[0]) {
                         case "invertYMouse" -> options.invertYMouse = Boolean.parseBoolean(strings[1]);
                         case "mouseSensitivity" -> options.sensitivity = Float.parseFloat(strings[1]);
@@ -150,7 +149,7 @@ public class StandardSettings {
                     }
                     // Some options.txt settings which aren't accessible in vanilla Minecraft and some unnecessary settings (like Multiplayer and Streaming stuff) are not included.
                 } catch (Exception exception) {
-                    if (!string.equals("hitboxes:") && !string.equals("perspective:") && !string.equals("renderDistanceOnWorldJoin:") && !string.equals("fovOnWorldJoin:") && !string.equals("lastServer:")) {
+                    if (string != null && !string.equals("hitboxes:") && !string.equals("perspective:") && !string.equals("renderDistanceOnWorldJoin:") && !string.equals("fovOnWorldJoin:") && !string.equals("lastServer:")) {
                         LOGGER.warn("Skipping bad StandardSetting: " + string);
                     }
                 }
@@ -189,7 +188,7 @@ public class StandardSettings {
         options.fov = Math.round(check("FOV", options.fov, 30, 110));
         options.gamma = check("Brightness", options.gamma, 0, 5);
         options.viewDistance = check("Render Distance", options.viewDistance, 2, 32);
-        options.guiScale = check("GUI Scale", options.guiScale, 0, 4);
+        options.guiScale = check("GUI Scale", options.guiScale, 0, 3);
         options.maxFramerate = check("Max FPS", options.maxFramerate, 1, 260);
         options.chatOpacity = check("Chat Opacity", options.chatOpacity, 0, 1);
         options.chatHeightFocused = check("(Chat) Focused Height", options.chatHeightFocused, 0, 1);
@@ -237,5 +236,51 @@ public class StandardSettings {
             return max;
         }
         return setting;
+    }
+
+    public static String getStandardoptionsTxt() {
+        String l = System.lineSeparator();
+        StringBuilder string = new StringBuilder("chatColors:" + options.chatColor + l +
+                "chatLinks:" + options.chatLink + l +
+                "chatLinksPrompt:" + options.chatLinkPrompt + l +
+                "enableVsync:" + options.vsync + l +
+                "forceUnicodeFont:" + options.forceUnicode + l +
+                "invertYMouse:" + options.invertYMouse + l +
+                "touchscreen:" + options.touchScreen + l +
+                "fullscreen:" + options.fullscreen + l +
+                "bobView:" + options.bobView + l +
+                "anaglyph3d:" + options.anaglyph3d + l +
+                "mouseSensitivity:" + options.sensitivity + l +
+                "fov:" + (options.fov - 70.0f) / 40.0f + l +
+                "gamma:" + options.gamma + l +
+                "renderDistance:" + options.viewDistance + l +
+                "guiScale:" + options.guiScale + l +
+                "particles:" + options.particle + l +
+                "maxFps:" + options.maxFramerate + l +
+                "difficulty:" + options.difficulty + l +
+                "fancyGraphics:" + options.fancyGraphics + l +
+                "ao:" + options.ao + l +
+                "clouds:" + options.renderClouds + l +
+                "lang:" + options.language + l +
+                "chatVisibility:" + options.field_7671.getId() + l +
+                "chatOpacity:" + options.chatOpacity + l +
+                "advancedItemTooltips:" + options.advancedItemTooltips + l +
+                "pauseOnLostFocus:" + options.pauseOnLostFocus + l +
+                "showCape:" + options.field_5053 + l +
+                "chatHeightFocused:" + options.chatHeightFocused + l +
+                "chatHeightUnfocused:" + options.chatHeightUnfocused + l +
+                "chatScale:" + options.chatScale + l +
+                "chatWidth:" + options.chatWidth + l +
+                "mipmapLevels:" + options.mipmapLevels + l +
+                "anisotropicFiltering:" + options.field_7638 + l);
+        for (KeyBinding keyBinding : options.keysAll) {
+            string.append("key_").append(keyBinding.getTranslationKey()).append(":").append(keyBinding.getCode()).append(l);
+        }
+        for (SoundCategory soundCategory : SoundCategory.values()) {
+            string.append("soundCategory_").append(soundCategory.getName()).append(":").append(options.getSoundVolume(soundCategory)).append(l);
+        }
+        string.append("hitboxes:").append(l).append("perspective:").append(l).append("piedirectory:").append(l).append("fovOnWorldJoin:").append(l).append("renderDistanceOnWorldJoin:");
+
+        return string.toString();
     }
 }
