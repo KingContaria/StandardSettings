@@ -27,7 +27,6 @@ public class StandardSettings {
     public static final File standardoptionsFile = new File("config/standardoptions.txt");
     public static File lastUsedFile;
     public static long fileLastModified;
-    public static final File optionsFile = options.getOptionsFile();
     public static boolean changeOnGainedFocus = false;
     private static int renderDistanceOnWorldJoin;
     private static int simulationDistanceOnWorldJoin;
@@ -49,7 +48,7 @@ public class StandardSettings {
 
             String string = bufferedReader.readLine();
 
-            if (new File(string).exists()) {
+            if (string != null && new File(string).exists()) {
                 LOGGER.info("Using global standardoptions file");
                 bufferedReader.close();
                 bufferedReader = new BufferedReader(new FileReader(lastUsedFile = new File(string)));
@@ -60,9 +59,9 @@ public class StandardSettings {
             fileLastModified = lastUsedFile.lastModified();
 
             do {
-                String[] strings = string.split(":", 2);
-                String[] string0_split = strings[0].split("_", 2);
                 try {
+                    String[] strings = string.split(":", 2);
+                    String[] string0_split = strings[0].split("_", 2);
                     switch (string0_split[0]) {
                         case "autoJump" -> options.getAutoJump().setValue(Boolean.parseBoolean(strings[1]));
                         case "autoSuggestions" -> options.getAutoSuggestions().setValue(Boolean.parseBoolean(strings[1]));
@@ -106,7 +105,7 @@ public class StandardSettings {
                         case "maxFps" -> options.getMaxFps().setValue(Integer.parseInt(strings[1]));
                         case "graphicsMode" -> options.getGraphicsMode().setValue(GraphicsMode.byId(Integer.parseInt(strings[1])));
                         case "ao" -> options.getAo().setValue(AoMode.byId(Integer.parseInt(strings[1])));
-                        case "renderClouds" -> options.getCloudRenderMod().setValue(strings[1].equals("true") ? CloudRenderMode.FANCY : strings[1].equals("false") ? CloudRenderMode.OFF : CloudRenderMode.FAST);
+                        case "renderClouds" -> options.getCloudRenderMod().setValue(strings[1].equals("\"true\"") ? CloudRenderMode.FANCY : strings[1].equals("\"false\"") ? CloudRenderMode.OFF : CloudRenderMode.FAST);
                         case "attackIndicator" -> options.getAttackIndicator().setValue(AttackIndicator.byId(Integer.parseInt(strings[1])));
                         case "lang" -> {
                             client.getLanguageManager().setLanguage(client.getLanguageManager().getLanguage(strings[1]));
@@ -196,7 +195,7 @@ public class StandardSettings {
                     }
                     // Some options.txt settings which aren't accessible in vanilla Minecraft and some unnecessary settings (like Multiplayer stuff) are not included.
                 } catch (Exception exception) {
-                    if (!string.equals("sneaking:") && !string.equals("sprinting:") && !string.equals("chunkborders:") && !string.equals("hitboxes:") && !string.equals("renderDistanceOnWorldJoin:") && !string.equals("simulationDistanceOnWorldJoin:") && !string.equals("entityDistanceScalingOnWorldJoin:") && !string.equals("fovOnWorldJoin:") && !string.equals("lastServer:")) {
+                    if (string != null && !string.equals("sneaking:") && !string.equals("sprinting:") && !string.equals("chunkborders:") && !string.equals("hitboxes:") && !string.equals("renderDistanceOnWorldJoin:") && !string.equals("simulationDistanceOnWorldJoin:") && !string.equals("entityDistanceScalingOnWorldJoin:") && !string.equals("fovOnWorldJoin:") && !string.equals("lastServer:")) {
                         LOGGER.warn("Skipping bad StandardSetting: " + string);
                     }
                 }
@@ -243,7 +242,7 @@ public class StandardSettings {
         options.getViewDistance().setValue(check("Render Distance", options.getViewDistance().getValue(), 2, 32));
         options.getSimulationDistance().setValue(check("Simulation Distance", options.getSimulationDistance().getValue(), 5, 32));
         options.getEntityDistanceScaling().setValue((double) Math.round(check("Entity Distance", options.getEntityDistanceScaling().getValue(), 0.5f, 5) * 4) / 4);
-        options.getGuiScale().setValue(check("GUI Scale", options.getGuiScale().getValue(), 0, 4));
+        options.getGuiScale().setValue(check("GUI Scale", options.getGuiScale().getValue(), 0, Integer.MAX_VALUE));
         options.getMaxFps().setValue(check("Max FPS", options.getMaxFps().getValue(), 1, 260));
         options.getBiomeBlendRadius().setValue(check("Biome Blend Radius", options.getBiomeBlendRadius().getValue(), 0, 7));
         options.getChtOpacity().setValue(check("Chat Opacity", options.getChtOpacity().getValue(), 0, 1));
@@ -315,5 +314,79 @@ public class StandardSettings {
             return max;
         }
         return setting;
+    }
+
+    public static String getStandardoptionsTxt() {
+        String l = System.lineSeparator();
+        StringBuilder string = new StringBuilder("autoJump:" + options.getAutoJump().getValue() + l +
+                "autoSuggestions:" + options.getAutoSuggestions().getValue() + l +
+                "chatColors:" + options.getChatColors().getValue() + l +
+                "chatLinks:" + options.getChatLinks().getValue() + l +
+                "chatLinksPrompt:" + options.getChatLinksPrompt().getValue() + l +
+                "enableVsync:" + options.getEnableVsync().getValue() + l +
+                "entityShadows:" + options.getEntityShadows().getValue() + l +
+                "forceUnicodeFont:" + options.getForceUnicodeFont().getValue() + l +
+                "discrete_mouse_scroll:" + options.getDiscreteMouseScroll().getValue() + l +
+                "invertYMouse:" + options.getInvertYMouse().getValue() + l +
+                "reducedDebugInfo:" + options.getReducedDebugInfo().getValue() + l +
+                "showSubtitles:" + options.getShowSubtitles().getValue() + l +
+                "directionalAudio:" + options.getDirectionalAudio().getValue() + l +
+                "touchscreen:" + options.getTouchscreen().getValue() + l +
+                "fullscreen:" + options.getFullscreen().getValue() + l +
+                "bobView:" + options.getBobView().getValue() + l +
+                "toggleCrouch:" + options.getSneakToggled().getValue() + l +
+                "toggleSprint:" + options.getSprintToggled().getValue() + l +
+                "darkMojangStudiosBackground:" + options.getMonochromeLogo().getValue() + l +
+                "hideLightningFlashes:" + options.getHideLightningFlashes().getValue() + l +
+                "mouseSensitivity:" + options.getMouseSensitivity().getValue() + l +
+                "fov:" + (options.getFov().getValue() - 70.0f) / 40.0f + l +
+                "screenEffectScale:" + options.getDistortionEffectScale().getValue() + l +
+                "fovEffectScale:" + options.getFovEffectScale().getValue() + l +
+                "darknessEffectScale:" + options.getDarknessEffectScale().getValue() + l +
+                "gamma:" + options.getGamma().getValue() + l +
+                "renderDistance:" + options.getViewDistance().getValue() + l +
+                "entityDistanceScaling:" + options.getEntityDistanceScaling().getValue() + l +
+                "guiScale:" + options.getGuiScale().getValue() + l +
+                "particles:" + options.getParticles().getValue().getId() + l +
+                "maxFps:" + options.getMaxFps().getValue() + l +
+                "graphicsMode:" + options.getGraphicsMode().getValue().getId() + l +
+                "ao:" + options.getAo().getValue().getId() + l +
+                "renderClouds:\"" + (options.getCloudRenderMod().getValue() == CloudRenderMode.FAST ? "fast" : options.getCloudRenderMod().getValue() == CloudRenderMode.FANCY) + "\"" + l +
+                "attackIndicator:" + options.getAttackIndicator().getValue().getId() + l +
+                "lang:" + options.language + l +
+                "chatVisibility:" + options.getChatVisibility().getValue().getId() + l +
+                "chatOpacity:" + options.getChtOpacity().getValue() + l +
+                "chatLineSpacing:" + options.getChatLineSpacing().getValue() + l +
+                "textBackgroundOpacity:" + options.getTextBackgroundOpacity().getValue() + l +
+                "backgroundForChatOnly:" + options.getBackgroundForChatOnly().getValue() + l +
+                "fullscreenResolution:" + (options.fullscreenResolution == null ? "" : options.fullscreenResolution) + l +
+                "advancedItemTooltips:" + options.advancedItemTooltips + l +
+                "pauseOnLostFocus:" + options.pauseOnLostFocus + l +
+                "chatHeightFocused:" + options.getChatHeightFocused().getValue() + l +
+                "chatDelay:" + options.getChatDelay().getValue() + l +
+                "chatHeightUnfocused:" + options.getChatHeightUnfocused().getValue() + l +
+                "chatScale:" + options.getChatScale().getValue() + l +
+                "chatWidth:" + options.getChatWidth().getValue() + l +
+                "mipmapLevels:" + options.getMipmapLevels().getValue() + l +
+                "mainHand:" + (options.getMainArm().getValue() == Arm.LEFT ? "\"left\"" : "\"right\"") + l +
+                "narrator:" + options.getNarrator().getValue().getId() + l +
+                "biomeBlendRadius:" + options.getBiomeBlendRadius().getValue() + l +
+                "mouseWheelSensitivity:" + options.getMouseWheelSensitivity().getValue() + l +
+                "rawMouseInput:" + options.getRawMouseInput().getValue() + l +
+                "showAutosaveIndicator:" + options.getShowAutosaveIndicator().getValue() + l +
+                "chatPreview:" + options.getChatPreview().getValue() + l +
+                "onlyShowSecureChat:" + options.getOnlyShowSecureChat().getValue() + l);
+        for (KeyBinding keyBinding : options.allKeys) {
+            string.append("key_").append(keyBinding.getTranslationKey()).append(":").append(keyBinding.getBoundKeyTranslationKey()).append(l);
+        }
+        for (SoundCategory soundCategory : SoundCategory.values()) {
+            string.append("soundCategory_").append(soundCategory.getName()).append(":").append(options.getSoundVolume(soundCategory)).append(l);
+        }
+        for (PlayerModelPart playerModelPart : PlayerModelPart.values()) {
+            string.append("modelPart_").append(playerModelPart.getName()).append(":").append(options.isPlayerModelPartEnabled(playerModelPart)).append(l);
+        }
+        string.append("sneaking:").append(l).append("sprinting:").append(l).append("chunkborders:").append(l).append("hitboxes:").append(l).append("perspective:").append(l).append("piedirectory:").append(l).append("fovOnWorldJoin:").append(l).append("renderDistanceOnWorldJoin:").append(l).append("simulationDistanceOnWorldJoin:").append(l).append("entityDistanceScalingOnWorldJoin:");
+
+        return string.toString();
     }
 }
