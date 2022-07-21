@@ -10,7 +10,6 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
 
 @Mixin(MinecraftClient.class)
@@ -30,17 +29,12 @@ public class MinecraftClientMixin {
 
             long start = System.nanoTime();
 
-            if (!StandardSettings.optionsFile.exists()) {
-                StandardSettings.options.write();
-            }
             if (!StandardSettings.standardoptionsFile.getParentFile().exists()) {
                 StandardSettings.standardoptionsFile.getParentFile().mkdir();
             }
 
             try {
-                String l = System.lineSeparator();
-                Files.copy(StandardSettings.optionsFile.toPath(), StandardSettings.standardoptionsFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
-                Files.write(StandardSettings.standardoptionsFile.toPath(), ("sneaking:" + l + "sprinting:" + l + "chunkborders:" + l + "hitboxes:" + l + "perspective:" + l + "piedirectory:" + l + "renderDistanceOnWorldJoin:" + l + "entityDistanceScalingOnWorldJoin:" + l + "simulationDistanceOnWorldJoin" + l + "fovOnWorldJoin:").getBytes(), StandardOpenOption.APPEND);
+                Files.write(StandardSettings.standardoptionsFile.toPath(), StandardSettings.getStandardoptionsTxt().getBytes(), StandardOpenOption.CREATE_NEW);
                 StandardSettings.LOGGER.info("Finished creating StandardSettings File ({} ms)", (System.nanoTime() - start) / 1000000.0f);
             } catch (IOException e) {
                 StandardSettings.LOGGER.error("Failed to create StandardSettings File", e);
