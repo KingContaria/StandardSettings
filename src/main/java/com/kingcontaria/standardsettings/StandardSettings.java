@@ -1,5 +1,6 @@
 package com.kingcontaria.standardsettings;
 
+import com.kingcontaria.standardsettings.mixins.LanguageManagerAccessor;
 import com.kingcontaria.standardsettings.mixins.MinecraftClientAccessor;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.options.GameOptions;
@@ -75,14 +76,10 @@ public class StandardSettings {
                         case "ao" -> options.ao = strings[1].equals("true") ? 2 : (strings[1].equals("false") ? 0 : Integer.parseInt(strings[1]));
                         case "renderClouds" -> options.cloudMode = strings[1].equals("true") ? 2 : strings[1].equals("false") ? 0 : 1;
                         case "lang" -> {
-                            for (LanguageDefinition languageDefinition : client.getLanguageManager().method_5943()) {
-                                if (strings[1].equals(languageDefinition.method_5935())) {
-                                    client.getLanguageManager().method_5939(languageDefinition);
-                                    client.getLanguageManager().reload(client.getResourceManager());
-                                    options.language = languageDefinition.method_5935(); break;
-                                }
+                            if (!options.language.equals(strings[1]) && ((LanguageManagerAccessor)client.getLanguageManager()).getField_6653().containsKey(strings[1])) {
+                                client.getLanguageManager().method_5939((LanguageDefinition) ((LanguageManagerAccessor)client.getLanguageManager()).getField_6653().get(options.language = strings[1]));
+                                client.getLanguageManager().reload(client.getResourceManager());
                             }
-                            LOGGER.warn("Could not resolve Language Code: " + strings[1]);
                         }
                         case "chatVisibility" -> options.chatVisibilityType = PlayerEntity.ChatVisibilityType.getById(Integer.parseInt(strings[1]));
                         case "chatColors" -> options.chatColor = Boolean.parseBoolean(strings[1]);
