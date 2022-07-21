@@ -28,7 +28,6 @@ public class StandardSettings {
     public static final File standardoptionsFile = new File("config/standardoptions.txt");
     public static File lastUsedFile;
     public static long fileLastModified;
-    public static final File optionsFile = new File("options.txt");
     public static boolean changeOnGainedFocus = false;
     private static int renderDistanceOnWorldJoin;
     private static double fovOnWorldJoin;
@@ -48,7 +47,7 @@ public class StandardSettings {
 
             String string = bufferedReader.readLine();
 
-            if (new File(string).exists()) {
+            if (string != null && new File(string).exists()) {
                 LOGGER.info("Using global standardoptions file");
                 bufferedReader.close();
                 bufferedReader = new BufferedReader(new FileReader(lastUsedFile = new File(string)));
@@ -59,9 +58,9 @@ public class StandardSettings {
             fileLastModified = lastUsedFile.lastModified();
 
             do {
-                String[] strings = string.split(":", 2);
-                String[] string0_split = strings[0].split("_", 2);
                 try {
+                    String[] strings = string.split(":", 2);
+                    String[] string0_split = strings[0].split("_", 2);
                     switch (string0_split[0]) {
                         case "autoJump" -> options.autoJump = Boolean.parseBoolean(strings[1]);
                         case "autoSuggestions" -> options.autoSuggestions = Boolean.parseBoolean(strings[1]);
@@ -180,7 +179,7 @@ public class StandardSettings {
                         // Some options.txt settings which aren't accessible in vanilla Minecraft and some unnecessary settings (like Multiplayer stuff) are not included.
                     }
                 } catch (Exception exception) {
-                    if (!string.equals("sneaking:") && !string.equals("sprinting:") && !string.equals("chunkborders:") && !string.equals("hitboxes:") && !string.equals("perspective:") && !string.equals("renderDistanceOnWorldJoin:") && !string.equals("fovOnWorldJoin:") && !string.equals("lastServer:")) {
+                    if (string != null && !string.equals("sneaking:") && !string.equals("sprinting:") && !string.equals("chunkborders:") && !string.equals("hitboxes:") && !string.equals("perspective:") && !string.equals("renderDistanceOnWorldJoin:") && !string.equals("fovOnWorldJoin:") && !string.equals("lastServer:")) {
                         LOGGER.warn("Skipping bad StandardSetting: " + string);
                     }
                 }
@@ -216,7 +215,7 @@ public class StandardSettings {
         options.fov = Math.round(check("FOV", options.fov, 30, 110));
         options.gamma = check("Brightness", options.gamma, 0, 5);
         options.viewDistance = check("Render Distance", options.viewDistance, 2, 32);
-        options.guiScale = check("GUI Scale", options.guiScale, 0, 4);
+        options.guiScale = check("GUI Scale", options.guiScale, 0, Integer.MAX_VALUE);
         options.maxFps = check("Max FPS", options.maxFps, 1, 260);
         options.biomeBlendRadius = check("Biome Blend Radius", options.biomeBlendRadius, 0, 7);
         options.chatOpacity = check("Chat Opacity", options.chatOpacity, 0, 1);
@@ -279,5 +278,67 @@ public class StandardSettings {
             return max;
         }
         return setting;
+    }
+
+    public static String getStandardoptionsTxt() {
+        String l = System.lineSeparator();
+        StringBuilder string = new StringBuilder("autoJump:" + options.autoJump + l +
+                "autoSuggestions:" + options.autoSuggestions + l +
+                "chatColors:" + options.chatColors + l +
+                "chatLinks:" + options.chatLinks + l +
+                "chatLinksPrompt:" + options.chatLinksPrompt + l +
+                "enableVsync:" + options.enableVsync + l +
+                "entityShadows:" + options.entityShadows + l +
+                "forceUnicodeFont:" + options.forceUnicodeFont + l +
+                "discrete_mouse_scroll:" + options.discreteMouseScroll + l +
+                "invertYMouse:" + options.invertYMouse + l +
+                "reducedDebugInfo:" + options.reducedDebugInfo + l +
+                "showSubtitles:" + options.showSubtitles + l +
+                "touchscreen:" + options.touchscreen + l +
+                "fullscreen:" + options.fullscreen + l +
+                "bobView:" + options.bobView + l +
+                "toggleCrouch:" + options.sneakToggled + l +
+                "toggleSprint:" + options.sprintToggled + l +
+                "mouseSensitivity:" + options.mouseSensitivity + l +
+                "fov:" + (options.fov - 70.0f) / 40.0f + l +
+                "gamma:" + options.gamma + l +
+                "renderDistance:" + options.viewDistance + l +
+                "guiScale:" + options.guiScale + l +
+                "particles:" + options.particles.getId() + l +
+                "maxFps:" + options.maxFps + l +
+                "fancyGraphics:" + options.fancyGraphics + l +
+                "ao:" + options.ao.getValue() + l +
+                "renderClouds:" + (options.cloudRenderMode == CloudRenderMode.FAST ? "fast" : options.cloudRenderMode == CloudRenderMode.FANCY) + l +
+                "attackIndicator:" + options.attackIndicator.getId() + l +
+                "lang:" + options.language + l +
+                "chatVisibility:" + options.chatVisibility.getId() + l +
+                "chatOpacity:" + options.chatOpacity + l +
+                "textBackgroundOpacity:" + options.textBackgroundOpacity + l +
+                "backgroundForChatOnly:" + options.backgroundForChatOnly + l +
+                "fullscreenResolution:" + (options.fullscreenResolution == null ? "" : options.fullscreenResolution) + l +
+                "advancedItemTooltips:" + options.advancedItemTooltips + l +
+                "pauseOnLostFocus:" + options.pauseOnLostFocus + l +
+                "chatHeightFocused:" + options.chatHeightFocused + l +
+                "chatHeightUnfocused:" + options.chatHeightUnfocused + l +
+                "chatScale:" + options.chatScale + l +
+                "chatWidth:" + options.chatWidth + l +
+                "mipmapLevels:" + options.mipmapLevels + l +
+                "mainHand:" + (options.mainArm == Arm.LEFT ? "left" : "right") + l +
+                "narrator:" + options.narrator.getId() + l +
+                "biomeBlendRadius:" + options.biomeBlendRadius + l +
+                "mouseWheelSensitivity:" + options.mouseWheelSensitivity + l +
+                "rawMouseInput:" + options.rawMouseInput + l);
+        for (KeyBinding keyBinding : options.keysAll) {
+            string.append("key_").append(keyBinding.getId()).append(":").append(keyBinding.getName()).append(l);
+        }
+        for (SoundCategory soundCategory : SoundCategory.values()) {
+            string.append("soundCategory_").append(soundCategory.getName()).append(":").append(options.getSoundVolume(soundCategory)).append(l);
+        }
+        for (PlayerModelPart playerModelPart : PlayerModelPart.values()) {
+            string.append("modelPart_").append(playerModelPart.getName()).append(":").append(options.getEnabledPlayerModelParts().contains(playerModelPart)).append(l);
+        }
+        string.append("sneaking:").append(l).append("sprinting:").append(l).append("chunkborders:").append(l).append("hitboxes:").append(l).append("perspective:").append(l).append("piedirectory:").append(l).append("fovOnWorldJoin:").append(l).append("renderDistanceOnWorldJoin:");
+
+        return string.toString();
     }
 }
