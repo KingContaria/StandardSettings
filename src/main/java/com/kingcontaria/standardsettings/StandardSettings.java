@@ -1,11 +1,13 @@
 package com.kingcontaria.standardsettings;
 
 import com.kingcontaria.standardsettings.mixins.BakedModelManagerAccessor;
+import com.kingcontaria.standardsettings.mixins.LanguageManagerAccessor;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.options.*;
 import net.minecraft.client.render.entity.PlayerModelPart;
+import net.minecraft.client.resource.language.LanguageDefinition;
 import net.minecraft.client.texture.SpriteAtlasTexture;
 import net.minecraft.client.util.InputUtil;
 import net.minecraft.sound.SoundCategory;
@@ -96,9 +98,10 @@ public class StandardSettings {
                         case "renderClouds" -> options.cloudRenderMode = strings[1].equals("true") ? CloudRenderMode.FANCY : strings[1].equals("false") ? CloudRenderMode.OFF : CloudRenderMode.FAST;
                         case "attackIndicator" -> options.attackIndicator = AttackIndicator.byId(Integer.parseInt(strings[1]));
                         case "lang" -> {
-                            client.getLanguageManager().setLanguage(client.getLanguageManager().getLanguage(strings[1]));
-                            client.getLanguageManager().apply(client.getResourceManager());
-                            options.language = client.getLanguageManager().getLanguage().getCode();
+                            if (!options.language.equals(strings[1]) && ((LanguageManagerAccessor)client.getLanguageManager()).getLanguageDefs().containsKey(strings[1])) {
+                                client.getLanguageManager().setLanguage((LanguageDefinition) ((LanguageManagerAccessor)client.getLanguageManager()).getLanguageDefs().get(options.language = strings[1]));
+                                client.getLanguageManager().apply(client.getResourceManager());
+                            }
                         }
                         case "chatVisibility" -> options.chatVisibility = ChatVisibility.byId(Integer.parseInt(strings[1]));
                         case "chatOpacity" -> options.chatOpacity = Double.parseDouble(strings[1]);
