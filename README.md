@@ -4,22 +4,16 @@
 
 *developed by KingContaria*
 
-###
-
 ### What does this Mod do?
 
 This Mod defaults settings to a standard set by the player when creating a new World.
 It's designed to replace the much slower, much laggier and more inconsistent solution of doing it by macro.
-
-###
 
 ### How does it work?
 
 At the start of creating a new world, the Mod will check for a 'standardoptions.txt' file in your config folder.
 
 It now defaults your settings to the values specified in that file. After that is done, it will also perform a quick check to make sure the values are within the boundaries of vanilla minecraft / the speedrun.com ruleset.
-
-###
 
 ### How can I edit my standardsettings?
 
@@ -30,8 +24,6 @@ This file contains all the settings changed by StandardSettings, including most 
 To change your settings, you can either manually edit them in the file or set your settings ingame, then delete the file and restart Minecraft to generate a new one.
 
 To stop a setting from being reset, remove the corresponding line from the file.
-
-###
 
 ### What are the additional settings?
 
@@ -56,8 +48,6 @@ Depending on the version you are playing some of these might not be included.
 **simulationDistanceOnWorldJoin**: This is the Simulation Distance (1.18+) the game will change to once you finish world creation & have the instance focused.
 
 **entityDistanceScalingOnWorldJoin**: This is the Entity Distance (1.16+) the game will change to once you finish world creation & have the instance focused.
-
-###
 
 ### How can I use a global standardoptions file?
 
