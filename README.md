@@ -1,5 +1,3 @@
-###### ***NOT ALLOWED (yet pauseman)***
-
 ## StandardSettings
 
 *developed by KingContaria*
