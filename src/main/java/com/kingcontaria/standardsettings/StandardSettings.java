@@ -55,6 +55,7 @@ public class StandardSettings {
             do {
                 try {
                     String[] strings = string.split(":", 2);
+                    strings[1] = strings[1].trim();
                     String[] string0_split = strings[0].split("_", 2);
                     switch (string0_split[0]) {
                         case "mouseSensitivity" -> options.sensitivity = Float.parseFloat(strings[1]);
@@ -179,7 +180,7 @@ public class StandardSettings {
     public static void checkSettings() {
         long start = System.nanoTime();
 
-        options.sensitivity = check("Sensitivity", options.sensitivity, 0, 1);
+        options.sensitivity = check("Sensitivity", options.sensitivity, 0, 2);
         options.fov = Math.round(check("FOV", options.fov, 30, 110));
         options.gamma = check("Brightness", options.gamma, 0, 5);
         options.viewDistance = check("Render Distance", options.viewDistance, 2, 32);
