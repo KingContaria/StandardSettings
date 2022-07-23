@@ -41,9 +41,9 @@ Depending on the version you are playing some of these might not be included.
 
 **piedirectory**: This resets the directory your piechart is in. Spelling is key, check upper/lower case! (common directories [here](#common-piechart-directories))
 
-**fovOnWorldJoin**: This is the FOV the game will change to once you finish world creation & have the instance focused.
+**fovOnWorldJoin**: This is the FOV the game will change to once you finish world creation & have the instance focused. More Info on OnWorldJoin options [here](#onworldjoin-options).
 
-**renderDistanceOnWorldJoin**: This is the Render Distance the game will change to once you finish world creation & have the instance focused.
+**renderDistanceOnWorldJoin**: This is the Render Distance the game will change to once you finish world creation & have the instance focused. This option can cause issues in Pre 1.9 when not playing on wall and also just isn't that helpful for single instance anyway.
 
 **simulationDistanceOnWorldJoin**: This is the Simulation Distance (1.18+) the game will change to once you finish world creation & have the instance focused.
 
@@ -62,3 +62,15 @@ C:\Users\KingContaria\Desktop\speedrunning stuff\standardoptions\globalstandardo
 **mapless / preemptive**: root.gameRenderer.level.entities
 
 **blockentities**: root.tick.level.entities.blockEntities
+
+#
+
+### OnWorldJoin options
+
+Since OnWorldJoin options might be a bit unintuitive for people to use who have used settings resetting in macros before, here is a quick summary:
+
+We take as example renderDistanceOnWorldJoin. The value you enter into '**renderDistance:**' is the value it gets changed to at the start of world generation. This will also be the value your background instances (in case you do multi instance) will be at, for example 5RD.
+
+The value you enter into '**renderDistanceOnWorldJoin:**' is the value it gets set to either when you join the world or once you first focus the instance. This means you want to put this as the value you want to use while playing, for example 16RD.
+
+The same concept applies for all the other OnWorldJoin options too.
