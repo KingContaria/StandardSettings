@@ -61,6 +61,7 @@ public class StandardSettings {
             do {
                 try {
                     String[] strings = string.split(":", 2);
+                    strings[1] = strings[1].trim();
                     String[] string0_split = strings[0].split("_", 2);
                     switch (string0_split[0]) {
                         case "autoJump" -> options.autoJump = Boolean.parseBoolean(strings[1]);
@@ -149,8 +150,16 @@ public class StandardSettings {
                         case "mouseWheelSensitivity" -> options.mouseWheelSensitivity = Double.parseDouble(strings[1]);
                         case "rawMouseInput" -> window.setRawMouseMotion(options.rawMouseInput = Boolean.parseBoolean(strings[1]));
                         case "showAutosaveIndicator" -> options.showAutosaveIndicator = Boolean.parseBoolean(strings[1]);
-                        case "sneaking" -> options.sneakKey.setPressed(options.sneakToggled && Boolean.parseBoolean(strings[1]));
-                        case "sprinting" -> options.sprintKey.setPressed(options.sprintToggled && Boolean.parseBoolean(strings[1]));
+                        case "sneaking" -> {
+                            if (options.sneakToggled && (Boolean.parseBoolean(strings[1]) != options.sneakKey.isPressed())) {
+                                options.sneakKey.setPressed(true);
+                            }
+                        }
+                        case "sprinting" -> {
+                            if (options.sprintToggled && (Boolean.parseBoolean(strings[1]) != options.sprintKey.isPressed())) {
+                                options.sprintKey.setPressed(true);
+                            }
+                        }
                         case "chunkborders" -> {
                             if (client.debugRenderer.toggleShowChunkBorder() != Boolean.parseBoolean(strings[1])) {
                                 client.debugRenderer.toggleShowChunkBorder();
@@ -229,7 +238,7 @@ public class StandardSettings {
     public static void checkSettings() {
         long start = System.nanoTime();
 
-        options.mouseSensitivity = check("Sensitivity", options.mouseSensitivity, 0, 1);
+        options.mouseSensitivity = check("Sensitivity", options.mouseSensitivity, 0, 2);
         options.fov = Math.round(check("FOV", options.fov, 30, 110));
         options.distortionEffectScale = check("Distortion Effects", options.distortionEffectScale, 0, 1);
         options.fovEffectScale = check("FOV Effects", options.fovEffectScale, 0, 1);
