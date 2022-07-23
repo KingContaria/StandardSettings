@@ -61,6 +61,7 @@ public class StandardSettings {
             do {
                 try {
                     String[] strings = string.split(":", 2);
+                    strings[1] = strings[1].trim();
                     String[] string0_split = strings[0].split("_", 2);
                     switch (string0_split[0]) {
                         case "autoJump" -> options.getAutoJump().setValue(Boolean.parseBoolean(strings[1]));
@@ -154,8 +155,16 @@ public class StandardSettings {
                         case "showAutosaveIndicator" -> options.getShowAutosaveIndicator().setValue(Boolean.parseBoolean(strings[1]));
                         case "chatPreview" -> options.getChatPreview().setValue(Boolean.parseBoolean(strings[1]));
                         case "onlyShowSecureChat" -> options.getOnlyShowSecureChat().setValue(Boolean.parseBoolean(strings[1]));
-                        case "sneaking" -> options.sneakKey.setPressed(options.getSneakToggled().getValue() && Boolean.parseBoolean(strings[1]));
-                        case "sprinting" -> options.sprintKey.setPressed(options.getSprintToggled().getValue() && Boolean.parseBoolean(strings[1]));
+                        case "sneaking" -> {
+                            if (options.getSneakToggled().getValue() && (Boolean.parseBoolean(strings[1]) != options.sneakKey.isPressed())) {
+                                options.sneakKey.setPressed(true);
+                            }
+                        }
+                        case "sprinting" -> {
+                            if (options.getSprintToggled().getValue() && (Boolean.parseBoolean(strings[1]) != options.sprintKey.isPressed())) {
+                                options.sprintKey.setPressed(true);
+                            }
+                        }
                         case "chunkborders" -> {
                             if (client.debugRenderer.toggleShowChunkBorder() != Boolean.parseBoolean(strings[1])) {
                                 client.debugRenderer.toggleShowChunkBorder();
@@ -195,7 +204,7 @@ public class StandardSettings {
                     }
                     // Some options.txt settings which aren't accessible in vanilla Minecraft and some unnecessary settings (like Multiplayer stuff) are not included.
                 } catch (Exception exception) {
-                    if (string != null && !string.equals("sneaking:") && !string.equals("sprinting:") && !string.equals("chunkborders:") && !string.equals("hitboxes:") && !string.equals("renderDistanceOnWorldJoin:") && !string.equals("simulationDistanceOnWorldJoin:") && !string.equals("entityDistanceScalingOnWorldJoin:") && !string.equals("fovOnWorldJoin:") && !string.equals("lastServer:")) {
+                    if (string != null && !string.equals("sneaking:") && !string.equals("sprinting:") && !string.equals("chunkborders:") && !string.equals("hitboxes:") && !string.equals("perspective:") && !string.equals("renderDistanceOnWorldJoin:") && !string.equals("simulationDistanceOnWorldJoin:") && !string.equals("entityDistanceScalingOnWorldJoin:") && !string.equals("fovOnWorldJoin:") && !string.equals("lastServer:")) {
                         LOGGER.warn("Skipping bad StandardSetting: " + string);
                     }
                 }
@@ -234,7 +243,7 @@ public class StandardSettings {
     public static void checkSettings() {
         long start = System.nanoTime();
 
-        options.getMouseSensitivity().setValue(check("Sensitivity", options.getMouseSensitivity().getValue(), 0, 1));
+        options.getMouseSensitivity().setValue(check("Sensitivity", options.getMouseSensitivity().getValue(), 0, 2));
         options.getFov().setValue(Math.round(check("FOV", options.getFov().getValue(), 30, 110)));
         options.getDistortionEffectScale().setValue(check("Distortion Effects", options.getDistortionEffectScale().getValue(), 0, 1));
         options.getFovEffectScale().setValue(check("FOV Effects", options.getFovEffectScale().getValue(),0,1));
