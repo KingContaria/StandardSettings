@@ -10,6 +10,7 @@ import net.minecraft.client.util.InputUtil;
 import net.minecraft.client.util.Window;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.util.Arm;
+import net.minecraft.util.Util;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -69,7 +70,7 @@ public class StandardSettings {
                         case "chatLinksPrompt" -> options.chatLinksPrompt = Boolean.parseBoolean(strings[1]);
                         case "enableVsync" -> window.setVsync(options.enableVsync = Boolean.parseBoolean(strings[1]));
                         case "entityShadows" -> options.entityShadows = Boolean.parseBoolean(strings[1]);
-                        case "forceUnicodeFont" -> ((MinecraftClientAccessor)client).callInitFont(options.forceUnicodeFont = Boolean.parseBoolean(strings[1]));
+                        case "forceUnicodeFont" -> client.getFontManager().setForceUnicodeFont((options.forceUnicodeFont = Boolean.parseBoolean(strings[1])), Util.getServerWorkerExecutor(), client);
                         case "discrete" -> options.discreteMouseScroll = Boolean.parseBoolean(strings[1]);
                         case "invertYMouse" -> options.invertYMouse = Boolean.parseBoolean(strings[1]);
                         case "reducedDebugInfo" -> options.reducedDebugInfo = Boolean.parseBoolean(strings[1]);
@@ -92,11 +93,10 @@ public class StandardSettings {
                         case "fov" -> options.fov = Double.parseDouble(strings[1]) * 40.0f + 70.0f;
                         case "gamma" -> options.gamma = Double.parseDouble(strings[1]);
                         case "renderDistance" -> options.viewDistance = Integer.parseInt(strings[1]);
-                        case "entityDistanceScaling" -> options.entityDistanceScaling = Float.parseFloat(strings[1]);
                         case "guiScale" -> options.guiScale = Integer.parseInt(strings[1]);
                         case "particles" -> options.particles = ParticlesOption.byId(Integer.parseInt(strings[1]));
                         case "maxFps" -> window.setFramerateLimit(options.maxFps = Integer.parseInt(strings[1]));
-                        case "graphicsMode" -> options.graphicsMode = GraphicsMode.byId(Integer.parseInt(strings[1]));
+                        case "fancyGraphics" -> options.fancyGraphics = Boolean.parseBoolean(strings[1]);
                         case "ao" -> options.ao = AoOption.getOption(Integer.parseInt(strings[1]));
                         case "renderClouds" -> options.cloudRenderMode = strings[1].equals("true") ? CloudRenderMode.FANCY : strings[1].equals("false") ? CloudRenderMode.OFF : CloudRenderMode.FAST;
                         case "attackIndicator" -> options.attackIndicator = AttackIndicator.byId(Integer.parseInt(strings[1]));
@@ -107,7 +107,6 @@ public class StandardSettings {
                         }
                         case "chatVisibility" -> options.chatVisibility = ChatVisibility.byId(Integer.parseInt(strings[1]));
                         case "chatOpacity" -> options.chatOpacity = Double.parseDouble(strings[1]);
-                        case "chatLineSpacing" -> options.chatLineSpacing = Double.parseDouble(strings[1]);
                         case "textBackgroundOpacity" -> options.textBackgroundOpacity = Double.parseDouble(strings[1]);
                         case "backgroundForChatOnly" -> options.backgroundForChatOnly = Boolean.parseBoolean(strings[1]);
                         case "fullscreenResolution" -> {
@@ -128,7 +127,6 @@ public class StandardSettings {
                         case "advancedItemTooltips" -> options.advancedItemTooltips = Boolean.parseBoolean(strings[1]);
                         case "pauseOnLostFocus" -> options.pauseOnLostFocus = Boolean.parseBoolean(strings[1]);
                         case "chatHeightFocused" -> options.chatHeightFocused = Double.parseDouble(strings[1]);
-                        case "chatDelay" -> options.chatDelay = Double.parseDouble(strings[1]);
                         case "chatHeightUnfocused" -> options.chatHeightUnfocused = Double.parseDouble(strings[1]);
                         case "chatScale" -> options.chatScale = Double.parseDouble(strings[1]);
                         case "chatWidth" -> options.chatWidth = Double.parseDouble(strings[1]);
@@ -169,8 +167,8 @@ public class StandardSettings {
                         case "entityDistanceScalingOnWorldJoin" -> entityDistanceScalingOnWorldJoin = Float.parseFloat(strings[1]);
                         case "key" -> {
                             for (KeyBinding keyBinding : options.keysAll) {
-                                if (string0_split[1].equals(keyBinding.getTranslationKey())) {
-                                    keyBinding.setBoundKey(InputUtil.fromTranslationKey(strings[1])); break;
+                                if (string0_split[1].equals(keyBinding.getId())) {
+                                    keyBinding.setKeyCode(InputUtil.fromName(strings[1])); break;
                                 }
                             }
                         }
@@ -211,9 +209,6 @@ public class StandardSettings {
         if (renderDistanceOnWorldJoin != 0) {
             options.viewDistance = renderDistanceOnWorldJoin;
         }
-        if (entityDistanceScalingOnWorldJoin != 0) {
-            options.entityDistanceScaling = entityDistanceScalingOnWorldJoin;
-        }
         if (fovOnWorldJoin != 0) {
             options.fov = fovOnWorldJoin;
         }
@@ -231,15 +226,12 @@ public class StandardSettings {
         options.fov = Math.round(check("FOV", options.fov, 30, 110));
         options.gamma = check("Brightness", options.gamma, 0, 5);
         options.viewDistance = check("Render Distance", options.viewDistance, 2, 32);
-        options.entityDistanceScaling = (float) Math.round(check("Entity Distance", options.entityDistanceScaling, 0.5f, 5) * 4) / 4;
         options.guiScale = check("GUI Scale", options.guiScale, 0, Integer.MAX_VALUE);
         options.maxFps = check("Max FPS", options.maxFps, 1, 260);
         options.biomeBlendRadius = check("Biome Blend Radius", options.biomeBlendRadius, 0, 7);
         options.chatOpacity = check("Chat Opacity", options.chatOpacity, 0, 1);
-        options.chatLineSpacing = check("Line Spacing", options.chatLineSpacing, 0, 1);
         options.textBackgroundOpacity = check("Text Background Opacity", options.textBackgroundOpacity, 0, 1);
         options.chatHeightFocused = check("(Chat) Focused Height", options.chatHeightFocused, 0, 1);
-        options.chatDelay = check("Chat Delay", options.chatDelay,0,6);
         options.chatHeightUnfocused = check("(Chat) Unfocused Height", options.chatHeightUnfocused, 0, 1);
         options.chatScale = check("Chat Text Size", options.chatScale, 0, 1);
         options.chatWidth = check("Chat Width", options.chatWidth, 0, 1);
@@ -325,25 +317,22 @@ public class StandardSettings {
                 "fov:" + (options.fov - 70.0f) / 40.0f + l +
                 "gamma:" + options.gamma + l +
                 "renderDistance:" + options.viewDistance + l +
-                "entityDistanceScaling:" + options.entityDistanceScaling + l +
                 "guiScale:" + options.guiScale + l +
                 "particles:" + options.particles.getId() + l +
                 "maxFps:" + options.maxFps + l +
-                "graphicsMode:" + options.graphicsMode.getId() + l +
+                "fancyGraphics:" + options.fancyGraphics + l +
                 "ao:" + options.ao.getValue() + l +
                 "renderClouds:" + (options.cloudRenderMode == CloudRenderMode.FAST ? "fast" : options.cloudRenderMode == CloudRenderMode.FANCY) + l +
                 "attackIndicator:" + options.attackIndicator.getId() + l +
                 "lang:" + options.language + l +
                 "chatVisibility:" + options.chatVisibility.getId() + l +
                 "chatOpacity:" + options.chatOpacity + l +
-                "chatLineSpacing:" + options.chatLineSpacing + l +
                 "textBackgroundOpacity:" + options.textBackgroundOpacity + l +
                 "backgroundForChatOnly:" + options.backgroundForChatOnly + l +
                 "fullscreenResolution:" + (options.fullscreenResolution == null ? "" : options.fullscreenResolution) + l +
                 "advancedItemTooltips:" + options.advancedItemTooltips + l +
                 "pauseOnLostFocus:" + options.pauseOnLostFocus + l +
                 "chatHeightFocused:" + options.chatHeightFocused + l +
-                "chatDelay:" + options.chatDelay + l +
                 "chatHeightUnfocused:" + options.chatHeightUnfocused + l +
                 "chatScale:" + options.chatScale + l +
                 "chatWidth:" + options.chatWidth + l +
@@ -354,7 +343,7 @@ public class StandardSettings {
                 "mouseWheelSensitivity:" + options.mouseWheelSensitivity + l +
                 "rawMouseInput:" + options.rawMouseInput + l);
         for (KeyBinding keyBinding : options.keysAll) {
-            string.append("key_").append(keyBinding.getTranslationKey()).append(":").append(keyBinding.getBoundKeyTranslationKey()).append(l);
+            string.append("key_").append(keyBinding.getId()).append(":").append(keyBinding.getName()).append(l);
         }
         for (SoundCategory soundCategory : SoundCategory.values()) {
             string.append("soundCategory_").append(soundCategory.getName()).append(":").append(options.getSoundVolume(soundCategory)).append(l);
