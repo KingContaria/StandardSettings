@@ -76,7 +76,7 @@ public class OptionsCache {
     private boolean hitboxes;
     private int perspective;
     private String piedirectory;
-    private boolean hudHidden;
+    //private boolean hudHidden;
     private KeyBinding[] keysAll;
     private SoundCategory[] soundCategories;
     private Set<PlayerModelPart> playerModelParts;
@@ -146,7 +146,7 @@ public class OptionsCache {
         hitboxes = client.getEntityRenderManager().shouldRenderHitboxes();
         perspective = options.perspective;
         piedirectory = ((MinecraftClientAccessor)client).getOpenProfilerSection();
-        hudHidden = options.hudHidden;
+        //hudHidden = options.hudHidden;
         keysAll = options.keysAll;
         soundCategories = SoundCategory.values();
         playerModelParts = options.getEnabledPlayerModelParts();
@@ -235,7 +235,7 @@ public class OptionsCache {
         client.getEntityRenderManager().setRenderHitboxes(hitboxes);
         options.perspective = perspective;
         ((MinecraftClientAccessor)client).setOpenProfilerSection(piedirectory);
-        options.hudHidden = hudHidden;
+        //options.hudHidden = hudHidden;
         for (KeyBinding savedKey : keysAll) {
             for (KeyBinding keyBinding : options.keysAll) {
                 if (keyBinding == savedKey) {
