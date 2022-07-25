@@ -30,11 +30,18 @@ public class StandardSettings {
     private static int renderDistanceOnWorldJoin;
     private static float entityDistanceScalingOnWorldJoin;
     private static double fovOnWorldJoin;
-
+    private static boolean fullscreenOnWorldJoin;
+    private static int guiScaleOnWorldJoin;
+    public static OptionsCache optionsCache = new OptionsCache(client);
+    public static String lastQuitWorld;
     public static void load() {
         long start = System.nanoTime();
 
         fovOnWorldJoin = entityDistanceScalingOnWorldJoin = renderDistanceOnWorldJoin = 0;
+        fullscreenOnWorldJoin = false;
+        guiScaleOnWorldJoin = -1;
+
+        optionsCache.save(lastQuitWorld);
 
         try {
             if (!standardoptionsFile.exists()) {
@@ -79,17 +86,17 @@ public class StandardSettings {
                             if (window.isFullscreen() != Boolean.parseBoolean(strings[1])) {
                                 if (client.isWindowFocused()) {
                                     window.toggleFullscreen();
-                                    options.fullscreen = window.isFullscreen();
                                 } else {
                                     LOGGER.error("Could not reset fullscreen mode because window wasn't focused!");
                                 }
+                                options.fullscreen = window.isFullscreen();
                             }
                         }
                         case "bobView" -> options.bobView = Boolean.parseBoolean(strings[1]);
                         case "toggleCrouch" -> options.sneakToggled = Boolean.parseBoolean(strings[1]);
                         case "toggleSprint" -> options.sprintToggled = Boolean.parseBoolean(strings[1]);
                         case "mouseSensitivity" -> options.mouseSensitivity = Double.parseDouble(strings[1]);
-                        case "fov" -> options.fov = Double.parseDouble(strings[1]) * 40.0f + 70.0f;
+                        case "fov" -> options.fov = Double.parseDouble(strings[1]) < 5 ? Double.parseDouble(strings[1]) * 40.0f + 70.0f : Integer.parseInt(strings[1]);
                         case "gamma" -> options.gamma = Double.parseDouble(strings[1]);
                         case "renderDistance" -> options.viewDistance = Integer.parseInt(strings[1]);
                         case "entityDistanceScaling" -> options.entityDistanceScaling = Float.parseFloat(strings[1]);
@@ -164,7 +171,10 @@ public class StandardSettings {
                             if (!strings[1].split("\\.")[0].equals("root")) break;
                             ((MinecraftClientAccessor)client).setOpenProfilerSection(strings[1].replace('.','\u001e'));
                         }
-                        case "fovOnWorldJoin" -> fovOnWorldJoin = Double.parseDouble(strings[1]);
+                        case "f1" -> options.hudHidden = Boolean.parseBoolean(strings[1]);
+                        case "fovOnWorldJoin" -> fovOnWorldJoin = Double.parseDouble(strings[1]) < 5 ? Double.parseDouble(strings[1]) * 40.0f + 70.0f : Integer.parseInt(strings[1]);
+                        case "fullscreenOnWorldJoin" ->  fullscreenOnWorldJoin = Boolean.parseBoolean(strings[1]);
+                        case "guiScaleOnWorldJoin" ->  guiScaleOnWorldJoin = Integer.parseInt(strings[1]);
                         case "renderDistanceOnWorldJoin" -> renderDistanceOnWorldJoin = Integer.parseInt(strings[1]);
                         case "entityDistanceScalingOnWorldJoin" -> entityDistanceScalingOnWorldJoin = Float.parseFloat(strings[1]);
                         case "key" -> {
@@ -191,7 +201,7 @@ public class StandardSettings {
                     }
                     // Some options.txt settings which aren't accessible in vanilla Minecraft and some unnecessary settings (like Multiplayer stuff) are not included.
                 } catch (Exception exception) {
-                    if (string != null && !string.equals("sneaking:") && !string.equals("sprinting:") && !string.equals("chunkborders:") && !string.equals("hitboxes:") && !string.equals("perspective:") && !string.equals("renderDistanceOnWorldJoin:") && !string.equals("entityDistanceScalingOnWorldJoin:") && !string.equals("fovOnWorldJoin:") && !string.equals("lastServer:")) {
+                    if (string != null && !string.equals("sneaking:") && !string.equals("sprinting:") && !string.equals("chunkborders:") && !string.equals("hitboxes:") && !string.equals("perspective:") && !string.equals("renderDistanceOnWorldJoin:") && !string.equals("entityDistanceScalingOnWorldJoin:") && !string.equals("fovOnWorldJoin:")) {
                         LOGGER.warn("Skipping bad StandardSetting: " + string);
                     }
                 }
@@ -208,6 +218,14 @@ public class StandardSettings {
     public static void changeSettingsOnJoin() {
         long start = System.nanoTime();
 
+        if (fullscreenOnWorldJoin && client.isWindowFocused()) {
+            if (!window.isFullscreen()) {
+                window.toggleFullscreen();
+            }
+            fullscreenOnWorldJoin = false;
+            LOGGER.info("Fullscreened on World Join");
+        }
+
         if (renderDistanceOnWorldJoin != 0) {
             options.viewDistance = renderDistanceOnWorldJoin;
         }
@@ -216,6 +234,10 @@ public class StandardSettings {
         }
         if (fovOnWorldJoin != 0) {
             options.fov = fovOnWorldJoin;
+        }
+        if (guiScaleOnWorldJoin != -1) {
+            window.calculateScaleFactor(options.guiScale = guiScaleOnWorldJoin, options.forceUnicodeFont);
+            client.onResolutionChanged();
         }
         if (fovOnWorldJoin != 0 || renderDistanceOnWorldJoin != 0 || entityDistanceScalingOnWorldJoin != 0) {
             fovOnWorldJoin = entityDistanceScalingOnWorldJoin = renderDistanceOnWorldJoin = 0;
@@ -362,7 +384,7 @@ public class StandardSettings {
         for (PlayerModelPart playerModelPart : PlayerModelPart.values()) {
             string.append("modelPart_").append(playerModelPart.getName()).append(":").append(options.getEnabledPlayerModelParts().contains(playerModelPart)).append(l);
         }
-        string.append("sneaking:").append(l).append("sprinting:").append(l).append("chunkborders:").append(l).append("hitboxes:").append(l).append("perspective:").append(l).append("piedirectory:").append(l).append("fovOnWorldJoin:").append(l).append("renderDistanceOnWorldJoin:").append(l).append("entityDistanceScalingOnWorldJoin:");
+        string.append("sneaking:").append(l).append("sprinting:").append(l).append("chunkborders:").append(l).append("hitboxes:").append(l).append("perspective:").append(l).append("piedirectory:").append(l).append("fovOnWorldJoin:").append(l).append("fullscreenOnWorldJoin:false").append(l).append("renderDistanceOnWorldJoin:").append(l).append("entityDistanceScalingOnWorldJoin:");
 
         return string.toString();
     }

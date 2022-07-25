@@ -1,0 +1,262 @@
+package com.kingcontaria.standardsettings;
+
+import com.kingcontaria.standardsettings.mixins.BakedModelManagerAccessor;
+import com.kingcontaria.standardsettings.mixins.MinecraftClientAccessor;
+import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.options.*;
+import net.minecraft.client.render.entity.PlayerModelPart;
+import net.minecraft.client.resource.language.LanguageDefinition;
+import net.minecraft.client.util.InputUtil;
+import net.minecraft.client.util.VideoMode;
+import net.minecraft.client.util.Window;
+import net.minecraft.sound.SoundCategory;
+import net.minecraft.util.Arm;
+
+import java.util.Optional;
+import java.util.Set;
+
+public class OptionsCache {
+
+    private final MinecraftClient client;
+    private final GameOptions options;
+    private final Window window;
+    private String levelName;
+    private boolean autoJump;
+    private boolean autoSuggestions;
+    private boolean chatColors;
+    private boolean chatLinks;
+    private boolean chatLinksPrompt;
+    private boolean enableVsync;
+    private boolean entityShadows;
+    private boolean forceUnicodeFont;
+    private boolean discreteMouseScroll;
+    private boolean invertYMouse;
+    private boolean reducedDebugInfo;
+    private boolean showSubtitles;
+    private boolean touchscreen;
+    private boolean fullscreen;
+    private boolean bobView;
+    private boolean sneakToggled;
+    private boolean sprintToggled;
+    private double mouseSensitivity;
+    private double fov;
+    private double gamma;
+    private int viewDistance;
+    private float entityDistanceScaling;
+    private int guiScale;
+    private ParticlesOption particles;
+    private int maxFps;
+    private GraphicsMode graphicsMode;
+    private AoOption ao;
+    private CloudRenderMode cloudRenderMode;
+    private AttackIndicator attackIndicator;
+    LanguageDefinition language;
+    private ChatVisibility chatVisibility;
+    private double chatOpacity;
+    private double chatLineSpacing;
+    private double textBackgroundOpacity;
+    private boolean backgroundForChatOnly;
+    private Optional<VideoMode> fullscreenResolution;
+    private boolean advancedItemTooltips;
+    private boolean pauseOnLostFocus;
+    private double chatHeightFocused;
+    private double chatDelay;
+    private double chatHeightUnfocused;
+    private double chatScale;
+    private double chatWidth;
+    private int mipmapLevels;
+    private Arm mainArm;
+    private NarratorOption narrator;
+    private int biomeBlendRadius;
+    private double mouseWheelSensitivity;
+    private boolean rawMouseInput;
+    private boolean sneaking;
+    private boolean sprinting;
+    private boolean chunkborders;
+    private boolean hitboxes;
+    private int perspective;
+    private String piedirectory;
+    private boolean hudHidden;
+    private KeyBinding[] keysAll;
+    private SoundCategory[] soundCategories;
+    private Set<PlayerModelPart> playerModelParts;
+
+    public OptionsCache(MinecraftClient client) {
+        this.client = client;
+        this.options = client.options;
+        this.window = client.getWindow();
+    }
+
+    public void save(String levelName) {
+        this.levelName = levelName;
+
+        autoJump = options.autoJump;
+        autoSuggestions = options.autoSuggestions;
+        chatColors = options.chatColors;
+        chatLinks = options.chatLinks;
+        chatLinksPrompt = options.chatLinksPrompt;
+        enableVsync = options.enableVsync;
+        entityShadows = options.entityShadows;
+        forceUnicodeFont = options.forceUnicodeFont;
+        discreteMouseScroll = options.discreteMouseScroll;
+        invertYMouse = options.invertYMouse;
+        reducedDebugInfo = options.reducedDebugInfo;
+        showSubtitles = options.showSubtitles;
+        touchscreen = options.touchscreen;
+        fullscreen = options.fullscreen;
+        bobView = options.bobView;
+        sneakToggled = options.sneakToggled;
+        sprintToggled = options.sprintToggled;
+        mouseSensitivity = options.mouseSensitivity;
+        fov = options.fov;
+        gamma = options.gamma;
+        viewDistance = options.viewDistance;
+        entityDistanceScaling = options.entityDistanceScaling;
+        guiScale = options.guiScale;
+        particles = options.particles;
+        maxFps = options.maxFps;
+        graphicsMode = options.graphicsMode;
+        ao = options.ao;
+        cloudRenderMode = options.cloudRenderMode;
+        attackIndicator = options.attackIndicator;
+        language = client.getLanguageManager().getLanguage();
+        chatVisibility = options.chatVisibility;
+        chatOpacity = options.chatOpacity;
+        chatLineSpacing = options.chatLineSpacing;
+        textBackgroundOpacity = options.textBackgroundOpacity;
+        backgroundForChatOnly = options.backgroundForChatOnly;
+        fullscreenResolution = window.getVideoMode();
+        advancedItemTooltips = options.advancedItemTooltips;
+        pauseOnLostFocus = options.pauseOnLostFocus;
+        chatHeightFocused = options.chatHeightFocused;
+        chatDelay = options.chatDelay;
+        chatHeightUnfocused = options.chatHeightUnfocused;
+        chatScale = options.chatScale;
+        chatWidth = options.chatWidth;
+        mipmapLevels = options.mipmapLevels;
+        mainArm = options.mainArm;
+        narrator = options.narrator;
+        biomeBlendRadius = options.biomeBlendRadius;
+        mouseWheelSensitivity = options.mouseWheelSensitivity;
+        rawMouseInput = options.rawMouseInput;
+        sneaking = options.keySneak.isPressed();
+        sprinting = options.keySprint.isPressed();
+        client.debugRenderer.toggleShowChunkBorder();
+        chunkborders = client.debugRenderer.toggleShowChunkBorder();
+        hitboxes = client.getEntityRenderManager().shouldRenderHitboxes();
+        perspective = options.perspective;
+        piedirectory = ((MinecraftClientAccessor)client).getOpenProfilerSection();
+        hudHidden = options.hudHidden;
+        keysAll = options.keysAll;
+        soundCategories = SoundCategory.values();
+        playerModelParts = options.getEnabledPlayerModelParts();
+
+        StandardSettings.LOGGER.info("Cached options for '{}' & abandoned old cache", levelName);
+    }
+
+    public void load(String levelName) {
+        if (!levelName.equals(this.levelName)) {
+            return;
+        }
+        options.autoJump = autoJump;
+        options.autoSuggestions = autoSuggestions;
+        options.chatColors = chatColors;
+        options.chatLinks = chatLinks;
+        options.chatLinksPrompt = chatLinksPrompt;
+        options.enableVsync = enableVsync;
+        options.entityShadows = entityShadows;
+        ((MinecraftClientAccessor)client).callInitFont(options.forceUnicodeFont = forceUnicodeFont);
+        options.discreteMouseScroll = discreteMouseScroll;
+        options.invertYMouse = invertYMouse;
+        options.reducedDebugInfo = reducedDebugInfo;
+        options.showSubtitles = showSubtitles;
+        options.touchscreen = touchscreen;
+        if (window.isFullscreen() != fullscreen) {
+            if (client.isWindowFocused()) {
+                window.toggleFullscreen();
+                options.fullscreen = window.isFullscreen();
+            } else {
+                StandardSettings.LOGGER.error("Could not reset fullscreen mode because window wasn't focused!");
+            }
+        }
+        options.bobView = bobView;
+        options.sneakToggled = sneakToggled;
+        options.sprintToggled = sprintToggled;
+        options.mouseSensitivity = mouseSensitivity;
+        options.fov = fov;
+        options.gamma = gamma;
+        options.viewDistance = viewDistance;
+        options.entityDistanceScaling = entityDistanceScaling;
+        window.calculateScaleFactor(options.guiScale = guiScale, options.forceUnicodeFont);
+        options.particles = particles;
+        window.setFramerateLimit(options.maxFps = maxFps);
+        options.graphicsMode = graphicsMode;
+        options.ao = ao;
+        options.cloudRenderMode = cloudRenderMode;
+        options.attackIndicator = attackIndicator;
+        client.getLanguageManager().setLanguage(language);
+        client.getLanguageManager().apply(client.getResourceManager());
+        options.language = client.getLanguageManager().getLanguage().getCode();
+        options.chatVisibility = chatVisibility;
+        options.chatOpacity = chatOpacity;
+        options.chatLineSpacing = chatLineSpacing;
+        options.textBackgroundOpacity = textBackgroundOpacity;
+        options.backgroundForChatOnly = backgroundForChatOnly;
+        if (fullscreenResolution != window.getVideoMode()) {
+            window.setVideoMode(fullscreenResolution);
+            window.applyVideoMode();
+            options.fullscreenResolution = window.getVideoMode().toString();
+        }
+        options.advancedItemTooltips = advancedItemTooltips;
+        options.pauseOnLostFocus = pauseOnLostFocus;
+        options.chatHeightFocused = chatHeightFocused;
+        options.chatDelay = chatDelay;
+        options.chatHeightUnfocused = chatHeightUnfocused;
+        options.chatScale = chatScale;
+        options.chatWidth = chatWidth;
+        if (options.mipmapLevels != mipmapLevels) {
+            client.resetMipmapLevels(options.mipmapLevels = mipmapLevels);
+            ((BakedModelManagerAccessor)client.getBakedModelManager()).callApply(((BakedModelManagerAccessor)client.getBakedModelManager()).callPrepare(client.getResourceManager(), client.getProfiler()), client.getResourceManager(), client.getProfiler());
+        }
+        options.mainArm = mainArm;
+        options.narrator = narrator;
+        options.biomeBlendRadius = biomeBlendRadius;
+        options.mouseWheelSensitivity = mouseWheelSensitivity;
+        options.rawMouseInput = rawMouseInput;
+        if (options.sneakToggled && (sneaking != options.keySneak.isPressed())) {
+            options.keySneak.setPressed(true);
+        }
+        if (options.sprintToggled && (sprinting != options.keySprint.isPressed())) {
+            options.keySprint.setPressed(true);
+        }
+        if (client.debugRenderer.toggleShowChunkBorder() != chunkborders) {
+            client.debugRenderer.toggleShowChunkBorder();
+        }
+        client.getEntityRenderManager().setRenderHitboxes(hitboxes);
+        options.perspective = perspective;
+        ((MinecraftClientAccessor)client).setOpenProfilerSection(piedirectory);
+        options.hudHidden = hudHidden;
+        for (KeyBinding savedKey : keysAll) {
+            for (KeyBinding keyBinding : options.keysAll) {
+                if (keyBinding == savedKey) {
+                    keyBinding.setBoundKey(InputUtil.fromTranslationKey(savedKey.getBoundKeyTranslationKey()));
+                }
+            }
+        }
+        KeyBinding.updateKeysByCode();
+        for (SoundCategory savedSound : soundCategories) {
+            for (SoundCategory soundCategory : SoundCategory.values()) {
+                if (soundCategory == savedSound) {
+                    options.setSoundVolume(soundCategory, options.getSoundVolume(savedSound));
+                }
+            }
+        }
+        for (PlayerModelPart playerModelPart : PlayerModelPart.values()) {
+            options.setPlayerModelPart(playerModelPart, playerModelParts.contains(playerModelPart));
+        }
+
+        StandardSettings.LOGGER.info("Restored cached options for '{}' & abandoned cache", this.levelName);
+        this.levelName = null;
+    }
+
+}

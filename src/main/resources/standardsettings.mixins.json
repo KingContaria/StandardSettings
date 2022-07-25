@@ -8,6 +8,7 @@
     "CreateWorldScreenMixin",
     "MinecraftClientAccessor",
     "MinecraftClientMixin",
+    "WorldListWidgetEntryMixin",
     "WorldSaveHandlerMixin"
   ],
   "injectors": {

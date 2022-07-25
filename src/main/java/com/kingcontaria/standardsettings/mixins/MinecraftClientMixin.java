@@ -18,13 +18,7 @@ public class MinecraftClientMixin {
 
     @Inject(method = "<init>", at = @At("RETURN"))
     private void initializeStandardSettings(RunArgs args, CallbackInfo ci) {
-        if (StandardSettings.standardoptionsFile.exists()) {
-            StandardSettings.LOGGER.info("Loading StandardSettings...");
-            StandardSettings.load();
-            StandardSettings.LOGGER.info("Checking StandardSettings...");
-            StandardSettings.checkSettings();
-            StandardSettings.options.write();
-        } else {
+        if (!StandardSettings.standardoptionsFile.exists()) {
             StandardSettings.LOGGER.info("Creating StandardSettings File...");
 
             long start = System.nanoTime();
@@ -47,6 +41,23 @@ public class MinecraftClientMixin {
         if (focused && StandardSettings.changeOnGainedFocus) {
             StandardSettings.changeOnGainedFocus = false;
             StandardSettings.changeSettingsOnJoin();
+        }
+    }
+
+    @Inject(method = "onResolutionChanged", at = @At("HEAD"))
+    private void changeSettingsOnResize(CallbackInfo ci) {
+        if (StandardSettings.changeOnGainedFocus) {
+            StandardSettings.changeOnGainedFocus = false;
+            StandardSettings.changeSettingsOnJoin();
+        }
+    }
+
+    @Inject(method = "disconnect(Lnet/minecraft/client/gui/screen/Screen;)V", at = @At("HEAD"))
+    private void cacheOptions(CallbackInfo ci) {
+        try {
+            StandardSettings.lastQuitWorld = StandardSettings.client.getServer().getIconFile().getParentFile().getName();
+        } catch (Exception e) {
+            // empty catch block
         }
     }
 
