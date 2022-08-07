@@ -9,6 +9,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.StandardOpenOption;
@@ -47,23 +48,29 @@ public abstract class MinecraftClientMixin {
     }
 
     @Inject(method = "startGame", at = @At("HEAD"))
-    private void resetSettings(String string, String levelInfo, LevelInfo par3, CallbackInfo ci) {
-        if (bl) {
-            StandardSettings.LOGGER.info("Reset to StandardSettings...");
-            StandardSettings.load();
-            StandardSettings.LOGGER.info("Checking Settings...");
-            StandardSettings.checkSettings();
-            StandardSettings.options.save();
-            bl = false;
+    private void resetSettings(String fileName, String worldName, LevelInfo levelInfo, CallbackInfo ci) {
+        if (!new File("saves", fileName).exists()) {
+            if (bl) {
+                StandardSettings.changeOnWindowActivation = false;
+                StandardSettings.LOGGER.info("Reset to StandardSettings...");
+                StandardSettings.load();
+                StandardSettings.LOGGER.info("Checking Settings...");
+                StandardSettings.checkSettings();
+                StandardSettings.options.save();
+                bl = false;
+            }
+        } else {
+            StandardSettings.optionsCache.load(fileName);
         }
+        StandardSettings.lastQuitWorld = fileName;
     }
 
     @Inject(method = "startGame", at = @At("RETURN"))
-    private void onWorldJoin(String string, String levelInfo, LevelInfo par3, CallbackInfo ci) {
+    private void onWorldJoin(String fileName, String worldName, LevelInfo levelInfo, CallbackInfo ci) {
         if (this.isWindowFocused()) {
             StandardSettings.changeSettingsOnJoin();
         } else {
-            StandardSettings.changeOnGainedFocus = true;
+            StandardSettings.changeOnWindowActivation = true;
         }
         bl = true;
     }
