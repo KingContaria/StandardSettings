@@ -15,7 +15,7 @@ public class WorldListWidgetEntryMixin {
 
     @Shadow @Final private LevelSummary level;
 
-    @Inject(method = "play", at = @At("HEAD"))
+    @Inject(method = "method_29990", at = @At("HEAD"))
     private void loadCache(CallbackInfo ci) {
         StandardSettings.optionsCache.load(this.level.getName());
     }

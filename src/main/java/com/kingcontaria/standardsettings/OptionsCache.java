@@ -2,6 +2,8 @@ package com.kingcontaria.standardsettings;
 
 import com.kingcontaria.standardsettings.mixins.BakedModelManagerAccessor;
 import com.kingcontaria.standardsettings.mixins.MinecraftClientAccessor;
+import me.jellysquid.mods.sodium.client.SodiumClientMod;
+import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.options.*;
 import net.minecraft.client.render.entity.PlayerModelPart;
@@ -12,6 +14,7 @@ import net.minecraft.client.util.Window;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.util.Arm;
 
+import java.io.IOException;
 import java.util.Optional;
 import java.util.Set;
 
@@ -50,7 +53,7 @@ public class OptionsCache {
     private AoOption ao;
     private CloudRenderMode cloudRenderMode;
     private AttackIndicator attackIndicator;
-    LanguageDefinition language;
+    private LanguageDefinition language;
     private ChatVisibility chatVisibility;
     private double chatOpacity;
     private double chatLineSpacing;
@@ -70,15 +73,16 @@ public class OptionsCache {
     private int biomeBlendRadius;
     private double mouseWheelSensitivity;
     private boolean rawMouseInput;
+    private boolean entityCulling;
     private boolean sneaking;
     private boolean sprinting;
     private boolean chunkborders;
     private boolean hitboxes;
     private int perspective;
     private String piedirectory;
-    //private boolean hudHidden;
-    private KeyBinding[] keysAll;
-    private SoundCategory[] soundCategories;
+    private boolean hudHidden;
+    private String[] keysAll;
+    private float[] soundCategories;
     private Set<PlayerModelPart> playerModelParts;
 
     public OptionsCache(MinecraftClient client) {
@@ -88,8 +92,6 @@ public class OptionsCache {
     }
 
     public void save(String levelName) {
-        this.levelName = levelName;
-
         autoJump = options.autoJump;
         autoSuggestions = options.autoSuggestions;
         chatColors = options.chatColors;
@@ -139,6 +141,9 @@ public class OptionsCache {
         biomeBlendRadius = options.biomeBlendRadius;
         mouseWheelSensitivity = options.mouseWheelSensitivity;
         rawMouseInput = options.rawMouseInput;
+        if (FabricLoader.getInstance().getModContainer("sodium").isPresent()) {
+            entityCulling = SodiumClientMod.options().advanced.useEntityCulling;
+        }
         sneaking = options.keySneak.isPressed();
         sprinting = options.keySprint.isPressed();
         client.debugRenderer.toggleShowChunkBorder();
@@ -146,12 +151,20 @@ public class OptionsCache {
         hitboxes = client.getEntityRenderManager().shouldRenderHitboxes();
         perspective = options.perspective;
         piedirectory = ((MinecraftClientAccessor)client).getOpenProfilerSection();
-        //hudHidden = options.hudHidden;
-        keysAll = options.keysAll;
-        soundCategories = SoundCategory.values();
+        hudHidden = options.hudHidden;
+        keysAll = new String[options.keysAll.length];
+        int i = 0;
+        for (KeyBinding key : options.keysAll) {
+            keysAll[i++] = key.getBoundKeyTranslationKey();
+        }
+        soundCategories = new float[SoundCategory.values().length];
+        i = 0;
+        for (SoundCategory sound : SoundCategory.values()) {
+            soundCategories[i++] = options.getSoundVolume(sound);
+        }
         playerModelParts = options.getEnabledPlayerModelParts();
 
-        StandardSettings.LOGGER.info("Cached options for '{}' & abandoned old cache", levelName);
+        StandardSettings.LOGGER.info("Cached options for '{}'" + (this.levelName != null ? " & abandoned old cache" : ""), this.levelName = levelName);
     }
 
     public void load(String levelName) {
@@ -174,10 +187,10 @@ public class OptionsCache {
         if (window.isFullscreen() != fullscreen) {
             if (client.isWindowFocused()) {
                 window.toggleFullscreen();
-                options.fullscreen = window.isFullscreen();
             } else {
                 StandardSettings.LOGGER.error("Could not reset fullscreen mode because window wasn't focused!");
             }
+            options.fullscreen = window.isFullscreen();
         }
         options.bobView = bobView;
         options.sneakToggled = sneakToggled;
@@ -194,9 +207,11 @@ public class OptionsCache {
         options.ao = ao;
         options.cloudRenderMode = cloudRenderMode;
         options.attackIndicator = attackIndicator;
-        client.getLanguageManager().setLanguage(language);
-        client.getLanguageManager().apply(client.getResourceManager());
-        options.language = client.getLanguageManager().getLanguage().getCode();
+        if (!language.getCode().equals(options.language)) {
+            client.getLanguageManager().setLanguage(language);
+            client.getLanguageManager().apply(client.getResourceManager());
+            options.language = client.getLanguageManager().getLanguage().getCode();
+        }
         options.chatVisibility = chatVisibility;
         options.chatOpacity = chatOpacity;
         options.chatLineSpacing = chatLineSpacing;
@@ -223,6 +238,15 @@ public class OptionsCache {
         options.biomeBlendRadius = biomeBlendRadius;
         options.mouseWheelSensitivity = mouseWheelSensitivity;
         options.rawMouseInput = rawMouseInput;
+        if (FabricLoader.getInstance().getModContainer("sodium").isPresent()) {
+            if (SodiumClientMod.options().advanced.useEntityCulling != (SodiumClientMod.options().advanced.useEntityCulling = entityCulling)) {
+                try {
+                    SodiumClientMod.options().writeChanges();
+                } catch (IOException e) {
+                    // empty catch block
+                }
+            }
+        }
         if (options.sneakToggled && (sneaking != options.keySneak.isPressed())) {
             options.keySneak.setPressed(true);
         }
@@ -235,27 +259,21 @@ public class OptionsCache {
         client.getEntityRenderManager().setRenderHitboxes(hitboxes);
         options.perspective = perspective;
         ((MinecraftClientAccessor)client).setOpenProfilerSection(piedirectory);
-        //options.hudHidden = hudHidden;
-        for (KeyBinding savedKey : keysAll) {
-            for (KeyBinding keyBinding : options.keysAll) {
-                if (keyBinding == savedKey) {
-                    keyBinding.setBoundKey(InputUtil.fromTranslationKey(savedKey.getBoundKeyTranslationKey()));
-                }
-            }
+        options.hudHidden = hudHidden;
+        int i = 0;
+        for (KeyBinding keyBinding : options.keysAll) {
+            keyBinding.setBoundKey(InputUtil.fromTranslationKey(keysAll[i++]));
         }
         KeyBinding.updateKeysByCode();
-        for (SoundCategory savedSound : soundCategories) {
-            for (SoundCategory soundCategory : SoundCategory.values()) {
-                if (soundCategory == savedSound) {
-                    options.setSoundVolume(soundCategory, options.getSoundVolume(savedSound));
-                }
-            }
+        i = 0;
+        for (SoundCategory soundCategory : SoundCategory.values()) {
+            options.setSoundVolume(soundCategory, soundCategories[i++]);
         }
         for (PlayerModelPart playerModelPart : PlayerModelPart.values()) {
             options.setPlayerModelPart(playerModelPart, playerModelParts.contains(playerModelPart));
         }
 
-        StandardSettings.LOGGER.info("Restored cached options for '{}' & abandoned cache", this.levelName);
+        StandardSettings.LOGGER.info("Restored cached options for '{}'", this.levelName);
         this.levelName = null;
     }
 

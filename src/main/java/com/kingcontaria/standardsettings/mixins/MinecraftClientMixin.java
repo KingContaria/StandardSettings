@@ -10,11 +10,10 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.StandardOpenOption;
 
 @Mixin(MinecraftClient.class)
 
-public class MinecraftClientMixin {
+public abstract class MinecraftClientMixin {
 
     @Inject(method = "<init>", at = @At("RETURN"))
     private void initializeStandardSettings(RunArgs args, CallbackInfo ci) {
@@ -28,7 +27,7 @@ public class MinecraftClientMixin {
             }
 
             try {
-                Files.write(StandardSettings.standardoptionsFile.toPath(), StandardSettings.getStandardoptionsTxt().getBytes(), StandardOpenOption.CREATE_NEW);
+                Files.write(StandardSettings.standardoptionsFile.toPath(), StandardSettings.getStandardoptionsTxt().getBytes());
                 StandardSettings.LOGGER.info("Finished creating StandardSettings File ({} ms)", (System.nanoTime() - start) / 1000000.0f);
             } catch (IOException e) {
                 StandardSettings.LOGGER.error("Failed to create StandardSettings File", e);
@@ -38,27 +37,29 @@ public class MinecraftClientMixin {
 
     @Inject(method = "onWindowFocusChanged", at = @At("RETURN"))
     private void changeSettingsOnJoin(boolean focused, CallbackInfo ci) {
-        if (focused && StandardSettings.changeOnGainedFocus) {
-            StandardSettings.changeOnGainedFocus = false;
+        if (focused && StandardSettings.changeOnWindowActivation) {
+            StandardSettings.changeOnWindowActivation = false;
             StandardSettings.changeSettingsOnJoin();
         }
     }
 
     @Inject(method = "onResolutionChanged", at = @At("HEAD"))
     private void changeSettingsOnResize(CallbackInfo ci) {
-        if (StandardSettings.changeOnGainedFocus) {
-            StandardSettings.changeOnGainedFocus = false;
+        if (StandardSettings.changeOnWindowActivation && StandardSettings.changeOnResize) {
+            StandardSettings.changeOnWindowActivation = false;
             StandardSettings.changeSettingsOnJoin();
         }
     }
 
     @Inject(method = "disconnect(Lnet/minecraft/client/gui/screen/Screen;)V", at = @At("HEAD"))
     private void cacheOptions(CallbackInfo ci) {
+        StandardSettings.changeOnWindowActivation = false;
         try {
             StandardSettings.lastQuitWorld = StandardSettings.client.getServer().getIconFile().getParentFile().getName();
         } catch (Exception e) {
             // empty catch block
         }
+        System.out.println("CHECK");
     }
 
 }
