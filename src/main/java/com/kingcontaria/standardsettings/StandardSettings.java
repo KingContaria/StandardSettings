@@ -186,16 +186,8 @@ public class StandardSettings {
                             }
                         }
                     }
-                    case "sneaking" -> {
-                        if (options.sneakToggled && (Boolean.parseBoolean(strings[1]) != options.keySneak.isPressed())) {
-                            options.keySneak.setPressed(true);
-                        }
-                    }
-                    case "sprinting" -> {
-                        if (options.sprintToggled && (Boolean.parseBoolean(strings[1]) != options.keySprint.isPressed())) {
-                            options.keySprint.setPressed(true);
-                        }
-                    }
+                    case "sneaking" -> options.keySneak.setPressed(options.sneakToggled && (Boolean.parseBoolean(strings[1]) != options.keySneak.isPressed()));
+                    case "sprinting" -> options.keySprint.setPressed(options.sprintToggled && (Boolean.parseBoolean(strings[1]) != options.keySprint.isPressed()));
                     case "chunkborders" -> {
                         if (client.debugRenderer.toggleShowChunkBorder() != Boolean.parseBoolean(strings[1])) {
                             client.debugRenderer.toggleShowChunkBorder();
