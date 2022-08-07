@@ -1,9 +1,12 @@
 package com.kingcontaria.standardsettings;
 
+import com.google.common.io.Files;
 import com.kingcontaria.standardsettings.mixins.BakedModelManagerAccessor;
 import com.kingcontaria.standardsettings.mixins.MinecraftClientAccessor;
+import me.jellysquid.mods.sodium.client.SodiumClientMod;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
+import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.option.*;
 import net.minecraft.client.render.entity.PlayerModelPart;
@@ -15,6 +18,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.Optional;
 
 @Environment(value= EnvType.CLIENT)
@@ -25,192 +30,218 @@ public class StandardSettings {
     public static final GameOptions options = client.options;
     private static final Window window = client.getWindow();
     public static final File standardoptionsFile = new File("config/standardoptions.txt");
-    public static File lastUsedFile;
-    public static long fileLastModified;
-    public static boolean changeOnGainedFocus = false;
+    public static boolean changeOnWindowActivation = false;
+    public static boolean changeOnResize = false;
     private static int renderDistanceOnWorldJoin;
     private static int simulationDistanceOnWorldJoin;
     private static float entityDistanceScalingOnWorldJoin;
     private static double fovOnWorldJoin;
+    private static int guiScaleOnWorldJoin;
+    public static OptionsCache optionsCache = new OptionsCache(client);
+    public static String lastQuitWorld;
+    public static String[] standardoptionsCache;
+    public static long fileLastModified;
+    private static long standardoptionsTxtLastModified;
+    private static File lastUsedGlobalFile;
 
     public static void load() {
         long start = System.nanoTime();
 
         fovOnWorldJoin = entityDistanceScalingOnWorldJoin = renderDistanceOnWorldJoin = simulationDistanceOnWorldJoin = 0;
+        guiScaleOnWorldJoin = -1;
+        changeOnResize = false;
 
         try {
             if (!standardoptionsFile.exists()) {
+                standardoptionsCache = null;
+                lastUsedGlobalFile = null;
+                fileLastModified = standardoptionsTxtLastModified = 0;
                 LOGGER.error("standardoptions.txt is missing");
                 return;
             }
 
-            BufferedReader bufferedReader = new BufferedReader(new FileReader(standardoptionsFile));
-
-            String string = bufferedReader.readLine();
-
-            if (string != null && new File(string).exists()) {
-                LOGGER.info("Using global standardoptions file");
-                bufferedReader.close();
-                bufferedReader = new BufferedReader(new FileReader(lastUsedFile = new File(string)));
-                string = bufferedReader.readLine();
-            } else {
-                lastUsedFile = standardoptionsFile;
+            if (lastQuitWorld != null) {
+                optionsCache.save(lastQuitWorld);
+                lastQuitWorld = null;
             }
-            fileLastModified = lastUsedFile.lastModified();
 
-            do {
-                try {
-                    String[] strings = string.split(":", 2);
-                    strings[1] = strings[1].trim();
-                    String[] string0_split = strings[0].split("_", 2);
-                    switch (string0_split[0]) {
-                        case "autoJump" -> options.autoJump = Boolean.parseBoolean(strings[1]);
-                        case "autoSuggestions" -> options.autoSuggestions = Boolean.parseBoolean(strings[1]);
-                        case "chatColors" -> options.chatColors = Boolean.parseBoolean(strings[1]);
-                        case "chatLinks" -> options.chatLinks = Boolean.parseBoolean(strings[1]);
-                        case "chatLinksPrompt" -> options.chatLinksPrompt = Boolean.parseBoolean(strings[1]);
-                        case "enableVsync" -> window.setVsync(options.enableVsync = Boolean.parseBoolean(strings[1]));
-                        case "entityShadows" -> options.entityShadows = Boolean.parseBoolean(strings[1]);
-                        case "forceUnicodeFont" -> ((MinecraftClientAccessor)client).callInitFont(options.forceUnicodeFont = Boolean.parseBoolean(strings[1]));
-                        case "discrete" -> options.discreteMouseScroll = Boolean.parseBoolean(strings[1]);
-                        case "invertYMouse" -> options.invertYMouse = Boolean.parseBoolean(strings[1]);
-                        case "reducedDebugInfo" -> options.reducedDebugInfo = Boolean.parseBoolean(strings[1]);
-                        case "showSubtitles" -> options.showSubtitles = Boolean.parseBoolean(strings[1]);
-                        case "touchscreen" -> options.touchscreen = Boolean.parseBoolean(strings[1]);
-                        case "fullscreen" -> {
-                            if (window.isFullscreen() != Boolean.parseBoolean(strings[1])) {
-                                if (client.isWindowFocused()) {
-                                    window.toggleFullscreen();
-                                    options.fullscreen = window.isFullscreen();
-                                } else {
-                                    LOGGER.error("Could not reset fullscreen mode because window wasn't focused!");
-                                }
+            if (standardoptionsCache == null || standardoptionsTxtLastModified != standardoptionsFile.lastModified() || (lastUsedGlobalFile != null && fileLastModified != lastUsedGlobalFile.lastModified())) {
+                LOGGER.info(standardoptionsTxtLastModified == 0 ? "Loading & Caching StandardSettings on first load" : "Reloading & caching StandardSettings because the file has been changed");
+                standardoptionsTxtLastModified = standardoptionsFile.lastModified();
+                List<String> lines = Files.readLines(standardoptionsFile, StandardCharsets.UTF_8);
+                File globalFile = new File(lines.get(0));
+                if (lines.get(0) != null && globalFile.exists()) {
+                    LOGGER.info("Using global standardoptions file");
+                    fileLastModified = globalFile.lastModified();
+                    lines = Files.readLines(lastUsedGlobalFile = globalFile, StandardCharsets.UTF_8);
+                } else {
+                    lastUsedGlobalFile = null;
+                    fileLastModified = standardoptionsTxtLastModified;
+                }
+                standardoptionsCache = lines.toArray(new String[0]);
+            }
+            load(standardoptionsCache);
+            LOGGER.info("Finished loading StandardSettings ({} ms)", (System.nanoTime() - start) / 1000000.0f);
+        } catch (IOException e) {
+            LOGGER.error("Failed to load StandardSettings", e);
+        }
+    }
+
+    private static void load(String[] lines) {
+        for (String line : lines) {
+            try {
+                String[] strings = line.split(":", 2);
+                strings[1] = strings[1].trim();
+                String[] string0_split = strings[0].split("_", 2);
+                switch (string0_split[0]) {
+                    case "autoJump" -> options.autoJump = Boolean.parseBoolean(strings[1]);
+                    case "autoSuggestions" -> options.autoSuggestions = Boolean.parseBoolean(strings[1]);
+                    case "chatColors" -> options.chatColors = Boolean.parseBoolean(strings[1]);
+                    case "chatLinks" -> options.chatLinks = Boolean.parseBoolean(strings[1]);
+                    case "chatLinksPrompt" -> options.chatLinksPrompt = Boolean.parseBoolean(strings[1]);
+                    case "enableVsync" -> window.setVsync(options.enableVsync = Boolean.parseBoolean(strings[1]));
+                    case "entityShadows" -> options.entityShadows = Boolean.parseBoolean(strings[1]);
+                    case "forceUnicodeFont" -> ((MinecraftClientAccessor) client).callInitFont(options.forceUnicodeFont = Boolean.parseBoolean(strings[1]));
+                    case "discrete" -> options.discreteMouseScroll = Boolean.parseBoolean(strings[1]);
+                    case "invertYMouse" -> options.invertYMouse = Boolean.parseBoolean(strings[1]);
+                    case "reducedDebugInfo" -> options.reducedDebugInfo = Boolean.parseBoolean(strings[1]);
+                    case "showSubtitles" -> options.showSubtitles = Boolean.parseBoolean(strings[1]);
+                    case "touchscreen" -> options.touchscreen = Boolean.parseBoolean(strings[1]);
+                    case "fullscreen" -> {
+                        if (window.isFullscreen() != Boolean.parseBoolean(strings[1])) {
+                            if (client.isWindowFocused()) {
+                                window.toggleFullscreen();
+                                options.fullscreen = window.isFullscreen();
+                            } else {
+                                LOGGER.error("Could not reset fullscreen mode because window wasn't focused!");
                             }
                         }
-                        case "bobView" -> options.bobView = Boolean.parseBoolean(strings[1]);
-                        case "toggleCrouch" -> options.sneakToggled = Boolean.parseBoolean(strings[1]);
-                        case "toggleSprint" -> options.sprintToggled = Boolean.parseBoolean(strings[1]);
-                        case "darkMojangStudiosBackground" -> options.monochromeLogo = Boolean.parseBoolean(strings[1]);
-                        case "hideLightningFlashes" -> options.hideLightningFlashes = Boolean.parseBoolean(strings[1]);
-                        case "mouseSensitivity" -> options.mouseSensitivity = Double.parseDouble(strings[1]);
-                        case "fov" -> options.fov = Double.parseDouble(strings[1]) * 40.0f + 70.0f;
-                        case "screenEffectScale" -> options.distortionEffectScale = Float.parseFloat(strings[1]);
-                        case "fovEffectScale" -> options.fovEffectScale = Float.parseFloat(strings[1]);
-                        case "gamma" -> options.gamma = Double.parseDouble(strings[1]);
-                        case "renderDistance" -> options.viewDistance = Integer.parseInt(strings[1]);
-                        case "entityDistanceScaling" -> options.entityDistanceScaling = Float.parseFloat(strings[1]);
-                        case "guiScale" -> options.guiScale = Integer.parseInt(strings[1]);
-                        case "particles" -> options.particles = ParticlesMode.byId(Integer.parseInt(strings[1]));
-                        case "maxFps" -> window.setFramerateLimit(options.maxFps = Integer.parseInt(strings[1]));
-                        case "graphicsMode" -> options.graphicsMode = GraphicsMode.byId(Integer.parseInt(strings[1]));
-                        case "ao" -> options.ao = AoMode.byId(Integer.parseInt(strings[1]));
-                        case "renderClouds" -> options.cloudRenderMode = strings[1].equals("true") ? CloudRenderMode.FANCY : strings[1].equals("false") ? CloudRenderMode.OFF : CloudRenderMode.FAST;
-                        case "attackIndicator" -> options.attackIndicator = AttackIndicator.byId(Integer.parseInt(strings[1]));
-                        case "lang" -> {
-                            client.getLanguageManager().setLanguage(client.getLanguageManager().getLanguage(strings[1]));
-                            client.getLanguageManager().reload(client.getResourceManager());
-                            options.language = client.getLanguageManager().getLanguage().getCode();
-                        }
-                        case "chatVisibility" -> options.chatVisibility = ChatVisibility.byId(Integer.parseInt(strings[1]));
-                        case "chatOpacity" -> options.chatOpacity = Double.parseDouble(strings[1]);
-                        case "chatLineSpacing" -> options.chatLineSpacing = Double.parseDouble(strings[1]);
-                        case "textBackgroundOpacity" -> options.textBackgroundOpacity = Double.parseDouble(strings[1]);
-                        case "backgroundForChatOnly" -> options.backgroundForChatOnly = Boolean.parseBoolean(strings[1]);
-                        case "fullscreenResolution" -> {
-                            if (!strings[1].equals(options.fullscreenResolution)) {
-                                if (strings[1].equals("")) {
-                                    window.setVideoMode(Optional.empty());
+                    }
+                    case "bobView" -> options.bobView = Boolean.parseBoolean(strings[1]);
+                    case "toggleCrouch" -> options.sneakToggled = Boolean.parseBoolean(strings[1]);
+                    case "toggleSprint" -> options.sprintToggled = Boolean.parseBoolean(strings[1]);
+                    case "darkMojangStudiosBackground" -> options.monochromeLogo = Boolean.parseBoolean(strings[1]);
+                    case "hideLightningFlashes" -> options.hideLightningFlashes = Boolean.parseBoolean(strings[1]);
+                    case "mouseSensitivity" -> options.mouseSensitivity = Double.parseDouble(strings[1]);
+                    case "fov" -> options.fov = Double.parseDouble(strings[1]) * 40.0f + 70.0f;
+                    case "screenEffectScale" -> options.distortionEffectScale = Float.parseFloat(strings[1]);
+                    case "fovEffectScale" -> options.fovEffectScale = Float.parseFloat(strings[1]);
+                    case "gamma" -> options.gamma = Double.parseDouble(strings[1]);
+                    case "renderDistance" -> options.viewDistance = Integer.parseInt(strings[1]);
+                    case "entityDistanceScaling" -> options.entityDistanceScaling = Float.parseFloat(strings[1]);
+                    case "guiScale" -> options.guiScale = Integer.parseInt(strings[1]);
+                    case "particles" -> options.particles = ParticlesMode.byId(Integer.parseInt(strings[1]));
+                    case "maxFps" -> window.setFramerateLimit(options.maxFps = Integer.parseInt(strings[1]));
+                    case "graphicsMode" -> options.graphicsMode = GraphicsMode.byId(Integer.parseInt(strings[1]));
+                    case "ao" -> options.ao = AoMode.byId(Integer.parseInt(strings[1]));
+                    case "renderClouds" -> options.cloudRenderMode = strings[1].equals("true") ? CloudRenderMode.FANCY : strings[1].equals("false") ? CloudRenderMode.OFF : CloudRenderMode.FAST;
+                    case "attackIndicator" -> options.attackIndicator = AttackIndicator.byId(Integer.parseInt(strings[1]));
+                    case "lang" -> {
+                        client.getLanguageManager().setLanguage(client.getLanguageManager().getLanguage(strings[1]));
+                        client.getLanguageManager().reload(client.getResourceManager());
+                        options.language = client.getLanguageManager().getLanguage().getCode();
+                    }
+                    case "chatVisibility" -> options.chatVisibility = ChatVisibility.byId(Integer.parseInt(strings[1]));
+                    case "chatOpacity" -> options.chatOpacity = Double.parseDouble(strings[1]);
+                    case "chatLineSpacing" -> options.chatLineSpacing = Double.parseDouble(strings[1]);
+                    case "textBackgroundOpacity" -> options.textBackgroundOpacity = Double.parseDouble(strings[1]);
+                    case "backgroundForChatOnly" -> options.backgroundForChatOnly = Boolean.parseBoolean(strings[1]);
+                    case "fullscreenResolution" -> {
+                        if (!strings[1].equals(options.fullscreenResolution)) {
+                            if (strings[1].equals("")) {
+                                window.setVideoMode(Optional.empty());
+                                window.applyVideoMode(); break;
+                            }
+                            for (int i = 0; i < window.getMonitor().getVideoModeCount(); i++) {
+                                if (window.getMonitor().getVideoMode(i).asString().equals(strings[1])) {
+                                    window.setVideoMode(Optional.ofNullable(window.getMonitor().getVideoMode(i)));
                                     window.applyVideoMode(); break;
                                 }
-                                for (int i = 0; i < window.getMonitor().getVideoModeCount(); i++) {
-                                    if (window.getMonitor().getVideoMode(i).asString().equals(strings[1])) {
-                                        window.setVideoMode(Optional.ofNullable(window.getMonitor().getVideoMode(i)));
-                                        window.applyVideoMode(); break;
-                                    }
-                                }
-                                LOGGER.warn("Could not resolve Fullscreen Resolution: " + strings[1]);
                             }
+                            LOGGER.warn("Could not resolve Fullscreen Resolution: " + strings[1]);
                         }
-                        case "advancedItemTooltips" -> options.advancedItemTooltips = Boolean.parseBoolean(strings[1]);
-                        case "pauseOnLostFocus" -> options.pauseOnLostFocus = Boolean.parseBoolean(strings[1]);
-                        case "chatHeightFocused" -> options.chatHeightFocused = Double.parseDouble(strings[1]);
-                        case "chatDelay" -> options.chatDelay = Double.parseDouble(strings[1]);
-                        case "chatHeightUnfocused" -> options.chatHeightUnfocused = Double.parseDouble(strings[1]);
-                        case "chatScale" -> options.chatScale = Double.parseDouble(strings[1]);
-                        case "chatWidth" -> options.chatWidth = Double.parseDouble(strings[1]);
-                        case "mipmapLevels" -> {
-                            if (options.mipmapLevels != Integer.parseInt(strings[1])) {
-                                client.setMipmapLevels(options.mipmapLevels = Integer.parseInt(strings[1]));
-                                ((BakedModelManagerAccessor)client.getBakedModelManager()).callApply(((BakedModelManagerAccessor)client.getBakedModelManager()).callPrepare(client.getResourceManager(), client.getProfiler()), client.getResourceManager(), client.getProfiler());
-                            }
+                    }
+                    case "advancedItemTooltips" -> options.advancedItemTooltips = Boolean.parseBoolean(strings[1]);
+                    case "pauseOnLostFocus" -> options.pauseOnLostFocus = Boolean.parseBoolean(strings[1]);
+                    case "chatHeightFocused" -> options.chatHeightFocused = Double.parseDouble(strings[1]);
+                    case "chatDelay" -> options.chatDelay = Double.parseDouble(strings[1]);
+                    case "chatHeightUnfocused" -> options.chatHeightUnfocused = Double.parseDouble(strings[1]);
+                    case "chatScale" -> options.chatScale = Double.parseDouble(strings[1]);
+                    case "chatWidth" -> options.chatWidth = Double.parseDouble(strings[1]);
+                    case "mipmapLevels" -> {
+                        if (options.mipmapLevels != Integer.parseInt(strings[1])) {
+                            client.setMipmapLevels(options.mipmapLevels = Integer.parseInt(strings[1]));
+                            ((BakedModelManagerAccessor) client.getBakedModelManager()).callApply(((BakedModelManagerAccessor) client.getBakedModelManager()).callPrepare(client.getResourceManager(), client.getProfiler()), client.getResourceManager(), client.getProfiler());
                         }
-                        case "mainHand" -> options.mainArm = "left".equalsIgnoreCase(strings[1]) ? Arm.LEFT : Arm.RIGHT;
-                        case "narrator" -> options.narrator = NarratorMode.byId(Integer.parseInt(strings[1]));
-                        case "biomeBlendRadius" -> options.biomeBlendRadius = Integer.parseInt(strings[1]);
-                        case "mouseWheelSensitivity" -> options.mouseWheelSensitivity = Double.parseDouble(strings[1]);
-                        case "rawMouseInput" -> window.setRawMouseMotion(options.rawMouseInput = Boolean.parseBoolean(strings[1]));
-                        case "showAutosaveIndicator" -> options.showAutosaveIndicator = Boolean.parseBoolean(strings[1]);
-                        case "sneaking" -> {
-                            if (options.sneakToggled && (Boolean.parseBoolean(strings[1]) != options.sneakKey.isPressed())) {
-                                options.sneakKey.setPressed(true);
-                            }
-                        }
-                        case "sprinting" -> {
-                            if (options.sprintToggled && (Boolean.parseBoolean(strings[1]) != options.sprintKey.isPressed())) {
-                                options.sprintKey.setPressed(true);
-                            }
-                        }
-                        case "chunkborders" -> {
-                            if (client.debugRenderer.toggleShowChunkBorder() != Boolean.parseBoolean(strings[1])) {
-                                client.debugRenderer.toggleShowChunkBorder();
-                            }
-                        }
-                        case "hitboxes" -> client.getEntityRenderDispatcher().setRenderHitboxes(Boolean.parseBoolean(strings[1]));
-                        case "perspective" -> options.setPerspective(Perspective.values()[Integer.parseInt(strings[1]) % 3]);
-                        case "piedirectory" -> {
-                            if (!strings[1].split("\\.")[0].equals("root")) break;
-                            ((MinecraftClientAccessor)client).setOpenProfilerSection(strings[1].replace('.','\u001e'));
-                        }
-                        case "fovOnWorldJoin" -> fovOnWorldJoin = Double.parseDouble(strings[1]);
-                        case "renderDistanceOnWorldJoin" -> renderDistanceOnWorldJoin = Integer.parseInt(strings[1]);
-                        case "simulationDistanceOnWorldJoin" -> simulationDistanceOnWorldJoin = Integer.parseInt(strings[1]);
-                        case "entityDistanceScalingOnWorldJoin" -> entityDistanceScalingOnWorldJoin = Float.parseFloat(strings[1]);
-                        case "key" -> {
-                            for (KeyBinding keyBinding : options.allKeys) {
-                                if (string0_split[1].equals(keyBinding.getTranslationKey())) {
-                                    keyBinding.setBoundKey(InputUtil.fromTranslationKey(strings[1])); break;
-                                }
-                            }
-                        }
-                        case "soundCategory" -> {
-                            for (SoundCategory soundCategory : SoundCategory.values()) {
-                                if (string0_split[1].equals(soundCategory.getName())) {
-                                    options.setSoundVolume(soundCategory, Float.parseFloat(strings[1])); break;
-                                }
-                            }
-                        }
-                        case "modelPart" -> {
-                            for (PlayerModelPart playerModelPart : PlayerModelPart.values()) {
-                                if (string0_split[1].equals(playerModelPart.getName())) {
-                                    options.togglePlayerModelPart(playerModelPart, Boolean.parseBoolean(strings[1])); break;
-                                }
+                    }
+                    case "mainHand" -> options.mainArm = "left".equalsIgnoreCase(strings[1]) ? Arm.LEFT : Arm.RIGHT;
+                    case "narrator" -> options.narrator = NarratorMode.byId(Integer.parseInt(strings[1]));
+                    case "biomeBlendRadius" -> options.biomeBlendRadius = Integer.parseInt(strings[1]);
+                    case "mouseWheelSensitivity" -> options.mouseWheelSensitivity = Double.parseDouble(strings[1]);
+                    case "rawMouseInput" -> window.setRawMouseMotion(options.rawMouseInput = Boolean.parseBoolean(strings[1]));
+                    case "showAutosaveIndicator" -> options.showAutosaveIndicator = Boolean.parseBoolean(strings[1]);
+                    case "entityCulling" -> {
+                        if (FabricLoader.getInstance().getModContainer("sodium").isPresent()) {
+                            if (SodiumClientMod.options().performance.useEntityCulling != (SodiumClientMod.options().performance.useEntityCulling = Boolean.parseBoolean(strings[1]))) {
+                                SodiumClientMod.options().writeChanges();
                             }
                         }
                     }
-                    // Some options.txt settings which aren't accessible in vanilla Minecraft and some unnecessary settings (like Multiplayer stuff) are not included.
-                } catch (Exception exception) {
-                    if (string != null && !string.equals("sneaking:") && !string.equals("sprinting:") && !string.equals("chunkborders:") && !string.equals("hitboxes:") && !string.equals("perspective:") && !string.equals("renderDistanceOnWorldJoin:") && !string.equals("simulationDistanceOnWorldJoin:") && !string.equals("entityDistanceScalingOnWorldJoin:") && !string.equals("fovOnWorldJoin:") && !string.equals("lastServer:")) {
-                        LOGGER.warn("Skipping bad StandardSetting: " + string);
+                    case "sneaking" -> {
+                        if (options.sneakToggled && (Boolean.parseBoolean(strings[1]) != options.sneakKey.isPressed())) {
+                            options.sneakKey.setPressed(true);
+                        }
+                    }
+                    case "sprinting" -> {
+                        if (options.sprintToggled && (Boolean.parseBoolean(strings[1]) != options.sprintKey.isPressed())) {
+                            options.sprintKey.setPressed(true);
+                        }
+                    }
+                    case "chunkborders" -> {
+                        if (client.debugRenderer.toggleShowChunkBorder() != Boolean.parseBoolean(strings[1])) {
+                            client.debugRenderer.toggleShowChunkBorder();
+                        }
+                    }
+                    case "hitboxes" -> client.getEntityRenderDispatcher().setRenderHitboxes(Boolean.parseBoolean(strings[1]));
+                    case "perspective" -> options.setPerspective(Perspective.values()[Integer.parseInt(strings[1]) % 3]);
+                    case "piedirectory" -> {
+                        if (!strings[1].split("\\.")[0].equals("root")) break;
+                        ((MinecraftClientAccessor) client).setOpenProfilerSection(strings[1].replace('.', '\u001e'));
+                    }
+                    case "f1" -> options.hudHidden = Boolean.parseBoolean(strings[1]);
+                    case "fovOnWorldJoin" -> fovOnWorldJoin = Double.parseDouble(strings[1]);
+                    case "renderDistanceOnWorldJoin" -> renderDistanceOnWorldJoin = Integer.parseInt(strings[1]);
+                    case "simulationDistanceOnWorldJoin" -> simulationDistanceOnWorldJoin = Integer.parseInt(strings[1]);
+                    case "entityDistanceScalingOnWorldJoin" -> entityDistanceScalingOnWorldJoin = Float.parseFloat(strings[1]);
+                    case "changeOnResize" -> changeOnResize = Boolean.parseBoolean(strings[1]);
+                    case "key" -> {
+                        for (KeyBinding keyBinding : options.allKeys) {
+                            if (string0_split[1].equals(keyBinding.getTranslationKey())) {
+                                keyBinding.setBoundKey(InputUtil.fromTranslationKey(strings[1])); break;
+                            }
+                        }
+                    }
+                    case "soundCategory" -> {
+                        for (SoundCategory soundCategory : SoundCategory.values()) {
+                            if (string0_split[1].equals(soundCategory.getName())) {
+                                options.setSoundVolume(soundCategory, Float.parseFloat(strings[1])); break;
+                            }
+                        }
+                    }
+                    case "modelPart" -> {
+                        for (PlayerModelPart playerModelPart : PlayerModelPart.values()) {
+                            if (string0_split[1].equals(playerModelPart.getName())) {
+                                options.togglePlayerModelPart(playerModelPart, Boolean.parseBoolean(strings[1])); break;
+                            }
+                        }
                     }
                 }
-            } while ((string = bufferedReader.readLine()) != null);
-            KeyBinding.updateKeysByCode();
-            bufferedReader.close();
-            LOGGER.info("Finished loading StandardSettings ({} ms)", (System.nanoTime() - start) / 1000000.0f);
+                // Some options.txt settings which aren't accessible in vanilla Minecraft and some unnecessary settings (like Multiplayer stuff) are not included.
+            } catch (Exception e) {
+                LOGGER.warn("Skipping bad StandardSetting: " + line);
+            }
         }
-        catch (Exception exception2) {
-            LOGGER.error("Failed to load StandardSettings", exception2);
-        }
+        KeyBinding.updateKeysByCode();
     }
 
     public static void changeSettingsOnJoin() {
@@ -228,7 +259,11 @@ public class StandardSettings {
         if (fovOnWorldJoin != 0) {
             options.fov = fovOnWorldJoin;
         }
-        if (fovOnWorldJoin != 0 || renderDistanceOnWorldJoin != 0 || simulationDistanceOnWorldJoin != 0 || entityDistanceScalingOnWorldJoin != 0) {
+        if (guiScaleOnWorldJoin != -1) {
+            options.guiScale = guiScaleOnWorldJoin;
+            client.onResolutionChanged();
+        }
+        if (fovOnWorldJoin != 0 || guiScaleOnWorldJoin != -1 || renderDistanceOnWorldJoin != 0 || simulationDistanceOnWorldJoin != 0 || entityDistanceScalingOnWorldJoin != 0) {
             fovOnWorldJoin = entityDistanceScalingOnWorldJoin = renderDistanceOnWorldJoin = simulationDistanceOnWorldJoin = 0;
             options.write();
             LOGGER.info("Changed Settings on World Join ({} ms)", (System.nanoTime() - start) / 1000000.0f);
@@ -238,32 +273,35 @@ public class StandardSettings {
     public static void checkSettings() {
         long start = System.nanoTime();
 
-        options.mouseSensitivity = check("Sensitivity", options.mouseSensitivity, 0, 2);
-        options.fov = Math.round(check("FOV", options.fov, 30, 110));
-        options.distortionEffectScale = check("Distortion Effects", options.distortionEffectScale, 0, 1);
-        options.fovEffectScale = check("FOV Effects", options.fovEffectScale, 0, 1);
-        options.gamma = check("Brightness", options.gamma, 0, 5);
+        options.mouseSensitivity = check("Sensitivity", options.mouseSensitivity * 2, 0, 2, true) / 2;
+        options.fov = Math.round(check("FOV", options.fov, 30, 110, false));
+        options.distortionEffectScale = check("Distortion Effects", options.distortionEffectScale, 0, 1, true);
+        options.fovEffectScale = check("FOV Effects", options.fovEffectScale, 0, 1, true);
+        options.gamma = check("Brightness", options.gamma, 0, 5, true);
         options.viewDistance = check("Render Distance", options.viewDistance, 2, 32);
         options.simulationDistance = check("Simulation Distance", options.simulationDistance, 5, 32);
-        options.entityDistanceScaling = (float) Math.round(check("Entity Distance", options.entityDistanceScaling, 0.5f, 5) * 4) / 4;
+        float entityDistanceScalingTemp = options.entityDistanceScaling;
+        if ((options.entityDistanceScaling = check("Entity Distance", options.entityDistanceScaling, 0.5f, 5, true)) != (options.entityDistanceScaling = (float) (Math.round(options.entityDistanceScaling * 4) / 4))) {
+            LOGGER.warn("Entity Distance was set to a false interval ({})", entityDistanceScalingTemp);
+        }
         options.guiScale = check("GUI Scale", options.guiScale, 0, Integer.MAX_VALUE);
-        options.maxFps = check("Max FPS", options.maxFps, 1, 260);
-        options.biomeBlendRadius = check("Biome Blend Radius", options.biomeBlendRadius, 0, 7);
-        options.chatOpacity = check("Chat Opacity", options.chatOpacity, 0, 1);
-        options.chatLineSpacing = check("Line Spacing", options.chatLineSpacing, 0, 1);
-        options.textBackgroundOpacity = check("Text Background Opacity", options.textBackgroundOpacity, 0, 1);
-        options.chatHeightFocused = check("(Chat) Focused Height", options.chatHeightFocused, 0, 1);
-        options.chatDelay = check("Chat Delay", options.chatDelay, 0, 6);
-        options.chatHeightUnfocused = check("(Chat) Unfocused Height", options.chatHeightUnfocused, 0, 1);
-        options.chatScale = check("Chat Text Size", options.chatScale, 0, 1);
-        options.chatWidth = check("Chat Width", options.chatWidth, 0, 1);
+        options.maxFps = check("Max Framerate", options.maxFps, 1, 260);
+        options.biomeBlendRadius = check("Biome Blend", options.biomeBlendRadius, 0, 7);
+        options.chatOpacity = check("Chat Text Opacity", options.chatOpacity, 0, 1, true);
+        options.chatLineSpacing = check("Line Spacing", options.chatLineSpacing, 0, 1, true);
+        options.textBackgroundOpacity = check("Text Background Opacity", options.textBackgroundOpacity, 0, 1, true);
+        options.chatHeightFocused = check("(Chat) Focused Height", options.chatHeightFocused, 0, 1, false);
+        options.chatDelay = check("Chat Delay", options.chatDelay, 0, 6, false);
+        options.chatHeightUnfocused = check("(Chat) Unfocused Height", options.chatHeightUnfocused, 0, 1, false);
+        options.chatScale = check("Chat Text Size", options.chatScale, 0, 1, true);
+        options.chatWidth = check("(Chat) Width", options.chatWidth, 0, 1, false);
         if (options.mipmapLevels != (options.mipmapLevels = check("Mipmap Levels", options.mipmapLevels, 0, 4))) {
             client.setMipmapLevels(options.mipmapLevels);
             ((BakedModelManagerAccessor)client.getBakedModelManager()).callApply(((BakedModelManagerAccessor)client.getBakedModelManager()).callPrepare(client.getResourceManager(), client.getProfiler()), client.getResourceManager(), client.getProfiler());
         }
-        options.mouseWheelSensitivity = check("Scroll Sensitivity", options.mouseWheelSensitivity, 0.01, 10);
+        options.mouseWheelSensitivity = check("Scroll Sensitivity", options.mouseWheelSensitivity, 0.01, 10, false);
         for (SoundCategory soundCategory : SoundCategory.values()) {
-            options.setSoundVolume(soundCategory, check("(Music & Sounds) " + soundCategory.name(), options.getSoundVolume(soundCategory), 0, 1));
+            options.setSoundVolume(soundCategory, check("(Music & Sounds) " + SoundCategoryName.valueOf(soundCategory.name()).assignedName, options.getSoundVolume(soundCategory), 0, 1, true));
         }
 
         if (renderDistanceOnWorldJoin != 0) {
@@ -273,35 +311,41 @@ public class StandardSettings {
             simulationDistanceOnWorldJoin = check("Simulation Distance (On World Join)", simulationDistanceOnWorldJoin, 5, 32);
         }
         if (entityDistanceScalingOnWorldJoin != 0) {
-            entityDistanceScalingOnWorldJoin = (float) Math.round(check("Entity Distance (On World Join)", entityDistanceScalingOnWorldJoin, 0.5f, 5) * 4) / 4;
+            entityDistanceScalingTemp = entityDistanceScalingOnWorldJoin;
+            if ((entityDistanceScalingOnWorldJoin = check("Entity Distance (On World Join)", entityDistanceScalingOnWorldJoin, 0.5f, 5, true)) != (entityDistanceScalingOnWorldJoin = (float) (Math.round(entityDistanceScalingOnWorldJoin * 4) / 4))) {
+                LOGGER.warn("Entity Distance (On World Join) was set to a false interval ({})", entityDistanceScalingTemp);
+            }
         }
         if (fovOnWorldJoin != 0) {
-            fovOnWorldJoin = Math.round(check("FOV (On World Join)", fovOnWorldJoin, 30, 110));
+            fovOnWorldJoin = Math.round(check("FOV (On World Join)", fovOnWorldJoin, 30, 110, false));
+        }
+        if (guiScaleOnWorldJoin != -1) {
+            guiScaleOnWorldJoin = check("GUI Scale (On World Join)", guiScaleOnWorldJoin, 0, Integer.MAX_VALUE);
         }
 
         window.setScaleFactor(window.calculateScaleFactor(options.guiScale, options.forceUnicodeFont));
         LOGGER.info("Finished checking Settings ({} ms)", (System.nanoTime() - start) / 1000000.0f);
     }
 
-    private static double check(String settingName, double setting, double min, double max) {
+    private static double check(String settingName, double setting, double min, double max, boolean percent) {
         if (setting < min) {
-            LOGGER.warn(settingName + " was too low! ({})", setting);
+            LOGGER.warn(settingName + " was too low! ({})", percent ? asPercent(setting) : setting);
             return min;
         }
         if (setting > max) {
-            LOGGER.warn(settingName + " was too high! ({})", setting);
+            LOGGER.warn(settingName + " was too high! ({})", percent ? asPercent(setting) : setting);
             return max;
         }
         return setting;
     }
 
-    private static float check(String settingName, float setting, float min, float max) {
+    private static float check(String settingName, float setting, float min, float max, boolean percent) {
         if (setting < min) {
-            LOGGER.warn(settingName + " was too low! ({})", setting);
+            LOGGER.warn(settingName + " was too low! ({})", percent ? asPercent(setting) : setting);
             return min;
         }
         if (setting > max) {
-            LOGGER.warn(settingName + " was too high! ({})", setting);
+            LOGGER.warn(settingName + " was too high! ({})", percent ? asPercent(setting) : setting);
             return max;
         }
         return setting;
@@ -317,6 +361,28 @@ public class StandardSettings {
             return max;
         }
         return setting;
+    }
+
+    private static String asPercent(double value) {
+        return value * 100 == (int) (value * 100) ? (int) (value * 100) + "%" : value * 100 + "%";
+    }
+
+    private enum SoundCategoryName {
+        MASTER("Master Volume"),
+        MUSIC("Music"),
+        RECORDS("Jukebox/Note Blocks"),
+        WEATHER("Weather"),
+        BLOCKS("Blocks"),
+        HOSTILE("Hostile Creatures"),
+        NEUTRAL("Friendly Creatures"),
+        PLAYERS("Players"),
+        AMBIENT("Ambient/Environment"),
+        VOICE("Voice/Speech");
+
+        private final String assignedName;
+        SoundCategoryName(String name) {
+            this.assignedName = name;
+        }
     }
 
     public static String getStandardoptionsTxt() {
@@ -384,7 +450,7 @@ public class StandardSettings {
         for (PlayerModelPart playerModelPart : PlayerModelPart.values()) {
             string.append("modelPart_").append(playerModelPart.getName()).append(":").append(options.isPlayerModelPartEnabled(playerModelPart)).append(l);
         }
-        string.append("sneaking:").append(l).append("sprinting:").append(l).append("chunkborders:").append(l).append("hitboxes:").append(l).append("perspective:").append(l).append("piedirectory:").append(l).append("fovOnWorldJoin:").append(l).append("renderDistanceOnWorldJoin:").append(l).append("simulationDistanceOnWorldJoin:").append(l).append("entityDistanceScalingOnWorldJoin:");
+        string.append("entityCulling:").append(FabricLoader.getInstance().getModContainer("sodium").isPresent() ? SodiumClientMod.options().performance.useEntityCulling : "").append(l).append("sneaking:").append(l).append("sprinting:").append(l).append("chunkborders:").append(l).append("hitboxes:").append(l).append("perspective:").append(l).append("piedirectory:").append(l).append("f1:").append(l).append("fovOnWorldJoin:").append(l).append("guiScaleOnWorldJoin:").append(l).append("renderDistanceOnWorldJoin:").append(l).append("simulationDistanceOnWorldJoin:").append(l).append("entityDistanceScalingOnWorldJoin:");
 
         return string.toString();
     }
