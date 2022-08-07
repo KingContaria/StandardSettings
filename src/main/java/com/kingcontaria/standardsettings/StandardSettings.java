@@ -204,6 +204,7 @@ public class StandardSettings {
                     }
                     case "f1" -> options.hudHidden = Boolean.parseBoolean(strings[1]);
                     case "fovOnWorldJoin" -> fovOnWorldJoin = Double.parseDouble(strings[1]);
+                    case "guiScaleOnWorldJoin" -> guiScaleOnWorldJoin = Integer.parseInt(strings[1]);
                     case "renderDistanceOnWorldJoin" -> renderDistanceOnWorldJoin = Integer.parseInt(strings[1]);
                     case "simulationDistanceOnWorldJoin" -> simulationDistanceOnWorldJoin = Integer.parseInt(strings[1]);
                     case "entityDistanceScalingOnWorldJoin" -> entityDistanceScalingOnWorldJoin = Float.parseFloat(strings[1]);
@@ -259,6 +260,7 @@ public class StandardSettings {
         }
         if (fovOnWorldJoin != 0 || guiScaleOnWorldJoin != -1 || renderDistanceOnWorldJoin != 0 || simulationDistanceOnWorldJoin != 0 || entityDistanceScalingOnWorldJoin != 0) {
             fovOnWorldJoin = entityDistanceScalingOnWorldJoin = renderDistanceOnWorldJoin = simulationDistanceOnWorldJoin = 0;
+            guiScaleOnWorldJoin = -1;
             options.write();
             LOGGER.info("Changed Settings on World Join ({} ms)", (System.nanoTime() - start) / 1000000.0f);
         }
