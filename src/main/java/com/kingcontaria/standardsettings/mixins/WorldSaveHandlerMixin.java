@@ -14,23 +14,19 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.StandardCopyOption;
 
 @Mixin(WorldSaveHandler.class)
 
 public class WorldSaveHandlerMixin {
 
     @Shadow @Final private File worldDir;
+    private final File file = new File(worldDir, "standardoptions.txt");
 
     @Inject(method = "saveWorld(Lnet/minecraft/world/level/LevelProperties;Lnet/minecraft/nbt/CompoundTag;)V", at = @At("TAIL"))
     private void saveStandardoptionsTxt(LevelProperties levelProperties, CompoundTag compoundTag, CallbackInfo ci) {
-        if (!new File(worldDir, "standardoptions.txt").exists() && StandardSettings.lastUsedFile != null) {
-            if (StandardSettings.fileLastModified != StandardSettings.lastUsedFile.lastModified()) {
-                StandardSettings.LOGGER.warn("standardoptions.txt has been modified since it's been applied");
-            }
+        if (!file.exists() && StandardSettings.standardoptionsCache != null) {
             try {
-                Files.copy(StandardSettings.lastUsedFile.toPath(), new File(worldDir, "standardoptions.txt").toPath(), StandardCopyOption.REPLACE_EXISTING);
-                StandardSettings.lastUsedFile = null;
+                Files.write(worldDir.toPath().resolve("standardoptions.txt"), String.join(System.lineSeparator(), StandardSettings.standardoptionsCache).getBytes());
                 StandardSettings.LOGGER.info("Saved standardoptions.txt to world file");
             } catch (IOException e) {
                 StandardSettings.LOGGER.error("Failed to save standardoptions.txt to world file", e);
