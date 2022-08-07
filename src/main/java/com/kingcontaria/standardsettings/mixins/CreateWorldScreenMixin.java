@@ -30,7 +30,7 @@ public class CreateWorldScreenMixin {
         if (StandardSettings.client.isWindowFocused()) {
             StandardSettings.changeSettingsOnJoin();
         } else {
-            StandardSettings.changeOnGainedFocus = true;
+            StandardSettings.changeOnWindowActivation = true;
         }
         bl = true;
     }
