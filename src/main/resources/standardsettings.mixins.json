@@ -5,9 +5,10 @@
   "compatibilityLevel": "JAVA_16",
   "client": [
     "BakedModelManagerAccessor",
-    "MinecraftClientAccessor",
     "CreateWorldScreenMixin",
+    "MinecraftClientAccessor",
     "MinecraftClientMixin",
+    "WorldListWidgetEntryMixin",
     "WorldSaveHandlerMixin"
   ],
   "injectors": {
