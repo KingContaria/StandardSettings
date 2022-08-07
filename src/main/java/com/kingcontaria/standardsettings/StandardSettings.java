@@ -90,7 +90,9 @@ public class StandardSettings {
         for (String line : lines) {
             try {
                 String[] strings = line.split(":", 2);
-                strings[1] = strings[1].trim();
+                if ((strings[1] = strings[1].trim()).equals("") && !strings[0].equals("fullscreenResolution")) {
+                    continue;
+                }
                 String[] string0_split = strings[0].split("_", 2);
                 switch (string0_split[0]) {
                     case "autoJump" -> options.autoJump = Boolean.parseBoolean(strings[1]);
