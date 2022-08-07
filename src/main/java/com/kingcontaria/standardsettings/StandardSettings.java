@@ -147,6 +147,7 @@ public class StandardSettings {
                         ((MinecraftClientAccessor)client).setOpenProfilerSection(strings[1]); break;
                     case "f1": options.hudHidden = Boolean.parseBoolean(strings[1]); break;
                     case "fovOnWorldJoin": fovOnWorldJoin = Float.parseFloat(strings[1]) < 5 ? Float.parseFloat(strings[1]) * 40.0f + 70.0f : Integer.parseInt(strings[1]); break;
+                    case "guiScaleOnWorldJoin": guiScaleOnWorldJoin = Integer.parseInt(strings[1]); break;
                     case "renderDistanceOnWorldJoin": renderDistanceOnWorldJoin = Integer.parseInt(strings[1]); break;
                     case "changeOnResize": changeOnResize = Boolean.parseBoolean(strings[1]); break;
                     case "key":
@@ -184,6 +185,7 @@ public class StandardSettings {
         }
         if (fovOnWorldJoin != 0 || guiScaleOnWorldJoin != -1 || renderDistanceOnWorldJoin != 0) {
             fovOnWorldJoin = renderDistanceOnWorldJoin = 0;
+            guiScaleOnWorldJoin = -1;
             options.save();
             LOGGER.info("Changed Settings on World Join ({} ms)", (System.nanoTime() - start) / 1000000.0f);
         }
