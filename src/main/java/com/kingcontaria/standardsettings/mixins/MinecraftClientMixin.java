@@ -59,7 +59,6 @@ public abstract class MinecraftClientMixin {
         } catch (Exception e) {
             // empty catch block
         }
-        System.out.println("CHECK");
     }
 
 }
