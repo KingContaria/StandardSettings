@@ -190,7 +190,9 @@ public class StandardSettings {
                         ((MinecraftClientAccessor)client).setOpenProfilerSection(strings[1].replace('.','\u001e')); break;
                     case "f1": options.hudHidden = Boolean.parseBoolean(strings[1]); break;
                     case "fovOnWorldJoin": fovOnWorldJoin = Double.parseDouble(strings[1]) < 5 ? Double.parseDouble(strings[1]) * 40.0f + 70.0f : Integer.parseInt(strings[1]); break;
+                    case "guiScaleOnWorldJoin": guiScaleOnWorldJoin = Integer.parseInt(strings[1]); break;
                     case "renderDistanceOnWorldJoin": renderDistanceOnWorldJoin = Integer.parseInt(strings[1]); break;
+                    case "changeOnResize": changeOnResize = Boolean.parseBoolean(strings[1]); break;
                     case "key":
                         for (KeyBinding keyBinding : options.keysAll) {
                             if (string0_split[1].equals(keyBinding.getId())) {
