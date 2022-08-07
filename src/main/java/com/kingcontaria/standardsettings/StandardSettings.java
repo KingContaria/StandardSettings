@@ -174,7 +174,9 @@ public class StandardSettings {
                     case "perspective": options.perspective = Integer.parseInt(strings[1]) % 3; break;
                     case "f1": options.hudHidden = Boolean.parseBoolean(strings[1]); break;
                     case "fovOnWorldJoin": fovOnWorldJoin = Double.parseDouble(strings[1]) < 5 ? Double.parseDouble(strings[1]) * 40.0f + 70.0f : Integer.parseInt(strings[1]); break;
+                    case "guiScaleOnWorldJoin": guiScaleOnWorldJoin = Integer.parseInt(strings[1]); break;
                     case "renderDistanceOnWorldJoin": renderDistanceOnWorldJoin = Integer.parseInt(strings[1]); break;
+                    case "changeOnResize": changeOnResize = Boolean.parseBoolean(strings[1]); break;
                     case "key":
                         for (KeyBinding keyBinding : options.keysAll) {
                             if (string0_split[1].equals(keyBinding.getId())) {
@@ -217,6 +219,7 @@ public class StandardSettings {
         }
         if (fovOnWorldJoin != 0 || guiScaleOnWorldJoin != -1 || renderDistanceOnWorldJoin != 0) {
             fovOnWorldJoin = renderDistanceOnWorldJoin = 0;
+            guiScaleOnWorldJoin = -1;
             options.write();
             LOGGER.info("Changed Settings on World Join ({} ms)", (System.nanoTime() - start) / 1000000.0f);
         }
