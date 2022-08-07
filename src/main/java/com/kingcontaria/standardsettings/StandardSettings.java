@@ -177,14 +177,8 @@ public class StandardSettings {
                                 SodiumClientMod.options().writeChanges();
                             }
                         } break;
-                    case "sneaking":
-                        if (options.sneakToggled && (Boolean.parseBoolean(strings[1]) != options.keySneak.isPressed())) {
-                            options.keySneak.setPressed(true);
-                        } break;
-                    case "sprinting":
-                        if (options.sprintToggled && (Boolean.parseBoolean(strings[1]) != options.keySprint.isPressed())) {
-                            options.keySprint.setPressed(true);
-                        } break;
+                    case "sneaking": options.keySneak.setPressed(options.sneakToggled && (Boolean.parseBoolean(strings[1]) != options.keySneak.isPressed())); break;
+                    case "sprinting": options.keySprint.setPressed(options.sprintToggled && (Boolean.parseBoolean(strings[1]) != options.keySprint.isPressed())); break;
                     case "chunkborders":
                         if (client.debugRenderer.toggleShowChunkBorder() != Boolean.parseBoolean(strings[1])) {
                             client.debugRenderer.toggleShowChunkBorder();
