@@ -10,4 +10,6 @@ import org.spongepowered.asm.mixin.gen.Invoker;
 public interface MinecraftClientAccessor {
     @Accessor
     void setOpenProfilerSection(String value);
+    @Accessor
+    String getOpenProfilerSection();
 }
