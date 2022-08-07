@@ -13,8 +13,16 @@ public class GameRendererMixin {
 
     @Inject(method = "render", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/MouseInput;updateMouse()V"))
     private void changeSettingsOnJoin(float tickDelta, long nanoTime, CallbackInfo ci) {
-        if (StandardSettings.changeOnGainedFocus) {
-            StandardSettings.changeOnGainedFocus = false;
+        if (StandardSettings.changeOnWindowActivation) {
+            StandardSettings.changeOnWindowActivation = false;
+            StandardSettings.changeSettingsOnJoin();
+        }
+    }
+
+    @Inject(method = "onResized", at = @At("HEAD"))
+    private void changeSettingsOnResize(CallbackInfo ci) {
+        if (StandardSettings.changeOnWindowActivation && StandardSettings.changeOnResize) {
+            StandardSettings.changeOnWindowActivation = false;
             StandardSettings.changeSettingsOnJoin();
         }
     }
