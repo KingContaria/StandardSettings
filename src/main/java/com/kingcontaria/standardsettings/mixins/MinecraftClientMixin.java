@@ -67,7 +67,7 @@ public class MinecraftClientMixin {
             if (StandardSettings.compareVersions(fileVersion, globalFileVersion)) {
                 fileVersion = globalFileVersion;
                 try {
-                    view.write("standardsettings", Charset.defaultCharset().encode(System.lineSeparator() + String.join(".", Arrays.stream(globalFileVersion).mapToObj(String::valueOf).toArray(String[]::new))));
+                    view.write("standardsettings", Charset.defaultCharset().encode(String.join(".", Arrays.stream(globalFileVersion).mapToObj(String::valueOf).toArray(String[]::new))));
                 } catch (IOException e) {
                     StandardSettings.LOGGER.error("Failed to adjust standardoptions.txt version to global file version", e);
                 }
@@ -77,7 +77,7 @@ public class MinecraftClientMixin {
         try {
             String[] linesToAdd = StandardSettings.checkVersion(fileVersion);
             if (linesToAdd != null) {
-                com.google.common.io.Files.append(String.join(System.lineSeparator(), linesToAdd), globalFile != null ? globalFile : StandardSettings.standardoptionsFile, Charset.defaultCharset());
+                com.google.common.io.Files.append(System.lineSeparator() + String.join(System.lineSeparator(), linesToAdd), globalFile != null ? globalFile : StandardSettings.standardoptionsFile, Charset.defaultCharset());
                 StandardSettings.LOGGER.info("Finished updating standardoptions.txt");
             }
             if (StandardSettings.compareVersions(fileVersion, StandardSettings.version)) {
