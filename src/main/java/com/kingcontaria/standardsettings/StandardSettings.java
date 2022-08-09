@@ -2,16 +2,14 @@ package com.kingcontaria.standardsettings;
 
 import com.google.common.io.Files;
 import com.kingcontaria.standardsettings.mixins.BakedModelManagerAccessor;
-import com.kingcontaria.standardsettings.mixins.MinecraftClientAccessor;
-import me.jellysquid.mods.sodium.client.SodiumClientMod;
+import com.kingcontaria.standardsettings.mixins.LanguageManagerAccessor;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
-import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.options.*;
 import net.minecraft.client.render.entity.PlayerModelPart;
+import net.minecraft.client.texture.SpriteAtlasTexture;
 import net.minecraft.client.util.InputUtil;
-import net.minecraft.client.util.Window;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.util.Arm;
 import net.minecraft.util.Util;
@@ -32,7 +30,6 @@ public class StandardSettings {
     public static final Logger LOGGER = LogManager.getLogger();
     public static final MinecraftClient client = MinecraftClient.getInstance();
     public static final GameOptions options = client.options;
-    private static final Window window = client.getWindow();
     public static final File standardoptionsFile = new File("config/standardoptions.txt");
     public static boolean changeOnWindowActivation = false;
     public static boolean changeOnResize = false;
@@ -107,7 +104,7 @@ public class StandardSettings {
                     case "chatColors": options.chatColors = Boolean.parseBoolean(strings[1]); break;
                     case "chatLinks": options.chatLinks = Boolean.parseBoolean(strings[1]); break;
                     case "chatLinksPrompt": options.chatLinksPrompt = Boolean.parseBoolean(strings[1]); break;
-                    case "enableVsync": window.setVsync(options.enableVsync = Boolean.parseBoolean(strings[1])); break;
+                    case "enableVsync": client.window.setVsync(options.enableVsync = Boolean.parseBoolean(strings[1])); break;
                     case "entityShadows": options.entityShadows = Boolean.parseBoolean(strings[1]); break;
                     case "forceUnicodeFont": client.getFontManager().setForceUnicodeFont(options.forceUnicodeFont = Boolean.parseBoolean(strings[1]), Util.getServerWorkerExecutor(), client); break;
                     case "discrete": options.discreteMouseScroll = Boolean.parseBoolean(strings[1]); break;
@@ -116,33 +113,30 @@ public class StandardSettings {
                     case "showSubtitles": options.showSubtitles = Boolean.parseBoolean(strings[1]); break;
                     case "touchscreen": options.touchscreen = Boolean.parseBoolean(strings[1]); break;
                     case "fullscreen":
-                        if (window.isFullscreen() != Boolean.parseBoolean(strings[1])) {
+                        if (client.window.isFullscreen() != Boolean.parseBoolean(strings[1])) {
                             if (client.isWindowFocused()) {
-                                window.toggleFullscreen();
-                                options.fullscreen = window.isFullscreen();
+                                client.window.toggleFullscreen();
+                                options.fullscreen = client.window.isFullscreen();
                             } else {
                                 LOGGER.error("Could not reset fullscreen mode because window wasn't focused!");
                             }
                         } break;
                     case "bobView": options.bobView = Boolean.parseBoolean(strings[1]); break;
-                    case "toggleCrouch": options.sneakToggled = Boolean.parseBoolean(strings[1]); break;
-                    case "toggleSprint": options.sprintToggled = Boolean.parseBoolean(strings[1]); break;
                     case "mouseSensitivity": options.mouseSensitivity = Double.parseDouble(strings[1]); break;
                     case "fov": options.fov = Double.parseDouble(strings[1]) < 5 ? Double.parseDouble(strings[1]) * 40.0f + 70.0f : Integer.parseInt(strings[1]); break;
                     case "gamma": options.gamma = Double.parseDouble(strings[1]); break;
                     case "renderDistance": options.viewDistance = Integer.parseInt(strings[1]); break;
                     case "guiScale": options.guiScale = Integer.parseInt(strings[1]); break;
                     case "particles": options.particles = ParticlesOption.byId(Integer.parseInt(strings[1])); break;
-                    case "maxFps": window.setFramerateLimit(options.maxFps = Integer.parseInt(strings[1])); break;
+                    case "maxFps": client.window.setFramerateLimit(options.maxFps = Integer.parseInt(strings[1])); break;
                     case "fancyGraphics": options.fancyGraphics = Boolean.parseBoolean(strings[1]); break;
                     case "ao": options.ao = AoOption.getOption(Integer.parseInt(strings[1])); break;
                     case "renderClouds": options.cloudRenderMode = strings[1].equals("true") ? CloudRenderMode.FANCY : strings[1].equals("false") ? CloudRenderMode.OFF : CloudRenderMode.FAST; break;
                     case "attackIndicator": options.attackIndicator = AttackIndicator.byId(Integer.parseInt(strings[1])); break;
                     case "lang":
-                        if (!strings[1].equals(options.language)) {
-                            client.getLanguageManager().setLanguage(client.getLanguageManager().getLanguage(strings[1]));
+                        if (!options.language.equals(strings[1]) && ((LanguageManagerAccessor)client.getLanguageManager()).getLanguageDefs().containsKey(strings[1])) {
+                            client.getLanguageManager().setLanguage(((LanguageManagerAccessor)client.getLanguageManager()).getLanguageDefs().get(options.language = strings[1]));
                             client.getLanguageManager().apply(client.getResourceManager());
-                            options.language = client.getLanguageManager().getLanguage().getCode();
                         } break;
                     case "chatVisibility": options.chatVisibility = ChatVisibility.byId(Integer.parseInt(strings[1])); break;
                     case "chatOpacity": options.chatOpacity = Double.parseDouble(strings[1]); break;
@@ -151,13 +145,13 @@ public class StandardSettings {
                     case "fullscreenResolution":
                         if (!strings[1].equals(options.fullscreenResolution)) {
                             if (strings[1].equals("")) {
-                                window.setVideoMode(Optional.empty());
-                                window.applyVideoMode(); break;
+                                client.window.setVideoMode(Optional.empty());
+                                client.window.method_4475(); break;
                             }
-                            for (int i = 0; i < window.getMonitor().getVideoModeCount(); i++) {
-                                if (window.getMonitor().getVideoMode(i).asString().equals(strings[1])) {
-                                    window.setVideoMode(Optional.ofNullable(window.getMonitor().getVideoMode(i)));
-                                    window.applyVideoMode(); break;
+                            for (int i = 0; i < client.window.getMonitor().getVideoModeCount(); i++) {
+                                if (client.window.getMonitor().getVideoMode(i).asString().equals(strings[1])) {
+                                    client.window.setVideoMode(Optional.ofNullable(client.window.getMonitor().getVideoMode(i)));
+                                    client.window.method_4475(); break;
                                 }
                             }
                             LOGGER.warn("Could not resolve Fullscreen Resolution: " + strings[1]);
@@ -170,31 +164,21 @@ public class StandardSettings {
                     case "chatWidth": options.chatWidth = Double.parseDouble(strings[1]); break;
                     case "mipmapLevels":
                         if (options.mipmapLevels != Integer.parseInt(strings[1])) {
-                            client.resetMipmapLevels(options.mipmapLevels = Integer.parseInt(strings[1]));
+                            client.getSpriteAtlas().setMipLevel(options.mipmapLevels = Integer.parseInt(strings[1]));
+                            client.getTextureManager().bindTexture(SpriteAtlasTexture.BLOCK_ATLAS_TEX);
+                            client.getSpriteAtlas().setFilter(false, options.mipmapLevels > 0);
                             ((BakedModelManagerAccessor)client.getBakedModelManager()).callApply(((BakedModelManagerAccessor)client.getBakedModelManager()).callPrepare(client.getResourceManager(), client.getProfiler()), client.getResourceManager(), client.getProfiler());
                         } break;
                     case "mainHand": options.mainArm = "left".equalsIgnoreCase(strings[1]) ? Arm.LEFT : Arm.RIGHT; break;
                     case "narrator": options.narrator = NarratorOption.byId(Integer.parseInt(strings[1])); break;
                     case "biomeBlendRadius": options.biomeBlendRadius = Integer.parseInt(strings[1]); break;
                     case "mouseWheelSensitivity": options.mouseWheelSensitivity = Double.parseDouble(strings[1]); break;
-                    case "rawMouseInput": window.setRawMouseMotion(options.rawMouseInput = Boolean.parseBoolean(strings[1])); break;
-                    case "entityCulling":
-                        if (FabricLoader.getInstance().getModContainer("sodium").isPresent()) {
-                            if (SodiumClientMod.options().advanced.useAdvancedEntityCulling != (SodiumClientMod.options().advanced.useAdvancedEntityCulling = Boolean.parseBoolean(strings[1]))) {
-                                SodiumClientMod.options().writeChanges();
-                            }
-                        } break;
-                    case "sneaking": options.keySneak.setPressed(options.sneakToggled && (Boolean.parseBoolean(strings[1]) != options.keySneak.isPressed())); break;
-                    case "sprinting": options.keySprint.setPressed(options.sprintToggled && (Boolean.parseBoolean(strings[1]) != options.keySprint.isPressed())); break;
                     case "chunkborders":
-                        if (client.debugRenderer.toggleShowChunkBorder() != Boolean.parseBoolean(strings[1])) {
+                        if (client.debugRenderer.shouldRender() != Boolean.parseBoolean(strings[1])) {
                             client.debugRenderer.toggleShowChunkBorder();
                         } break;
                     case "hitboxes": client.getEntityRenderManager().setRenderHitboxes(Boolean.parseBoolean(strings[1])); break;
                     case "perspective": options.perspective = Integer.parseInt(strings[1]) % 3; break;
-                    case "piedirectory":
-                        if (!strings[1].split("\\.")[0].equals("root")) break;
-                        ((MinecraftClientAccessor)client).setOpenProfilerSection(strings[1].replace('.','\u001e')); break;
                     case "f1": options.hudHidden = Boolean.parseBoolean(strings[1]); break;
                     case "fovOnWorldJoin": fovOnWorldJoin = Double.parseDouble(strings[1]) < 5 ? Double.parseDouble(strings[1]) * 40.0f + 70.0f : Integer.parseInt(strings[1]); break;
                     case "guiScaleOnWorldJoin": guiScaleOnWorldJoin = Integer.parseInt(strings[1]); break;
@@ -265,7 +249,9 @@ public class StandardSettings {
         options.chatScale = check("(Chat) Scale", options.chatScale, 0, 1, true);
         options.chatWidth = check("(Chat) Width", options.chatWidth, 0, 1, false);
         if (options.mipmapLevels != (options.mipmapLevels = check("Mipmap Levels", options.mipmapLevels, 0, 4))) {
-            client.resetMipmapLevels(options.mipmapLevels);
+            client.getSpriteAtlas().setMipLevel(options.mipmapLevels);
+            client.getTextureManager().bindTexture(SpriteAtlasTexture.BLOCK_ATLAS_TEX);
+            client.getSpriteAtlas().setFilter(false, options.mipmapLevels > 0);
             ((BakedModelManagerAccessor)client.getBakedModelManager()).callApply(((BakedModelManagerAccessor)client.getBakedModelManager()).callPrepare(client.getResourceManager(), client.getProfiler()), client.getResourceManager(), client.getProfiler());
         }
         options.mouseWheelSensitivity = check("Scroll Sensitivity", options.mouseWheelSensitivity, 0.01, 10, false);
@@ -283,7 +269,7 @@ public class StandardSettings {
             guiScaleOnWorldJoin = check("GUI Scale (On World Join)", guiScaleOnWorldJoin, 0, Integer.MAX_VALUE);
         }
 
-        window.setScaleFactor(window.calculateScaleFactor(options.guiScale, options.forceUnicodeFont));
+        client.window.setScaleFactor(client.window.calculateScaleFactor(options.guiScale, options.forceUnicodeFont));
         LOGGER.info("Finished checking Settings ({} ms)", (System.nanoTime() - start) / 1000000.0f);
     }
 
@@ -362,8 +348,6 @@ public class StandardSettings {
                 "touchscreen:" + options.touchscreen + l +
                 "fullscreen:" + options.fullscreen + l +
                 "bobView:" + options.bobView + l +
-                "toggleCrouch:" + options.sneakToggled + l +
-                "toggleSprint:" + options.sprintToggled + l +
                 "mouseSensitivity:" + options.mouseSensitivity + l +
                 "fov:" + (options.fov - 70.0f) / 40.0f + l +
                 "gamma:" + options.gamma + l +
@@ -391,8 +375,7 @@ public class StandardSettings {
                 "mainHand:" + (options.mainArm == Arm.LEFT ? "left" : "right") + l +
                 "narrator:" + options.narrator.getId() + l +
                 "biomeBlendRadius:" + options.biomeBlendRadius + l +
-                "mouseWheelSensitivity:" + options.mouseWheelSensitivity + l +
-                "rawMouseInput:" + options.rawMouseInput + l);
+                "mouseWheelSensitivity:" + options.mouseWheelSensitivity + l);
         for (KeyBinding keyBinding : options.keysAll) {
             string.append("key_").append(keyBinding.getId()).append(":").append(keyBinding.getName()).append(l);
         }
@@ -402,7 +385,7 @@ public class StandardSettings {
         for (PlayerModelPart playerModelPart : PlayerModelPart.values()) {
             string.append("modelPart_").append(playerModelPart.getName()).append(":").append(options.getEnabledPlayerModelParts().contains(playerModelPart)).append(l);
         }
-        string.append("entityCulling:").append(FabricLoader.getInstance().getModContainer("sodium").isPresent() ? SodiumClientMod.options().advanced.useAdvancedEntityCulling : "").append(l).append("sneaking:").append(l).append("sprinting:").append(l).append("chunkborders:").append(l).append("hitboxes:").append(l).append("perspective:").append(l).append("piedirectory:").append(l).append("f1:").append(l).append("fovOnWorldJoin:").append(l).append("guiScaleOnWorldJoin:").append(l).append("renderDistanceOnWorldJoin:");
+        string.append("chunkborders:").append(l).append("hitboxes:").append(l).append("perspective:").append(l).append("f1:").append(l).append("fovOnWorldJoin:").append(l).append("guiScaleOnWorldJoin:").append(l).append("renderDistanceOnWorldJoin:");
 
         return string.toString();
     }
@@ -415,7 +398,6 @@ public class StandardSettings {
             return null;
         }
         if (compareVersions(fileVersion, new int[]{1,2,1,-1000})) {
-            lines.add("entityCulling:" + (FabricLoader.getInstance().getModContainer("sodium").isPresent() ? SodiumClientMod.options().advanced.useAdvancedEntityCulling : ""));
             lines.add("f1:");
             lines.add("guiScaleOnWorldJoin:");
             lines.add("changeOnResize:false");

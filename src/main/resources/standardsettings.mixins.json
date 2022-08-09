@@ -5,10 +5,9 @@
   "compatibilityLevel": "JAVA_8",
   "client": [
     "BakedModelManagerAccessor",
-    "MinecraftClientAccessor",
+    "LanguageManagerAccessor",
     "CreateWorldScreenMixin",
     "MinecraftClientMixin",
-    "WorldListWidgetEntryMixin",
     "WorldSaveHandlerMixin"
   ],
   "injectors": {
