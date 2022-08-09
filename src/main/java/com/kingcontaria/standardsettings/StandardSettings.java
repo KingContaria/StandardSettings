@@ -23,7 +23,7 @@ import java.util.List;
 
 public class StandardSettings {
 
-    public static final int[] version = new int[]{1,2,1,-997};
+    public static final int[] version = new int[]{1,2,1,0};
     public static final Logger LOGGER = LogManager.getLogger();
     private static final MinecraftClient client = MinecraftClient.getInstance();
     public static final GameOptions options = client.options;
@@ -83,6 +83,9 @@ public class StandardSettings {
             load(standardoptionsCache);
             LOGGER.info("Finished loading StandardSettings ({} ms)", (System.nanoTime() - start) / 1000000.0f);
         } catch (IOException e) {
+            standardoptionsCache = null;
+            lastUsedGlobalFile = null;
+            fileLastModified = standardoptionsTxtLastModified = 0;
             LOGGER.error("Failed to load StandardSettings", e);
         }
     }
@@ -333,14 +336,27 @@ public class StandardSettings {
         return string.toString();
     }
 
-    public static String[] checkVersion(int[] fileVersion) {
-        List<String> lines = new ArrayList<>();
+    public static List<String> checkVersion(int[] fileVersion, List<String> existingLines) {
         if (compareVersions(fileVersion, version)) {
             LOGGER.warn("standardoptions.txt was marked with an outdated StandardSettings version ({}), updating now...", String.join(".", Arrays.stream(fileVersion).mapToObj(String::valueOf).toArray(String[]::new)));
         } else {
             return null;
         }
+
+        int i = 0;
+        if (existingLines != null) {
+            for (String line : existingLines) {
+                existingLines.set(i++, line.split(":", 2)[0]);
+            }
+        }
+
+        List<String> lines = new ArrayList<>();
+
         if (compareVersions(fileVersion, new int[]{1,2,1,-1000})) {
+            if (existingLines != null && (existingLines.contains("entityCulling") || existingLines.contains("f1") || existingLines.contains("guiScaleOnWorldJoin") || existingLines.contains("changeOnResize"))) {
+                LOGGER.info("Didn't find anything to update, good luck on the runs!");
+                return lines;
+            }
             lines.add("f1:");
             lines.add("guiScaleOnWorldJoin:");
             lines.add("changeOnResize:false");
@@ -349,7 +365,7 @@ public class StandardSettings {
             LOGGER.info("Didn't find anything to update, good luck on the runs!");
             return null;
         }
-        return lines.toArray(new String[0]);
+        return lines;
     }
 
     // returns true when versionToCheck is older than versionToCompareTo
