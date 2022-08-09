@@ -3,6 +3,7 @@ package com.kingcontaria.standardsettings.mixins;
 import com.kingcontaria.standardsettings.StandardSettings;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.world.level.LevelInfo;
+import org.lwjgl.opengl.Display;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -14,7 +15,6 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
-import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.UserDefinedFileAttributeView;
 import java.util.Arrays;
 import java.util.List;
@@ -72,7 +72,7 @@ public abstract class MinecraftClientMixin {
             if (StandardSettings.compareVersions(fileVersion, globalFileVersion)) {
                 fileVersion = globalFileVersion;
                 try {
-                    view.write("standardsettings", Charset.defaultCharset().encode(System.lineSeparator() + String.join(".", Arrays.stream(globalFileVersion).mapToObj(String::valueOf).toArray(String[]::new))));
+                    view.write("standardsettings", Charset.defaultCharset().encode(String.join(".", Arrays.stream(globalFileVersion).mapToObj(String::valueOf).toArray(String[]::new))));
                 } catch (IOException e) {
                     StandardSettings.LOGGER.error("Failed to adjust standardoptions.txt version to global file version", e);
                 }
@@ -82,7 +82,7 @@ public abstract class MinecraftClientMixin {
         try {
             String[] linesToAdd = StandardSettings.checkVersion(fileVersion);
             if (linesToAdd != null) {
-                com.google.common.io.Files.append(String.join(System.lineSeparator(), linesToAdd), globalFile != null ? globalFile : StandardSettings.standardoptionsFile, Charset.defaultCharset());
+                com.google.common.io.Files.append(System.lineSeparator() + String.join(System.lineSeparator(), linesToAdd), globalFile != null ? globalFile : StandardSettings.standardoptionsFile, Charset.defaultCharset());
                 StandardSettings.LOGGER.info("Finished updating standardoptions.txt");
             }
             if (StandardSettings.compareVersions(fileVersion, StandardSettings.version)) {
@@ -135,6 +135,14 @@ public abstract class MinecraftClientMixin {
             StandardSettings.changeOnWindowActivation = true;
         }
         bl = true;
+    }
+
+    @Inject(method = "runGameLoop", at = @At("HEAD"))
+    private void changeSettingsOnJoin(CallbackInfo ci) {
+        if (StandardSettings.changeOnWindowActivation && Display.isActive()) {
+            StandardSettings.changeOnWindowActivation = false;
+            StandardSettings.changeSettingsOnJoin();
+        }
     }
 
 }

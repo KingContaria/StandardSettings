@@ -9,9 +9,11 @@ import net.minecraft.client.options.GameOptions;
 import net.minecraft.client.options.KeyBinding;
 import net.minecraft.client.render.entity.EntityRenderDispatcher;
 import net.minecraft.client.sound.SoundCategory;
+import net.minecraft.client.util.Window;
 import net.minecraft.world.Difficulty;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.lwjgl.opengl.Display;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
@@ -21,7 +23,7 @@ import java.util.List;
 
 public class StandardSettings {
 
-    public static final int[] version = new int[]{1,2,1,-998};
+    public static final int[] version = new int[]{1,2,1,-997};
     public static final Logger LOGGER = LogManager.getLogger();
     private static final MinecraftClient client = MinecraftClient.getInstance();
     public static final GameOptions options = client.options;
@@ -63,7 +65,7 @@ public class StandardSettings {
                 LOGGER.info("Reloading & caching StandardSettings...");
                 standardoptionsTxtLastModified = standardoptionsFile.lastModified();
                 List<String> lines = Files.readLines(standardoptionsFile, StandardCharsets.UTF_8);
-                if (lines.size() == 0) {
+                if (lines == null || lines.size() == 0) {
                     LOGGER.error("standardoptions.txt is empty");
                     return;
                 }
@@ -124,7 +126,7 @@ public class StandardSettings {
                     case "chatOpacity": options.chatOpacity = Float.parseFloat(strings[1]); break;
                     case "fullscreen":
                         if (options.fullscreen != Boolean.parseBoolean(strings[1])) {
-                            if (client.isWindowFocused()) {
+                            if (Display.isActive()) {
                                 client.toggleFullscreen();
                                 options.fullscreen = Boolean.parseBoolean(strings[1]);
                             } else {
@@ -189,6 +191,12 @@ public class StandardSettings {
         }
         if (guiScaleOnWorldJoin != -1) {
             options.guiScale = guiScaleOnWorldJoin;
+            if (client.currentScreen != null) {
+                Window window = new Window(client, client.width, client.height);
+                int j = window.getWidth();
+                int k = window.getHeight();
+                client.currentScreen.init(client, j, k);
+            }
         }
         if (fovOnWorldJoin != 0 || guiScaleOnWorldJoin != -1 || renderDistanceOnWorldJoin != 0) {
             fovOnWorldJoin = renderDistanceOnWorldJoin = 0;
