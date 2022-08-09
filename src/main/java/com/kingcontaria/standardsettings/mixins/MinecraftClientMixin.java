@@ -46,8 +46,9 @@ public class MinecraftClientMixin {
 
         File globalFile = null;
         UserDefinedFileAttributeView globalFileView = null;
+        List<String> lines = null;
         try {
-            List<String> lines = com.google.common.io.Files.readLines(StandardSettings.standardoptionsFile, Charset.defaultCharset());
+            lines = com.google.common.io.Files.readLines(StandardSettings.standardoptionsFile, Charset.defaultCharset());
             if (lines.size() > 0) {
                 String firstLine = com.google.common.io.Files.readLines(StandardSettings.standardoptionsFile, Charset.defaultCharset()).get(0);
                 globalFile = new File(firstLine);
@@ -75,7 +76,7 @@ public class MinecraftClientMixin {
         }
 
         try {
-            String[] linesToAdd = StandardSettings.checkVersion(fileVersion);
+            List<String> linesToAdd = StandardSettings.checkVersion(fileVersion, lines);
             if (linesToAdd != null) {
                 com.google.common.io.Files.append(System.lineSeparator() + String.join(System.lineSeparator(), linesToAdd), globalFile != null ? globalFile : StandardSettings.standardoptionsFile, Charset.defaultCharset());
                 StandardSettings.LOGGER.info("Finished updating standardoptions.txt");
