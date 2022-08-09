@@ -85,14 +85,17 @@ public class OptionsCache {
     private Perspective perspective;
     private String piedirectory;
     private boolean hudHidden;
-    private String[] keysAll;
-    private float[] soundCategories;
-    private boolean[] playerModelParts;
+    private final String[] keysAll;
+    private final float[] soundCategories;
+    private final boolean[] playerModelParts;
 
     public OptionsCache(MinecraftClient client) {
         this.client = client;
         this.options = client.options;
         this.window = client.getWindow();
+        keysAll = new String[options.allKeys.length];
+        soundCategories = new float[SoundCategory.values().length];
+        playerModelParts = new boolean[PlayerModelPart.values().length];
     }
 
     public void save(String levelName) {
@@ -161,17 +164,14 @@ public class OptionsCache {
         perspective = options.getPerspective();
         piedirectory = ((MinecraftClientAccessor)client).getOpenProfilerSection();
         hudHidden = options.hudHidden;
-        keysAll = new String[options.allKeys.length];
         int i = 0;
         for (KeyBinding key : options.allKeys) {
             keysAll[i++] = key.getBoundKeyTranslationKey();
         }
-        soundCategories = new float[SoundCategory.values().length];
         i = 0;
         for (SoundCategory sound : SoundCategory.values()) {
             soundCategories[i++] = options.getSoundVolume(sound);
         }
-        playerModelParts = new boolean[PlayerModelPart.values().length];
         i = 0;
         for (PlayerModelPart playerModelPart : PlayerModelPart.values()) {
             playerModelParts[i++] = options.isPlayerModelPartEnabled(playerModelPart);
