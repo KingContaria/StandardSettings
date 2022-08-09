@@ -55,13 +55,15 @@ public class OptionsCache {
     private int perspective;
     private String piedirectory;
     private boolean hudHidden;
-    private int[] keysAll;
-    private float[] soundCategories;
+    private final int[] keysAll;
+    private final float[] soundCategories;
     private Set<PlayerModelPart> playerModelParts;
 
     public OptionsCache(MinecraftClient client) {
         this.client = client;
         this.options = client.options;
+        keysAll = new int[options.keysAll.length];
+        soundCategories = new float[SoundCategory.values().length];
     }
 
     public void save(String levelName) {
@@ -103,12 +105,10 @@ public class OptionsCache {
         perspective = options.perspective;
         piedirectory = ((MinecraftClientAccessor)client).getOpenProfilerSection();
         hudHidden = options.hudHidden;
-        keysAll = new int[options.keysAll.length];
         int i = 0;
         for (KeyBinding key : options.keysAll) {
             keysAll[i++] = key.getCode();
         }
-        soundCategories = new float[SoundCategory.values().length];
         i = 0;
         for (SoundCategory sound : SoundCategory.values()) {
             soundCategories[i++] = options.getSoundVolume(sound);
