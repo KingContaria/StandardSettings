@@ -9,23 +9,25 @@ It's designed to replace the much slower, much laggier and more inconsistent sol
 
 ### How does it work?
 
-At the start of creating a new world, the Mod will check for a 'standardoptions.txt' file in your config folder.
+The Mod reads the 'standardoptions.txt' file in the config folder of your Minecraft instance and every time you create a new world it will default your settings to the values specified in that file. 
 
-It now defaults your settings to the values specified in that file. After that is done, it will also perform a quick check to make sure the values are within the boundaries of vanilla minecraft / the speedrun.com ruleset.
+After that is done, it will also perform a quick check to make sure the values are within the boundaries of vanilla minecraft / the speedrun.com rule set.
+
+You can change the values in the file whenever you want, the mod will detect that it has been edited and reread the file.
 
 ### How can I edit my standardsettings?
 
-When first launching Minecraft with this mod (or whenever there is no standardoptions.txt in your config folder), a standardoptions file based on your current settings will be created.
+When first launching Minecraft with this mod (or whenever there is no 'standardoptions.txt' in your config folder), a standardoptions file based on your current settings will be created.
 
-This file contains all the settings changed by StandardSettings, including most settings from options.txt file plus some additional settings. It does not include settings that aren't accessible from ingame and some unnecessary stuff (for example multiplayer related options).
+This file contains all the settings changed by StandardSettings, including most settings from Minecrafts options.txt file plus some additional settings. It does not include settings that aren't accessible from inside the game and some unnecessary ones (for example multiplayer related options) are also left out.
 
 To change your settings, you can either manually edit them in the file or set your settings ingame, then delete the file and restart Minecraft to generate a new one.
 
-To stop a setting from being reset, remove the corresponding line from the file.
+To stop a setting from being reset, remove the corresponding line from the file or leave the value behind the ':' blank.
 
 ### What are the additional settings?
 
-Depending on the version you are playing some of these might not be included.
+Depending on the Minecraft version you are playing some of these might not be included.
 
 **sneaking**: If you are using togglesneak, this resets the state of sneaking. (Set to 'true' or 'false')
 
@@ -39,13 +41,19 @@ Depending on the version you are playing some of these might not be included.
 
 **piedirectory**: This resets the directory your piechart is in. Spelling is key, check upper/lower case! (common directories [here](#common-piechart-directories))
 
-**fovOnWorldJoin**: This is the FOV the game will change to once you finish world creation & have the instance focused. More Info on OnWorldJoin options [here](#onworldjoin-options).
+**f1**: This resets the state of F1 (GUI elements being hidden). (Set to 'true' or 'false')
 
-**renderDistanceOnWorldJoin**: This is the Render Distance the game will change to once you finish world creation & have the instance focused. This option can cause issues in Pre 1.9 when not playing on wall and also just isn't that helpful for single instance anyway.
+**fovOnWorldJoin**: This is the FOV the game will change to once you finish world creation & have the instance focused. You can set this value as either 30 to 110 as in the ingame menu or -1.0 to 1.0 as in options.txt, both will work. More Info on OnWorldJoin options [here](#onworldjoin-options).
+
+**guiScaleOnWorldJoin**: This is the GUI Scale the game will change to once you finish world creation & have the instance focused.
+
+**renderDistanceOnWorldJoin**: This is the Render Distance the game will change to once you finish world creation & have the instance focused. For Pre 1.9: This option can cause issues when not playing on wall and also just isn't that helpful for single instance anyway.
 
 **simulationDistanceOnWorldJoin**: This is the Simulation Distance (1.18+) the game will change to once you finish world creation & have the instance focused.
 
 **entityDistanceScalingOnWorldJoin**: This is the Entity Distance (1.16+) the game will change to once you finish world creation & have the instance focused.
+
+**changeOnResize**: If you set this to true, resizing the window of your instance will also result in the OnWorldJoin options being triggered. This is mainly useful for macros to implement delays between activating OnWorldJoin options and joining the instance.
 
 ### How can I use a global standardoptions file?
 
