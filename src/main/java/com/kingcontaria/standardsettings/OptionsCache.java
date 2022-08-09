@@ -69,14 +69,16 @@ public class OptionsCache {
     private boolean hitboxes;
     private int perspective;
     private boolean hudHidden;
-    private String[] keysAll;
-    private float[] soundCategories;
+    private final String[] keysAll;
+    private final float[] soundCategories;
     private Set<PlayerModelPart> playerModelParts;
 
     public OptionsCache(MinecraftClient client) {
         this.client = client;
         this.options = client.options;
         this.window = client.window;
+        keysAll = new String[options.keysAll.length];
+        soundCategories = new float[SoundCategory.values().length];
     }
 
     public void save(String levelName) {
@@ -128,12 +130,10 @@ public class OptionsCache {
         hitboxes = client.getEntityRenderManager().shouldRenderHitboxes();
         perspective = options.perspective;
         hudHidden = options.hudHidden;
-        keysAll = new String[options.keysAll.length];
         int i = 0;
         for (KeyBinding key : options.keysAll) {
             keysAll[i++] = key.getName();
         }
-        soundCategories = new float[SoundCategory.values().length];
         i = 0;
         for (SoundCategory sound : SoundCategory.values()) {
             soundCategories[i++] = options.getSoundVolume(sound);

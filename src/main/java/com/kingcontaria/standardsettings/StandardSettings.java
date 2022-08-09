@@ -18,12 +18,15 @@ import org.apache.logging.log4j.Logger;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
 @Environment(value= EnvType.CLIENT)
 public class StandardSettings {
 
+    public static final int[] version = new int[]{1,2,1,-998};
     public static final Logger LOGGER = LogManager.getLogger();
     public static final MinecraftClient client = MinecraftClient.getInstance();
     public static final GameOptions options = client.options;
@@ -62,9 +65,13 @@ public class StandardSettings {
             }
 
             if (standardoptionsCache == null || standardoptionsTxtLastModified != standardoptionsFile.lastModified() || (lastUsedGlobalFile != null && fileLastModified != lastUsedGlobalFile.lastModified())) {
-                LOGGER.info(standardoptionsTxtLastModified == 0 ? "Loading & Caching StandardSettings on first load" : "Reloading & caching StandardSettings because the file has been changed");
+                LOGGER.info("Reloading & caching StandardSettings...");
                 standardoptionsTxtLastModified = standardoptionsFile.lastModified();
                 List<String> lines = Files.readLines(standardoptionsFile, StandardCharsets.UTF_8);
+                if (lines.size() == 0) {
+                    LOGGER.error("standardoptions.txt is empty");
+                    return;
+                }
                 File globalFile = new File(lines.get(0));
                 if (lines.get(0) != null && globalFile.exists()) {
                     LOGGER.info("Using global standardoptions file");
@@ -381,5 +388,39 @@ public class StandardSettings {
         string.append("chunkborders:").append(l).append("hitboxes:").append(l).append("perspective:").append(l).append("f1:").append(l).append("fovOnWorldJoin:").append(l).append("guiScaleOnWorldJoin:").append(l).append("renderDistanceOnWorldJoin:");
 
         return string.toString();
+    }
+
+    public static String[] checkVersion(int[] fileVersion) {
+        List<String> lines = new ArrayList<>();
+        if (compareVersions(fileVersion, version)) {
+            LOGGER.warn("standardoptions.txt was marked with an outdated StandardSettings version ({}), updating now...", String.join(".", Arrays.stream(fileVersion).mapToObj(String::valueOf).toArray(String[]::new)));
+        } else {
+            return null;
+        }
+        if (compareVersions(fileVersion, new int[]{1,2,1,-1000})) {
+            lines.add("f1:");
+            lines.add("guiScaleOnWorldJoin:");
+            lines.add("changeOnResize:false");
+        }
+        if (lines.size() == 0) {
+            LOGGER.info("Didn't find anything to update, good luck on the runs!");
+            return null;
+        }
+        return lines.toArray(new String[0]);
+    }
+
+    // returns true when versionToCheck is older than versionToCompareTo
+    public static boolean compareVersions(int[] versionToCheck, int[] versionToCompareTo) {
+        int i = 0;
+        for (int v1 : versionToCheck) {
+            int v2 = versionToCompareTo[i++];
+            if (v1 == v2) continue;
+            return v1 < v2;
+        }
+        return false;
+    }
+
+    public static String getVersion() {
+        return String.join(".", Arrays.stream(version).mapToObj(String::valueOf).toArray(String[]::new));
     }
 }
