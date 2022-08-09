@@ -11,14 +11,6 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 public class GameRendererMixin {
 
-    @Inject(method = "method_9775", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/MouseInput;updateMouse()V"))
-    private void changeSettingsOnJoin(float par1, CallbackInfo ci) {
-        if (StandardSettings.changeOnWindowActivation) {
-            StandardSettings.changeOnWindowActivation = false;
-            StandardSettings.changeSettingsOnJoin();
-        }
-    }
-
     @Inject(method = "onResized", at = @At("HEAD"))
     private void changeSettingsOnResize(CallbackInfo ci) {
         if (StandardSettings.changeOnWindowActivation && StandardSettings.changeOnResize) {
