@@ -27,7 +27,7 @@ import java.util.Optional;
 @Environment(value= EnvType.CLIENT)
 public class StandardSettings {
 
-    public static final int[] version = new int[]{1,2,1,-998};
+    public static final int[] version = new int[]{1,2,1,-997};
     public static final Logger LOGGER = LogManager.getLogger();
     public static final MinecraftClient client = MinecraftClient.getInstance();
     public static final GameOptions options = client.options;
@@ -71,7 +71,7 @@ public class StandardSettings {
                 LOGGER.info("Reloading & caching StandardSettings...");
                 standardoptionsTxtLastModified = standardoptionsFile.lastModified();
                 List<String> lines = Files.readLines(standardoptionsFile, StandardCharsets.UTF_8);
-                if (lines.size() == 0) {
+                if (lines == null || lines.size() == 0) {
                     LOGGER.error("standardoptions.txt is empty");
                     return;
                 }
