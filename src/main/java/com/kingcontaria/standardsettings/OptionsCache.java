@@ -9,6 +9,7 @@ import net.minecraft.client.render.entity.PlayerModelPart;
 import net.minecraft.client.resource.language.LanguageDefinition;
 import net.minecraft.client.sound.SoundCategory;
 import net.minecraft.client.texture.SpriteAtlasTexture;
+import org.lwjgl.opengl.Display;
 
 import java.util.Set;
 
@@ -123,7 +124,7 @@ public class OptionsCache {
         options.chatColor = chatColor;
         options.chatLink = chatLink;
         options.chatLinkPrompt = chatLinkPrompt;
-        options.vsync = vsync;
+        Display.setVSyncEnabled(options.vsync = vsync);
         options.vbo = vbo;
         options.entityShadows = entityShadows;
         client.textRenderer.method_960(client.getLanguageManager().method_5938() || (options.forceUnicode = forceUnicode));

@@ -132,7 +132,7 @@ public class StandardSettings {
                                 LOGGER.error("Could not reset fullscreen mode because window wasn't focused!");
                             }
                         } break;
-                    case "enableVsync": options.vsync = Boolean.parseBoolean(strings[1]); break;
+                    case "enableVsync": Display.setVSyncEnabled(options.vsync = Boolean.parseBoolean(strings[1])); break;
                     case "useVbo": options.vbo = Boolean.parseBoolean(strings[1]); break;
                     case "advancedItemTooltips": options.advancedItemTooltips = Boolean.parseBoolean(strings[1]); break;
                     case "pauseOnLostFocus": options.pauseOnLostFocus = Boolean.parseBoolean(strings[1]); break;
