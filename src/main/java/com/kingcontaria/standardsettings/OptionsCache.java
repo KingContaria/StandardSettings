@@ -8,6 +8,7 @@ import net.minecraft.client.options.KeyBinding;
 import net.minecraft.client.render.entity.EntityRenderDispatcher;
 import net.minecraft.client.resource.language.LanguageDefinition;
 import net.minecraft.client.sound.SoundCategory;
+import org.lwjgl.opengl.Display;
 
 public class OptionsCache {
 
@@ -114,7 +115,7 @@ public class OptionsCache {
         options.chatColor = chatColor;
         options.chatLink = chatLink;
         options.chatLinkPrompt = chatLinkPrompt;
-        options.vsync = vsync;
+        Display.setVSyncEnabled(options.vsync = vsync);
         options.renderClouds = renderClouds;
         client.textRenderer.method_960(client.getLanguageManager().method_5938() || (options.forceUnicode = forceUnicode));
         options.invertYMouse = invertYMouse;
