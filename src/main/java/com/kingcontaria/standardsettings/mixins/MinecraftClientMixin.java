@@ -2,17 +2,13 @@ package com.kingcontaria.standardsettings.mixins;
 
 import com.kingcontaria.standardsettings.StandardSettings;
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.RunArgs;
-import net.minecraft.client.util.Window;
 import net.minecraft.world.level.LevelInfo;
 import org.lwjgl.opengl.Display;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-import java.awt.*;
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -28,9 +24,6 @@ import java.util.stream.Stream;
 public abstract class MinecraftClientMixin {
 
     private static boolean bl = true;
-    @Shadow public abstract boolean isWindowFocused();
-
-    @Shadow public boolean focused;
 
     @Inject(method = "initializeGame", at = @At("RETURN"))
     private void initializeStandardSettings(CallbackInfo ci) {
@@ -48,7 +41,7 @@ public abstract class MinecraftClientMixin {
                 Files.write(StandardSettings.standardoptionsFile.toPath(), StandardSettings.getStandardoptionsTxt().getBytes());
                 view.write("standardsettings", Charset.defaultCharset().encode(StandardSettings.getVersion()));
                 StandardSettings.LOGGER.info("Finished creating StandardSettings File ({} ms)", (System.nanoTime() - start) / 1000000.0f);
-            } catch (IOException e) {
+            } catch (Exception e) {
                 StandardSettings.LOGGER.error("Failed to create StandardSettings File", e);
             }
             return;
@@ -135,7 +128,7 @@ public abstract class MinecraftClientMixin {
 
     @Inject(method = "startGame", at = @At("RETURN"))
     private void onWorldJoin(String fileName, String worldName, LevelInfo levelInfo, CallbackInfo ci) {
-        if (this.isWindowFocused()) {
+        if (Display.isActive()) {
             StandardSettings.changeSettingsOnJoin();
         } else {
             StandardSettings.changeOnWindowActivation = true;
