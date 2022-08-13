@@ -38,7 +38,7 @@ public class MinecraftClientMixin {
                 Files.write(StandardSettings.standardoptionsFile.toPath(), StandardSettings.getStandardoptionsTxt().getBytes());
                 view.write("standardsettings", Charset.defaultCharset().encode(StandardSettings.getVersion()));
                 StandardSettings.LOGGER.info("Finished creating StandardSettings File ({} ms)", (System.nanoTime() - start) / 1000000.0f);
-            } catch (IOException e) {
+            } catch (Exception e) {
                 StandardSettings.LOGGER.error("Failed to create StandardSettings File", e);
             }
             return;
