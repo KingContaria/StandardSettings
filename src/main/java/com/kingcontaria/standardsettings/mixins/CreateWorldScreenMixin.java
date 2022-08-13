@@ -20,8 +20,8 @@ public class CreateWorldScreenMixin {
             StandardSettings.load();
             StandardSettings.LOGGER.info("Checking Settings...");
             StandardSettings.checkSettings();
-            StandardSettings.client.options.write();
-            StandardSettings.changeOnGainedFocus = false;
+            StandardSettings.options.write();
+            StandardSettings.changeOnWindowActivation = false;
             bl = false;
         }
     }
@@ -31,7 +31,7 @@ public class CreateWorldScreenMixin {
         if (StandardSettings.client.isWindowFocused()) {
             StandardSettings.changeSettingsOnJoin();
         } else {
-            StandardSettings.changeOnGainedFocus = true;
+            StandardSettings.changeOnWindowActivation = true;
         }
         bl = true;
     }
