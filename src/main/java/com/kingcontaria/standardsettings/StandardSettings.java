@@ -19,12 +19,13 @@ import org.apache.logging.log4j.Logger;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 @Environment(value= EnvType.CLIENT)
 public class StandardSettings {
 
+    public static final int[] version = new int[]{1,2,1,-995};
     public static final Logger LOGGER = LogManager.getLogger();
     public static final MinecraftClient client = MinecraftClient.getInstance();
     public static final GameOptions options = client.options;
@@ -33,28 +34,23 @@ public class StandardSettings {
     public static boolean changeOnWindowActivation = false;
     public static boolean changeOnResize = false;
     private static int renderDistanceOnWorldJoin;
-    private static float entityDistanceScalingOnWorldJoin;
     private static double fovOnWorldJoin;
     private static int guiScaleOnWorldJoin;
     public static OptionsCache optionsCache = new OptionsCache(client);
     public static String lastQuitWorld;
     public static String[] standardoptionsCache;
-    public static long fileLastModified;
-    private static long standardoptionsTxtLastModified;
-    private static File lastUsedGlobalFile;
+    private static Map<File, Long> filesLastModifiedMap;
 
     public static void load() {
         long start = System.nanoTime();
 
-        fovOnWorldJoin = entityDistanceScalingOnWorldJoin = renderDistanceOnWorldJoin = 0;
+        fovOnWorldJoin = renderDistanceOnWorldJoin = 0;
         guiScaleOnWorldJoin = -1;
         changeOnResize = false;
 
         try {
             if (!standardoptionsFile.exists()) {
                 standardoptionsCache = null;
-                lastUsedGlobalFile = null;
-                fileLastModified = standardoptionsTxtLastModified = 0;
                 LOGGER.error("standardoptions.txt is missing");
                 return;
             }
@@ -64,33 +60,54 @@ public class StandardSettings {
                 lastQuitWorld = null;
             }
 
-            if (standardoptionsCache == null || standardoptionsTxtLastModified != standardoptionsFile.lastModified() || (lastUsedGlobalFile != null && fileLastModified != lastUsedGlobalFile.lastModified())) {
-                LOGGER.info(standardoptionsTxtLastModified == 0 ? "Loading & Caching StandardSettings on first load" : "Reloading & caching StandardSettings because the file has been changed");
-                standardoptionsTxtLastModified = standardoptionsFile.lastModified();
-                List<String> lines = Files.readLines(standardoptionsFile, StandardCharsets.UTF_8);
-                File globalFile = new File(lines.get(0));
-                if (lines.get(0) != null && globalFile.exists()) {
+            if (standardoptionsCache == null || wereFilesModified(filesLastModifiedMap)) {
+                LOGGER.info("Reloading & caching StandardSettings...");
+                List<String> lines = resolveGlobalFile(standardoptionsFile);
+                if (lines == null) {
+                    LOGGER.error("standardoptions.txt is empty");
+                    return;
+                }
+                if (filesLastModifiedMap.size() > 1) {
                     LOGGER.info("Using global standardoptions file");
-                    fileLastModified = globalFile.lastModified();
-                    lines = Files.readLines(lastUsedGlobalFile = globalFile, StandardCharsets.UTF_8);
-                } else {
-                    lastUsedGlobalFile = null;
-                    fileLastModified = standardoptionsTxtLastModified;
                 }
                 standardoptionsCache = lines.toArray(new String[0]);
             }
             load(standardoptionsCache);
             LOGGER.info("Finished loading StandardSettings ({} ms)", (System.nanoTime() - start) / 1000000.0f);
-        } catch (IOException e) {
+        } catch (Exception e) {
+            standardoptionsCache = null;
             LOGGER.error("Failed to load StandardSettings", e);
         }
+    }
+
+    private static boolean wereFilesModified(Map<File, Long> map) {
+        if (map == null) {
+            return false;
+        }
+        AtomicBoolean wasModified = new AtomicBoolean(false);
+        map.forEach((file, lastModified) -> wasModified.set(file.lastModified() != lastModified || !file.exists() || wasModified.get()));
+        return wasModified.get();
+    }
+
+    private static List<String> resolveGlobalFile(File file) {
+        filesLastModifiedMap = new HashMap<>();
+        List<String> lines = null;
+        do {
+            filesLastModifiedMap.put(file, file.lastModified());
+            try {
+                lines = Files.readLines(file, StandardCharsets.UTF_8);
+            } catch (IOException e) {
+                break;
+            }
+        } while (lines != null && lines.size() > 0 && (file = new File(lines.get(0))).exists() && !filesLastModifiedMap.containsKey(file));
+        return lines;
     }
 
     private static void load(String[] lines) {
         for (String line : lines) {
             try {
                 String[] strings = line.split(":", 2);
-                if ((strings[1] = strings[1].trim()).equals("") && !strings[0].equals("fullscreenResolution")) {
+                if (strings.length < 2 || (strings[1] = strings[1].trim()).equals("") && !strings[0].equals("fullscreenResolution")) {
                     continue;
                 }
                 String[] string0_split = strings[0].split("_", 2);
@@ -194,7 +211,6 @@ public class StandardSettings {
                     case "fovOnWorldJoin": fovOnWorldJoin = Double.parseDouble(strings[1]) < 5 ? Double.parseDouble(strings[1]) * 40.0f + 70.0f : Integer.parseInt(strings[1]); break;
                     case "guiScaleOnWorldJoin": guiScaleOnWorldJoin = Integer.parseInt(strings[1]); break;
                     case "renderDistanceOnWorldJoin": renderDistanceOnWorldJoin = Integer.parseInt(strings[1]); break;
-                    case "entityDistanceScalingOnWorldJoin": entityDistanceScalingOnWorldJoin = Float.parseFloat(strings[1]); break;
                     case "changeOnResize": changeOnResize = Boolean.parseBoolean(strings[1]); break;
                     case "key":
                         for (KeyBinding keyBinding : options.keysAll) {
@@ -398,8 +414,43 @@ public class StandardSettings {
         for (PlayerModelPart playerModelPart : PlayerModelPart.values()) {
             string.append("modelPart_").append(playerModelPart.getName()).append(":").append(options.getEnabledPlayerModelParts().contains(playerModelPart)).append(l);
         }
-        string.append("entityCulling:").append(FabricLoader.getInstance().getModContainer("sodium").isPresent() ? SodiumClientMod.options().advanced.useAdvancedEntityCulling : "").append(l).append("sneaking:").append(l).append("sprinting:").append(l).append("chunkborders:").append(l).append("hitboxes:").append(l).append("perspective:").append(l).append("piedirectory:").append(l).append("f1:").append(l).append("fovOnWorldJoin:").append(l).append("guiScaleOnWorldJoin:").append(l).append("renderDistanceOnWorldJoin:").append(l).append("entityDistanceScalingOnWorldJoin:").append(l).append("changeOnResize:false");
+        string.append("entityCulling:").append(FabricLoader.getInstance().getModContainer("sodium").isPresent() ? SodiumClientMod.options().advanced.useAdvancedEntityCulling : "").append(l).append("sneaking:").append(l).append("sprinting:").append(l).append("chunkborders:").append(l).append("hitboxes:").append(l).append("perspective:").append(l).append("piedirectory:").append(l).append("f1:").append(l).append("fovOnWorldJoin:").append(l).append("guiScaleOnWorldJoin:").append(l).append("renderDistanceOnWorldJoin:").append(l).append("changeOnResize:false");
 
         return string.toString();
+    }
+
+    public static String[] checkVersion(int[] fileVersion) {
+        List<String> lines = new ArrayList<>();
+        if (compareVersions(fileVersion, version)) {
+            LOGGER.warn("standardoptions.txt was marked with an outdated StandardSettings version ({}), updating now...", String.join(".", Arrays.stream(fileVersion).mapToObj(String::valueOf).toArray(String[]::new)));
+        } else {
+            return null;
+        }
+        if (compareVersions(fileVersion, new int[]{1,2,1,-1000})) {
+            lines.add("entityCulling:" + (FabricLoader.getInstance().getModContainer("sodium").isPresent() ? SodiumClientMod.options().advanced.useAdvancedEntityCulling : ""));
+            lines.add("f1:");
+            lines.add("guiScaleOnWorldJoin:");
+            lines.add("changeOnResize:false");
+        }
+        if (lines.size() == 0) {
+            LOGGER.info("Didn't find anything to update, good luck on the runs!");
+            return null;
+        }
+        return lines.toArray(new String[0]);
+    }
+
+    // returns true when versionToCheck is older than versionToCompareTo
+    public static boolean compareVersions(int[] versionToCheck, int[] versionToCompareTo) {
+        int i = 0;
+        for (int v1 : versionToCheck) {
+            int v2 = versionToCompareTo[i++];
+            if (v1 == v2) continue;
+            return v1 < v2;
+        }
+        return false;
+    }
+
+    public static String getVersion() {
+        return String.join(".", Arrays.stream(version).mapToObj(String::valueOf).toArray(String[]::new));
     }
 }
