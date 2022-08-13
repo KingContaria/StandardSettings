@@ -2,7 +2,8 @@ package com.kingcontaria.standardsettings.mixins;
 
 import com.kingcontaria.standardsettings.StandardSettings;
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.RunArgs;
+import net.minecraft.world.level.LevelInfo;
+import org.lwjgl.opengl.Display;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -20,10 +21,12 @@ import java.util.stream.Stream;
 
 @Mixin(MinecraftClient.class)
 
-public abstract class MinecraftClientMixin {
+public class MinecraftClientMixin {
 
-    @Inject(method = "<init>", at = @At("RETURN"))
-    private void initializeStandardSettings(RunArgs args, CallbackInfo ci) {
+    private static boolean bl = true;
+
+    @Inject(method = "initializeGame", at = @At("RETURN"))
+    private void initializeStandardSettings(CallbackInfo ci) {
         UserDefinedFileAttributeView view = Files.getFileAttributeView(StandardSettings.standardoptionsFile.toPath(), UserDefinedFileAttributeView.class);
         if (!StandardSettings.standardoptionsFile.exists()) {
             StandardSettings.LOGGER.info("Creating StandardSettings File...");
@@ -38,7 +41,7 @@ public abstract class MinecraftClientMixin {
                 Files.write(StandardSettings.standardoptionsFile.toPath(), StandardSettings.getStandardoptionsTxt().getBytes());
                 view.write("standardsettings", Charset.defaultCharset().encode(StandardSettings.getVersion()));
                 StandardSettings.LOGGER.info("Finished creating StandardSettings File ({} ms)", (System.nanoTime() - start) / 1000000.0f);
-            } catch (IOException e) {
+            } catch (Exception e) {
                 StandardSettings.LOGGER.error("Failed to create StandardSettings File", e);
             }
             return;
@@ -105,29 +108,39 @@ public abstract class MinecraftClientMixin {
         }
     }
 
-    @Inject(method = "onWindowFocusChanged", at = @At("RETURN"))
-    private void changeSettingsOnJoin(boolean focused, CallbackInfo ci) {
-        if (focused && StandardSettings.changeOnWindowActivation) {
-            StandardSettings.changeOnWindowActivation = false;
-            StandardSettings.changeSettingsOnJoin();
+    @Inject(method = "startGame", at = @At("HEAD"))
+    private void resetSettings(String fileName, String worldName, LevelInfo levelInfo, CallbackInfo ci) {
+        if (!new File("saves", fileName).exists()) {
+            if (bl) {
+                StandardSettings.changeOnWindowActivation = false;
+                StandardSettings.LOGGER.info("Reset to StandardSettings...");
+                StandardSettings.load();
+                StandardSettings.LOGGER.info("Checking Settings...");
+                StandardSettings.checkSettings();
+                StandardSettings.options.save();
+                bl = false;
+            }
+        } else {
+            StandardSettings.optionsCache.load(fileName);
         }
+        StandardSettings.lastQuitWorld = fileName;
     }
 
-    @Inject(method = "onResolutionChanged", at = @At("HEAD"))
-    private void changeSettingsOnResize(CallbackInfo ci) {
-        if (StandardSettings.changeOnWindowActivation && StandardSettings.changeOnResize) {
-            StandardSettings.changeOnWindowActivation = false;
+    @Inject(method = "startGame", at = @At("RETURN"))
+    private void onWorldJoin(String fileName, String worldName, LevelInfo levelInfo, CallbackInfo ci) {
+        if (Display.isActive()) {
             StandardSettings.changeSettingsOnJoin();
+        } else {
+            StandardSettings.changeOnWindowActivation = true;
         }
+        bl = true;
     }
 
-    @Inject(method = "disconnect(Lnet/minecraft/client/gui/screen/Screen;)V", at = @At("HEAD"))
-    private void cacheOptions(CallbackInfo ci) {
-        StandardSettings.changeOnWindowActivation = false;
-        try {
-            StandardSettings.lastQuitWorld = StandardSettings.client.getServer().getIconFile().getParentFile().getName();
-        } catch (Exception e) {
-            // empty catch block
+    @Inject(method = "runGameLoop", at = @At("HEAD"))
+    private void changeSettingsOnJoin(CallbackInfo ci) {
+        if (StandardSettings.changeOnWindowActivation && Display.isActive()) {
+            StandardSettings.changeOnWindowActivation = false;
+            StandardSettings.changeSettingsOnJoin();
         }
     }
 
