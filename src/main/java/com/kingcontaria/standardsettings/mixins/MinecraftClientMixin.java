@@ -58,7 +58,7 @@ public abstract class MinecraftClientMixin {
                     globalFileView = Files.getFileAttributeView(globalFile.toPath(), UserDefinedFileAttributeView.class);
                 }
             }
-        } catch (IOException e) {
+        } catch (Exception e) {
             StandardSettings.LOGGER.error("Failed to check for global file", e);
         }
 

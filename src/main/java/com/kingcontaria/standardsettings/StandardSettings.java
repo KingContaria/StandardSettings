@@ -18,15 +18,13 @@ import org.apache.logging.log4j.Logger;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 @Environment(value= EnvType.CLIENT)
 public class StandardSettings {
 
-    public static final int[] version = new int[]{1,2,1,0};
+    public static final int[] version = new int[]{1,2,1,-995};
     public static final Logger LOGGER = LogManager.getLogger();
     public static final MinecraftClient client = MinecraftClient.getInstance();
     public static final GameOptions options = client.options;
@@ -41,9 +39,7 @@ public class StandardSettings {
     public static OptionsCache optionsCache = new OptionsCache(client);
     public static String lastQuitWorld;
     public static String[] standardoptionsCache;
-    public static long fileLastModified;
-    private static long standardoptionsTxtLastModified;
-    private static File lastUsedGlobalFile;
+    private static Map<File, Long> filesLastModifiedMap;
 
     public static void load() {
         long start = System.nanoTime();
@@ -55,8 +51,6 @@ public class StandardSettings {
         try {
             if (!standardoptionsFile.exists()) {
                 standardoptionsCache = null;
-                lastUsedGlobalFile = null;
-                fileLastModified = standardoptionsTxtLastModified = 0;
                 LOGGER.error("standardoptions.txt is missing");
                 return;
             }
@@ -66,22 +60,15 @@ public class StandardSettings {
                 lastQuitWorld = null;
             }
 
-            if (standardoptionsCache == null || standardoptionsTxtLastModified != standardoptionsFile.lastModified() || (lastUsedGlobalFile != null && fileLastModified != lastUsedGlobalFile.lastModified())) {
+            if (standardoptionsCache == null || wereFilesModified(filesLastModifiedMap)) {
                 LOGGER.info("Reloading & caching StandardSettings...");
-                standardoptionsTxtLastModified = standardoptionsFile.lastModified();
-                List<String> lines = Files.readLines(standardoptionsFile, StandardCharsets.UTF_8);
-                if (lines == null || lines.size() == 0) {
+                List<String> lines = resolveGlobalFile(standardoptionsFile);
+                if (lines == null) {
                     LOGGER.error("standardoptions.txt is empty");
                     return;
                 }
-                File globalFile = new File(lines.get(0));
-                if (lines.get(0) != null && globalFile.exists()) {
+                if (filesLastModifiedMap.size() > 1) {
                     LOGGER.info("Using global standardoptions file");
-                    fileLastModified = globalFile.lastModified();
-                    lines = Files.readLines(lastUsedGlobalFile = globalFile, StandardCharsets.UTF_8);
-                } else {
-                    lastUsedGlobalFile = null;
-                    fileLastModified = standardoptionsTxtLastModified;
                 }
                 standardoptionsCache = lines.toArray(new String[0]);
             }
@@ -89,21 +76,60 @@ public class StandardSettings {
             LOGGER.info("Finished loading StandardSettings ({} ms)", (System.nanoTime() - start) / 1000000.0f);
         } catch (Exception e) {
             standardoptionsCache = null;
-            lastUsedGlobalFile = null;
-            fileLastModified = standardoptionsTxtLastModified = 0;
             LOGGER.error("Failed to load StandardSettings", e);
         }
+    }
+
+    private static boolean wereFilesModified(Map<File, Long> map) {
+        if (map == null) {
+            return false;
+        }
+        AtomicBoolean wasModified = new AtomicBoolean(false);
+        map.forEach((file, lastModified) -> wasModified.set(file.lastModified() != lastModified || !file.exists() || wasModified.get()));
+        return wasModified.get();
+    }
+
+    private static List<String> resolveGlobalFile(File file) {
+        filesLastModifiedMap = new HashMap<>();
+        List<String> lines = null;
+        do {
+            filesLastModifiedMap.put(file, file.lastModified());
+            try {
+                lines = Files.readLines(file, StandardCharsets.UTF_8);
+            } catch (IOException e) {
+                break;
+            }
+        } while (lines != null && lines.size() > 0 && (file = new File(lines.get(0))).exists() && !filesLastModifiedMap.containsKey(file));
+        return lines;
     }
 
     private static void load(String[] lines) {
         for (String line : lines) {
             try {
                 String[] strings = line.split(":", 2);
-                if ((strings[1] = strings[1].trim()).equals("") && !strings[0].equals("fullscreenResolution")) {
+                if (strings.length < 2 || (strings[1] = strings[1].trim()).equals("") && !strings[0].equals("fullscreenResolution")) {
                     continue;
                 }
                 String[] string0_split = strings[0].split("_", 2);
                 switch (string0_split[0]) {
+                    case "key":
+                        for (KeyBinding keyBinding : options.keysAll) {
+                            if (string0_split[1].equals(keyBinding.getTranslationKey())) {
+                                keyBinding.setBoundKey(InputUtil.fromTranslationKey(strings[1])); break;
+                            }
+                        } break;
+                    case "soundCategory":
+                        for (SoundCategory soundCategory : SoundCategory.values()) {
+                            if (string0_split[1].equals(soundCategory.getName())) {
+                                options.setSoundVolume(soundCategory, Float.parseFloat(strings[1])); break;
+                            }
+                        } break;
+                    case "modelPart":
+                        for (PlayerModelPart playerModelPart : PlayerModelPart.values()) {
+                            if (string0_split[1].equals(playerModelPart.getName())) {
+                                options.setPlayerModelPart(playerModelPart, Boolean.parseBoolean(strings[1])); break;
+                            }
+                        } break;
                     case "autoJump": options.autoJump = Boolean.parseBoolean(strings[1]);
                     case "autoSuggestions": options.autoSuggestions = Boolean.parseBoolean(strings[1]); break;
                     case "chatColors": options.chatColors = Boolean.parseBoolean(strings[1]); break;
@@ -208,24 +234,6 @@ public class StandardSettings {
                     case "renderDistanceOnWorldJoin": renderDistanceOnWorldJoin = Integer.parseInt(strings[1]); break;
                     case "entityDistanceScalingOnWorldJoin": entityDistanceScalingOnWorldJoin = Float.parseFloat(strings[1]); break;
                     case "changeOnResize": changeOnResize = Boolean.parseBoolean(strings[1]); break;
-                    case "key":
-                        for (KeyBinding keyBinding : options.keysAll) {
-                            if (string0_split[1].equals(keyBinding.getTranslationKey())) {
-                                keyBinding.setBoundKey(InputUtil.fromTranslationKey(strings[1])); break;
-                            }
-                        } break;
-                    case "soundCategory":
-                        for (SoundCategory soundCategory : SoundCategory.values()) {
-                            if (string0_split[1].equals(soundCategory.getName())) {
-                                options.setSoundVolume(soundCategory, Float.parseFloat(strings[1])); break;
-                            }
-                        } break;
-                    case "modelPart":
-                        for (PlayerModelPart playerModelPart : PlayerModelPart.values()) {
-                            if (string0_split[1].equals(playerModelPart.getName())) {
-                                options.setPlayerModelPart(playerModelPart, Boolean.parseBoolean(strings[1])); break;
-                            }
-                        } break;
                 }
                 // Some options.txt settings which aren't accessible in vanilla Minecraft and some unnecessary settings (like Multiplayer stuff) are not included.
             } catch (Exception e) {
