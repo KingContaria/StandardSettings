@@ -10,23 +10,21 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(CreateWorldScreen.class)
 
 public class CreateWorldScreenMixin {
-
     private static boolean bl = true;
 
-    @Inject(method = "createLevel", at = @At("HEAD"))
+    @Inject(method = "method_18847", at = @At("HEAD"))
     private void resetSettings(CallbackInfo info) {
         if (bl) {
-            int i = 0;
             StandardSettings.LOGGER.info("Reset to StandardSettings...");
             StandardSettings.load();
             StandardSettings.LOGGER.info("Checking Settings...");
             StandardSettings.checkSettings();
-            StandardSettings.client.options.write();
+            StandardSettings.client.options.save();
             bl = false;
         }
     }
 
-    @Inject(method = "createLevel", at = @At("RETURN"))
+    @Inject(method = "method_18847", at = @At("RETURN"))
     private void onWorldJoin(CallbackInfo ci) {
         if (StandardSettings.client.isWindowFocused()) {
             StandardSettings.changeSettingsOnJoin();
