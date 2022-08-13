@@ -20,7 +20,7 @@ public class CreateWorldScreenMixin {
             StandardSettings.load();
             StandardSettings.LOGGER.info("Checking Settings...");
             StandardSettings.checkSettings();
-            StandardSettings.client.options.write();
+            StandardSettings.options.write();
             StandardSettings.changeOnWindowActivation = false;
             bl = false;
         }
