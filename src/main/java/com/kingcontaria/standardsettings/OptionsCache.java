@@ -1,162 +1,126 @@
 package com.kingcontaria.standardsettings;
 
-import com.kingcontaria.standardsettings.mixins.BakedModelManagerAccessor;
 import com.kingcontaria.standardsettings.mixins.MinecraftClientAccessor;
-import me.jellysquid.mods.sodium.client.SodiumClientMod;
-import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.options.*;
+import net.minecraft.client.gui.screen.options.HandOption;
+import net.minecraft.client.options.GameOptions;
+import net.minecraft.client.options.KeyBinding;
 import net.minecraft.client.render.entity.PlayerModelPart;
 import net.minecraft.client.resource.language.LanguageDefinition;
-import net.minecraft.client.util.InputUtil;
-import net.minecraft.client.util.VideoMode;
-import net.minecraft.client.util.Window;
-import net.minecraft.sound.SoundCategory;
-import net.minecraft.util.Arm;
+import net.minecraft.client.sound.SoundCategory;
+import net.minecraft.client.texture.SpriteAtlasTexture;
+import net.minecraft.entity.player.PlayerEntity;
+import org.lwjgl.opengl.Display;
 
-import java.io.IOException;
-import java.util.Optional;
 import java.util.Set;
 
 public class OptionsCache {
 
     private final MinecraftClient client;
     private final GameOptions options;
-    private final Window window;
     private String levelName;
     private boolean autoJump;
-    private boolean autoSuggestions;
     private boolean chatColors;
     private boolean chatLinks;
     private boolean chatLinksPrompt;
     private boolean enableVsync;
+    private boolean vbo;
     private boolean entityShadows;
     private boolean forceUnicodeFont;
-    private boolean discreteMouseScroll;
     private boolean invertYMouse;
     private boolean reducedDebugInfo;
     private boolean showSubtitles;
     private boolean touchscreen;
     private boolean fullscreen;
     private boolean bobView;
-    private boolean sneakToggled;
-    private boolean sprintToggled;
-    private double mouseSensitivity;
-    private double fov;
-    private double gamma;
+    private boolean anaglyph3d;
+    private float mouseSensitivity;
+    private float fov;
+    private float gamma;
     private int viewDistance;
-    private float entityDistanceScaling;
     private int guiScale;
-    private ParticlesOption particles;
+    private int particles;
     private int maxFps;
-    private GraphicsMode graphicsMode;
-    private AoOption ao;
-    private CloudRenderMode cloudRenderMode;
-    private AttackIndicator attackIndicator;
+    private boolean fancyGraphics;
+    private int ao;
+    private int cloudMode;
+    private int attackIndicator;
     private LanguageDefinition language;
-    private ChatVisibility chatVisibility;
-    private double chatOpacity;
-    private double chatLineSpacing;
-    private double textBackgroundOpacity;
-    private boolean backgroundForChatOnly;
-    private Optional<VideoMode> fullscreenResolution;
+    private PlayerEntity.ChatVisibilityType chatVisibilityType;
+    private float chatOpacity;
     private boolean advancedItemTooltips;
     private boolean pauseOnLostFocus;
-    private double chatHeightFocused;
-    private double chatDelay;
-    private double chatHeightUnfocused;
-    private double chatScale;
-    private double chatWidth;
+    private float chatHeightFocused;
+    private float chatHeightUnfocused;
+    private float chatScale;
+    private float chatWidth;
     private int mipmapLevels;
-    private Arm mainArm;
-    private NarratorOption narrator;
-    private int biomeBlendRadius;
-    private double mouseWheelSensitivity;
-    private boolean rawMouseInput;
-    private boolean entityCulling;
-    private boolean sneaking;
-    private boolean sprinting;
+    private HandOption mainArm;
+    private int narrator;
     private boolean chunkborders;
     private boolean hitboxes;
     private int perspective;
     private String piedirectory;
     private boolean hudHidden;
-    private final String[] keysAll;
+    private final int[] keysAll;
     private final float[] soundCategories;
     private Set<PlayerModelPart> playerModelParts;
 
     public OptionsCache(MinecraftClient client) {
         this.client = client;
         this.options = client.options;
-        this.window = client.getWindow();
-        keysAll = new String[options.keysAll.length];
+        keysAll = new int[options.keysAll.length];
         soundCategories = new float[SoundCategory.values().length];
     }
 
     public void save(String levelName) {
-        autoJump = options.autoJump;
-        autoSuggestions = options.autoSuggestions;
-        chatColors = options.chatColors;
-        chatLinks = options.chatLinks;
-        chatLinksPrompt = options.chatLinksPrompt;
-        enableVsync = options.enableVsync;
+        autoJump = options.field_14902;
+        chatColors = options.chatColor;
+        chatLinks = options.chatLink;
+        chatLinksPrompt = options.chatLinkPrompt;
+        enableVsync = options.vsync;
+        vbo = options.vbo;
         entityShadows = options.entityShadows;
-        forceUnicodeFont = options.forceUnicodeFont;
-        discreteMouseScroll = options.discreteMouseScroll;
+        forceUnicodeFont = options.forceUnicode;
         invertYMouse = options.invertYMouse;
         reducedDebugInfo = options.reducedDebugInfo;
-        showSubtitles = options.showSubtitles;
-        touchscreen = options.touchscreen;
+        showSubtitles = options.field_13292;
+        touchscreen = options.touchScreen;
         fullscreen = options.fullscreen;
         bobView = options.bobView;
-        sneakToggled = options.sneakToggled;
-        sprintToggled = options.sprintToggled;
-        mouseSensitivity = options.mouseSensitivity;
+        anaglyph3d = options.anaglyph3d;
+        mouseSensitivity = options.sensitivity;
         fov = options.fov;
         gamma = options.gamma;
         viewDistance = options.viewDistance;
-        entityDistanceScaling = options.entityDistanceScaling;
         guiScale = options.guiScale;
-        particles = options.particles;
-        maxFps = options.maxFps;
-        graphicsMode = options.graphicsMode;
+        particles = options.particle;
+        maxFps = options.maxFramerate;
+        fancyGraphics = options.fancyGraphics;
         ao = options.ao;
-        cloudRenderMode = options.cloudRenderMode;
-        attackIndicator = options.attackIndicator;
+        cloudMode = options.cloudMode;
+        attackIndicator = options.field_13290;
         language = client.getLanguageManager().getLanguage();
-        chatVisibility = options.chatVisibility;
+        chatVisibilityType = options.chatVisibilityType;
         chatOpacity = options.chatOpacity;
-        chatLineSpacing = options.chatLineSpacing;
-        textBackgroundOpacity = options.textBackgroundOpacity;
-        backgroundForChatOnly = options.backgroundForChatOnly;
-        fullscreenResolution = window.getVideoMode();
         advancedItemTooltips = options.advancedItemTooltips;
         pauseOnLostFocus = options.pauseOnLostFocus;
         chatHeightFocused = options.chatHeightFocused;
-        chatDelay = options.chatDelay;
         chatHeightUnfocused = options.chatHeightUnfocused;
         chatScale = options.chatScale;
         chatWidth = options.chatWidth;
         mipmapLevels = options.mipmapLevels;
-        mainArm = options.mainArm;
-        narrator = options.narrator;
-        biomeBlendRadius = options.biomeBlendRadius;
-        mouseWheelSensitivity = options.mouseWheelSensitivity;
-        rawMouseInput = options.rawMouseInput;
-        if (FabricLoader.getInstance().getModContainer("sodium").isPresent()) {
-            entityCulling = SodiumClientMod.options().advanced.useEntityCulling;
-        }
-        sneaking = options.keySneak.isPressed();
-        sprinting = options.keySprint.isPressed();
-        client.debugRenderer.toggleShowChunkBorder();
-        chunkborders = client.debugRenderer.toggleShowChunkBorder();
-        hitboxes = client.getEntityRenderManager().shouldRenderHitboxes();
+        mainArm = options.field_13289;
+        narrator = options.field_15879;
+        client.field_13282.method_13451();
+        chunkborders = client.field_13282.method_13451();
+        hitboxes = client.getEntityRenderManager().method_10203();
         perspective = options.perspective;
         piedirectory = ((MinecraftClientAccessor)client).getOpenProfilerSection();
         hudHidden = options.hudHidden;
         int i = 0;
         for (KeyBinding key : options.keysAll) {
-            keysAll[i++] = key.getBoundKeyTranslationKey();
+            keysAll[i++] = key.getCode();
         }
         i = 0;
         for (SoundCategory sound : SoundCategory.values()) {
@@ -171,98 +135,69 @@ public class OptionsCache {
         if (!levelName.equals(this.levelName)) {
             return;
         }
-        options.autoJump = autoJump;
-        options.autoSuggestions = autoSuggestions;
-        options.chatColors = chatColors;
-        options.chatLinks = chatLinks;
-        options.chatLinksPrompt = chatLinksPrompt;
-        options.enableVsync = enableVsync;
+        options.field_14902 = autoJump;
+        options.chatColor = chatColors;
+        options.chatLink = chatLinks;
+        options.chatLinkPrompt = chatLinksPrompt;
+        Display.setVSyncEnabled(options.vsync = enableVsync);
         options.entityShadows = entityShadows;
-        ((MinecraftClientAccessor)client).callInitFont(options.forceUnicodeFont = forceUnicodeFont);
-        options.discreteMouseScroll = discreteMouseScroll;
+        client.textRenderer.method_960(client.getLanguageManager().method_5938() || (options.forceUnicode = forceUnicodeFont));
         options.invertYMouse = invertYMouse;
         options.reducedDebugInfo = reducedDebugInfo;
-        options.showSubtitles = showSubtitles;
-        options.touchscreen = touchscreen;
-        if (window.isFullscreen() != fullscreen) {
+        options.field_13292 = showSubtitles;
+        options.touchScreen = touchscreen;
+        if (options.fullscreen != fullscreen) {
             if (client.isWindowFocused()) {
-                window.toggleFullscreen();
+                client.toggleFullscreen();
             } else {
                 StandardSettings.LOGGER.error("Could not reset fullscreen mode because window wasn't focused!");
             }
-            options.fullscreen = window.isFullscreen();
         }
         options.bobView = bobView;
-        options.sneakToggled = sneakToggled;
-        options.sprintToggled = sprintToggled;
-        options.mouseSensitivity = mouseSensitivity;
+        if (options.anaglyph3d != (options.anaglyph3d = anaglyph3d)) {
+            client.getTextureManager().reload(client.getResourceManager());
+        }
+        options.sensitivity = mouseSensitivity;
         options.fov = fov;
         options.gamma = gamma;
         options.viewDistance = viewDistance;
-        options.entityDistanceScaling = entityDistanceScaling;
-        window.calculateScaleFactor(options.guiScale = guiScale, options.forceUnicodeFont);
-        options.particles = particles;
-        window.setFramerateLimit(options.maxFps = maxFps);
-        options.graphicsMode = graphicsMode;
+        options.guiScale = guiScale;
+        options.particle = particles;
+        options.maxFramerate = maxFps;
+        options.fancyGraphics = fancyGraphics;
         options.ao = ao;
-        options.cloudRenderMode = cloudRenderMode;
-        options.attackIndicator = attackIndicator;
-        if (!language.getCode().equals(options.language)) {
-            client.getLanguageManager().setLanguage(language);
-            client.getLanguageManager().apply(client.getResourceManager());
-            options.language = client.getLanguageManager().getLanguage().getCode();
+        options.cloudMode = cloudMode;
+        options.field_13290 = attackIndicator;
+        if (!options.language.equals(options.language = language.method_5935())) {
+            client.getLanguageManager().method_5939(language);
+            client.getLanguageManager().reload(client.getResourceManager());
         }
-        options.chatVisibility = chatVisibility;
+        options.chatVisibilityType = chatVisibilityType;
         options.chatOpacity = chatOpacity;
-        options.chatLineSpacing = chatLineSpacing;
-        options.textBackgroundOpacity = textBackgroundOpacity;
-        options.backgroundForChatOnly = backgroundForChatOnly;
-        if (fullscreenResolution != window.getVideoMode()) {
-            window.setVideoMode(fullscreenResolution);
-            window.applyVideoMode();
-            options.fullscreenResolution = window.getVideoMode().toString();
-        }
         options.advancedItemTooltips = advancedItemTooltips;
         options.pauseOnLostFocus = pauseOnLostFocus;
         options.chatHeightFocused = chatHeightFocused;
-        options.chatDelay = chatDelay;
         options.chatHeightUnfocused = chatHeightUnfocused;
         options.chatScale = chatScale;
         options.chatWidth = chatWidth;
         if (options.mipmapLevels != mipmapLevels) {
-            client.resetMipmapLevels(options.mipmapLevels = mipmapLevels);
-            ((BakedModelManagerAccessor)client.getBakedModelManager()).callApply(((BakedModelManagerAccessor)client.getBakedModelManager()).callPrepare(client.getResourceManager(), client.getProfiler()), client.getResourceManager(), client.getProfiler());
+            client.getSpriteAtlasTexture().setMaxTextureSize(options.mipmapLevels = mipmapLevels);
+            client.getTextureManager().bindTexture(SpriteAtlasTexture.BLOCK_ATLAS_TEX);
+            client.getSpriteAtlasTexture().setFilter(false, options.mipmapLevels > 0);
+            ((MinecraftClientAccessor) client).getModelManager().reload(client.getResourceManager());
         }
-        options.mainArm = mainArm;
-        options.narrator = narrator;
-        options.biomeBlendRadius = biomeBlendRadius;
-        options.mouseWheelSensitivity = mouseWheelSensitivity;
-        options.rawMouseInput = rawMouseInput;
-        if (FabricLoader.getInstance().getModContainer("sodium").isPresent()) {
-            if (SodiumClientMod.options().advanced.useEntityCulling != (SodiumClientMod.options().advanced.useEntityCulling = entityCulling)) {
-                try {
-                    SodiumClientMod.options().writeChanges();
-                } catch (IOException e) {
-                    // empty catch block
-                }
-            }
+        options.field_13289 = mainArm;
+        options.field_15879 = narrator;
+        if (client.field_13282.method_13451() != chunkborders) {
+            client.field_13282.method_13451();
         }
-        if (options.sneakToggled && (sneaking != options.keySneak.isPressed())) {
-            options.keySneak.setPressed(true);
-        }
-        if (options.sprintToggled && (sprinting != options.keySprint.isPressed())) {
-            options.keySprint.setPressed(true);
-        }
-        if (client.debugRenderer.toggleShowChunkBorder() != chunkborders) {
-            client.debugRenderer.toggleShowChunkBorder();
-        }
-        client.getEntityRenderManager().setRenderHitboxes(hitboxes);
+        client.getEntityRenderManager().method_10205(hitboxes);
         options.perspective = perspective;
         ((MinecraftClientAccessor)client).setOpenProfilerSection(piedirectory);
         options.hudHidden = hudHidden;
         int i = 0;
         for (KeyBinding keyBinding : options.keysAll) {
-            keyBinding.setBoundKey(InputUtil.fromTranslationKey(keysAll[i++]));
+            keyBinding.setCode(keysAll[i++]);
         }
         KeyBinding.updateKeysByCode();
         i = 0;
