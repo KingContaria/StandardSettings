@@ -132,7 +132,7 @@ public class OptionsCache {
         options.invertYMouse = invertYMouse;
         options.reducedDebugInfo = reducedDebugInfo;
         options.touchScreen = touchScreen;
-        if (options.fullscreen != (options.fullscreen = fullscreen)) {
+        if (options.fullscreen != fullscreen) {
             if (client.isWindowFocused()) {
                 client.toggleFullscreen();
             } else {
