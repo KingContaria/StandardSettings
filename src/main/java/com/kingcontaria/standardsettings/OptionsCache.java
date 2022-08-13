@@ -120,7 +120,7 @@ public class OptionsCache {
         client.textRenderer.method_960(client.getLanguageManager().method_5938() || (options.forceUnicode = forceUnicode));
         options.invertYMouse = invertYMouse;
         options.touchScreen = touchScreen;
-        if (options.fullscreen != (options.fullscreen = fullscreen)) {
+        if (options.fullscreen != fullscreen) {
             if (client.isWindowFocused()) {
                 client.toggleFullscreen();
             } else {
