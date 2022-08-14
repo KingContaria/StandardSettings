@@ -27,7 +27,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 @Environment(value= EnvType.CLIENT)
 public class StandardSettings {
 
-    public static final int[] version = new int[]{1,2,1,-995};
+    public static final int[] version = new int[]{1,2,1,0};
     public static final Logger LOGGER = LogManager.getLogger();
     public static final MinecraftClient client = MinecraftClient.getInstance();
     public static final GameOptions options = client.options;
@@ -114,24 +114,6 @@ public class StandardSettings {
                 }
                 String[] string0_split = strings[0].split("_", 2);
                 switch (string0_split[0]) {
-                    case "key":
-                        for (KeyBinding keyBinding : options.keysAll) {
-                            if (string0_split[1].equals(keyBinding.getTranslationKey())) {
-                                keyBinding.method_18170(class_4107.method_18156(strings[1])); break;
-                            }
-                        } break;
-                    case "soundCategory":
-                        for (SoundCategory soundCategory : SoundCategory.values()) {
-                            if (string0_split[1].equals(soundCategory.getName())) {
-                                options.setSoundVolume(soundCategory, Float.parseFloat(strings[1])); break;
-                            }
-                        } break;
-                    case "modelPart":
-                        for (PlayerModelPart playerModelPart : PlayerModelPart.values()) {
-                            if (string0_split[1].equals(playerModelPart.getName())) {
-                                options.setPlayerModelPart(playerModelPart, Boolean.parseBoolean(strings[1])); break;
-                            }
-                        } break;
                     case "autoJump": options.field_14902 = Boolean.parseBoolean(strings[1]); break;
                     case "autoSuggestions": options.field_19978 = Boolean.parseBoolean(strings[1]); break;
                     case "chatColors": options.chatColor = Boolean.parseBoolean(strings[1]); break;
@@ -191,6 +173,24 @@ public class StandardSettings {
                     case "narrator": options.field_15879 = Integer.parseInt(strings[1]); break;
                     case "biomeBlendRadius": options.field_19979 = Integer.parseInt(strings[1]); break;
                     case "mouseWheelSensitivity": options.field_19980 = Double.parseDouble(strings[1]); break;
+                    case "key":
+                        for (KeyBinding keyBinding : options.keysAll) {
+                            if (string0_split[1].equals(keyBinding.getTranslationKey())) {
+                                keyBinding.method_18170(class_4107.method_18156(strings[1])); break;
+                            }
+                        } break;
+                    case "soundCategory":
+                        for (SoundCategory soundCategory : SoundCategory.values()) {
+                            if (string0_split[1].equals(soundCategory.getName())) {
+                                options.setSoundVolume(soundCategory, Float.parseFloat(strings[1])); break;
+                            }
+                        } break;
+                    case "modelPart":
+                        for (PlayerModelPart playerModelPart : PlayerModelPart.values()) {
+                            if (string0_split[1].equals(playerModelPart.getName())) {
+                                options.setPlayerModelPart(playerModelPart, Boolean.parseBoolean(strings[1])); break;
+                            }
+                        } break;
                     case "chunkborders":
                         if (client.field_13282.method_13451() != Boolean.parseBoolean(strings[1])) {
                             client.field_13282.method_13451();
