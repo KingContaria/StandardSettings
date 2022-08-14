@@ -25,7 +25,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 @Environment(value= EnvType.CLIENT)
 public class StandardSettings {
 
-    public static final int[] version = new int[]{1,2,1,-995};
+    public static final int[] version = new int[]{1,2,1,0};
     public static final Logger LOGGER = LogManager.getLogger();
     public static final MinecraftClient client = MinecraftClient.getInstance();
     public static final GameOptions options = client.options;
@@ -114,27 +114,6 @@ public class StandardSettings {
                 }
                 String[] string0_split = strings[0].split("_", 2);
                 switch (string0_split[0]) {
-                    case "key" -> {
-                        for (KeyBinding keyBinding : options.allKeys) {
-                            if (string0_split[1].equals(keyBinding.getTranslationKey())) {
-                                keyBinding.setBoundKey(InputUtil.fromTranslationKey(strings[1])); break;
-                            }
-                        }
-                    }
-                    case "soundCategory" -> {
-                        for (SoundCategory soundCategory : SoundCategory.values()) {
-                            if (string0_split[1].equals(soundCategory.getName())) {
-                                options.setSoundVolume(soundCategory, Float.parseFloat(strings[1])); break;
-                            }
-                        }
-                    }
-                    case "modelPart" -> {
-                        for (PlayerModelPart playerModelPart : PlayerModelPart.values()) {
-                            if (string0_split[1].equals(playerModelPart.getName())) {
-                                options.togglePlayerModelPart(playerModelPart, Boolean.parseBoolean(strings[1])); break;
-                            }
-                        }
-                    }
                     case "autoJump" -> options.getAutoJump().setValue(Boolean.parseBoolean(strings[1]));
                     case "autoSuggestions" -> options.getAutoSuggestions().setValue(Boolean.parseBoolean(strings[1]));
                     case "chatColors" -> options.getChatColors().setValue(Boolean.parseBoolean(strings[1]));
@@ -226,6 +205,27 @@ public class StandardSettings {
                     case "showAutosaveIndicator" -> options.getShowAutosaveIndicator().setValue(Boolean.parseBoolean(strings[1]));
                     case "chatPreview" -> options.getChatPreview().setValue(Boolean.parseBoolean(strings[1]));
                     case "onlyShowSecureChat" -> options.getOnlyShowSecureChat().setValue(Boolean.parseBoolean(strings[1]));
+                    case "key" -> {
+                        for (KeyBinding keyBinding : options.allKeys) {
+                            if (string0_split[1].equals(keyBinding.getTranslationKey())) {
+                                keyBinding.setBoundKey(InputUtil.fromTranslationKey(strings[1])); break;
+                            }
+                        }
+                    }
+                    case "soundCategory" -> {
+                        for (SoundCategory soundCategory : SoundCategory.values()) {
+                            if (string0_split[1].equals(soundCategory.getName())) {
+                                options.setSoundVolume(soundCategory, Float.parseFloat(strings[1])); break;
+                            }
+                        }
+                    }
+                    case "modelPart" -> {
+                        for (PlayerModelPart playerModelPart : PlayerModelPart.values()) {
+                            if (string0_split[1].equals(playerModelPart.getName())) {
+                                options.togglePlayerModelPart(playerModelPart, Boolean.parseBoolean(strings[1])); break;
+                            }
+                        }
+                    }
                     case "entityCulling" -> {
                         if (FabricLoader.getInstance().getModContainer("sodium").isPresent()) {
                             if (SodiumClientMod.options().performance.useEntityCulling != (SodiumClientMod.options().performance.useEntityCulling = Boolean.parseBoolean(strings[1]))) {
