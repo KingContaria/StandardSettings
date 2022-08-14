@@ -24,7 +24,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 @Environment(value= EnvType.CLIENT)
 public class StandardSettings {
 
-    public static final int[] version = new int[]{1,2,1,-995};
+    public static final int[] version = new int[]{1,2,1,0};
     public static final Logger LOGGER = LogManager.getLogger();
     public static final MinecraftClient client = MinecraftClient.getInstance();
     public static final GameOptions options = client.options;
