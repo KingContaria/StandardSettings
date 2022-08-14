@@ -140,7 +140,7 @@ public class OptionsCache {
         options.field_13292 = showSubtitles;
         options.touchScreen = touchscreen;
         if (options.fullscreen != fullscreen) {
-            if (client.isWindowFocused()) {
+            if (Display.isActive()) {
                 client.toggleFullscreen();
             } else {
                 StandardSettings.LOGGER.error("Could not reset fullscreen mode because window wasn't focused!");
