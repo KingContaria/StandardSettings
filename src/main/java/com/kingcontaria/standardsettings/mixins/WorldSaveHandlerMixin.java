@@ -1,8 +1,8 @@
 package com.kingcontaria.standardsettings.mixins;
 
 import com.kingcontaria.standardsettings.StandardSettings;
+import net.minecraft.class_2934;
 import net.minecraft.world.WorldSaveHandler;
-import net.minecraft.world.level.LevelProperties;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -19,11 +19,16 @@ import java.nio.file.Files;
 public class WorldSaveHandlerMixin {
 
     @Shadow @Final private File worldDir;
-    private final File file = new File(worldDir, "standardoptions.txt");
+    private boolean isNewWorld;
 
-    @Inject(method = "saveWorld(Lnet/minecraft/world/level/LevelProperties;)V", at = @At("TAIL"))
-    private void saveStandardoptionsTxt(LevelProperties properties, CallbackInfo ci) {
-        if (!file.exists() && StandardSettings.standardoptionsCache != null) {
+    @Inject(method = "<init>", at = @At(value = "INVOKE", target = "Ljava/io/File;mkdirs()Z", ordinal = 0))
+    private void isNewWorld(File file, String string, boolean bl, class_2934 arg, CallbackInfo ci) {
+        isNewWorld = !worldDir.exists();
+    }
+
+    @Inject(method = "<init>", at = @At("TAIL"))
+    private void saveStandardoptionsTxt(File file, String string, boolean bl, class_2934 arg, CallbackInfo ci) {
+        if (isNewWorld && StandardSettings.standardoptionsCache != null) {
             try {
                 Files.write(worldDir.toPath().resolve("standardoptions.txt"), String.join(System.lineSeparator(), StandardSettings.standardoptionsCache).getBytes());
                 StandardSettings.LOGGER.info("Saved standardoptions.txt to world file");
