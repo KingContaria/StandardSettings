@@ -29,6 +29,8 @@ To stop a setting from being reset, remove the corresponding line from the file 
 
 Depending on the Minecraft version you are playing some of these might not be included.
 
+**entityCulling**: Sets the sodium option Entity Culling. (Set to 'true' or 'false')
+
 **sneaking**: If you are using togglesneak, this resets the state of sneaking. (Set to 'true' or 'false')
 
 **sprinting**: If you are using togglesprint, this resets the state of sprinting. (Set to 'true' or 'false')
@@ -60,6 +62,8 @@ Depending on the Minecraft version you are playing some of these might not be in
 To do this, you have to replace the text in the 'standardoptions.txt' of all your instances to the file directory of that global file, for example:
 
 C:\Users\KingContaria\Desktop\speedrunning stuff\standardoptions\globalstandardoptions_116.txt
+
+By putting another file directory into that file, you can now create chains of file paths. This can be useful if you use a lot of different settings for different categories.
 
 #
 

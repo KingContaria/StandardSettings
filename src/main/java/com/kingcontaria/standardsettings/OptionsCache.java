@@ -133,7 +133,7 @@ public class OptionsCache {
         options.reducedDebugInfo = reducedDebugInfo;
         options.touchScreen = touchScreen;
         if (options.fullscreen != fullscreen) {
-            if (client.isWindowFocused()) {
+            if (Display.isActive()) {
                 client.toggleFullscreen();
             } else {
                 StandardSettings.LOGGER.error("Could not reset fullscreen mode because window wasn't focused!");

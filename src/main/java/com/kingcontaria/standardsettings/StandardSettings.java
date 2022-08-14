@@ -22,7 +22,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 public class StandardSettings {
 
-    public static final int[] version = new int[]{1,2,1,-995};
+    public static final int[] version = new int[]{1,2,1,0};
     public static final Logger LOGGER = LogManager.getLogger();
     private static final MinecraftClient client = MinecraftClient.getInstance();
     public static final GameOptions options = client.options;
@@ -108,24 +108,6 @@ public class StandardSettings {
                 }
                 String[] string0_split = strings[0].split("_", 2);
                 switch (string0_split[0]) {
-                    case "key":
-                        for (KeyBinding keyBinding : options.keysAll) {
-                            if (string0_split[1].equals(keyBinding.getTranslationKey())) {
-                                keyBinding.setCode(Integer.parseInt(strings[1])); break;
-                            }
-                        } break;
-                    case "soundCategory":
-                        for (SoundCategory soundCategory : SoundCategory.values()) {
-                            if (string0_split[1].equals(soundCategory.getName())) {
-                                options.setSoundVolume(soundCategory, Float.parseFloat(strings[1])); break;
-                            }
-                        } break;
-                    case "modelPart":
-                        for (PlayerModelPart playerModelPart : PlayerModelPart.values()) {
-                            if (string0_split[1].equals(playerModelPart.getName())) {
-                                options.setPlayerModelPart(playerModelPart, Boolean.parseBoolean(strings[1])); break;
-                            }
-                        } break;
                     case "mouseSensitivity": options.sensitivity = Float.parseFloat(strings[1]); break;
                     case "fov": options.fov = Float.parseFloat(strings[1]) < 5 ? Float.parseFloat(strings[1]) * 40.0f + 70.0f : Integer.parseInt(strings[1]); break;
                     case "gamma": options.gamma = Float.parseFloat(strings[1]); break;
@@ -179,6 +161,24 @@ public class StandardSettings {
                     case "allowBlockAlternatives": options.alternativeBlocks = Boolean.parseBoolean(strings[1]); break;
                     case "reducedDebugInfo": options.reducedDebugInfo = Boolean.parseBoolean(strings[1]); break;
                     case "renderClouds": options.entityShadows = Boolean.parseBoolean(strings[1]); break;
+                    case "key":
+                        for (KeyBinding keyBinding : options.keysAll) {
+                            if (string0_split[1].equals(keyBinding.getTranslationKey())) {
+                                keyBinding.setCode(Integer.parseInt(strings[1])); break;
+                            }
+                        } break;
+                    case "soundCategory":
+                        for (SoundCategory soundCategory : SoundCategory.values()) {
+                            if (string0_split[1].equals(soundCategory.getName())) {
+                                options.setSoundVolume(soundCategory, Float.parseFloat(strings[1])); break;
+                            }
+                        } break;
+                    case "modelPart":
+                        for (PlayerModelPart playerModelPart : PlayerModelPart.values()) {
+                            if (string0_split[1].equals(playerModelPart.getName())) {
+                                options.setPlayerModelPart(playerModelPart, Boolean.parseBoolean(strings[1])); break;
+                            }
+                        } break;
                     case "hitboxes": client.getEntityRenderManager().method_10205(Boolean.parseBoolean(strings[1])); break;
                     case "perspective": options.perspective = Integer.parseInt(strings[1]) % 3; break;
                     case "piedirectory":
