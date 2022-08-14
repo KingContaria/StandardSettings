@@ -1,7 +1,8 @@
 package com.kingcontaria.standardsettings.mixins;
 
 import com.kingcontaria.standardsettings.StandardSettings;
-import net.minecraft.entity.player.PlayerEntity;
+import com.mojang.datafixers.DataFixer;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.WorldSaveHandler;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -18,13 +19,19 @@ import java.nio.file.Files;
 
 public class WorldSaveHandlerMixin {
 
-    @Shadow @Final private File playerDataDir;
+    @Shadow @Final private File worldDir;
+    private boolean isNewWorld;
 
-    @Inject(method = "savePlayerData", at = @At("TAIL"))
-    private void saveStandardoptionsTxt(PlayerEntity playerEntity, CallbackInfo ci) {
-        if (!new File(playerDataDir.getParentFile(), "standardoptions.txt").exists() && StandardSettings.standardoptionsCache != null) {
+    @Inject(method = "<init>", at = @At(value = "INVOKE", target = "Ljava/io/File;mkdirs()Z", ordinal = 0))
+    private void isNewWorld(File worldsDirectory, String worldName, MinecraftServer server, DataFixer dataFixer, CallbackInfo ci) {
+        isNewWorld = !worldDir.exists();
+    }
+
+    @Inject(method = "<init>", at = @At("TAIL"))
+    private void saveStandardoptionsTxt(File worldsDirectory, String worldName, MinecraftServer server, DataFixer dataFixer, CallbackInfo ci) {
+        if (isNewWorld && StandardSettings.standardoptionsCache != null) {
             try {
-                Files.write(playerDataDir.getParentFile().toPath().resolve("standardoptions.txt"), String.join(System.lineSeparator(), StandardSettings.standardoptionsCache).getBytes());
+                Files.write(worldDir.toPath().resolve("standardoptions.txt"), String.join(System.lineSeparator(), StandardSettings.standardoptionsCache).getBytes());
                 StandardSettings.LOGGER.info("Saved standardoptions.txt to world file");
             } catch (IOException e) {
                 StandardSettings.LOGGER.error("Failed to save standardoptions.txt to world file", e);
