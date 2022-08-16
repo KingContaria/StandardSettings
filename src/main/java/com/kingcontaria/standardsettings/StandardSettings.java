@@ -3,6 +3,7 @@ package com.kingcontaria.standardsettings;
 import com.google.common.io.Files;
 import com.kingcontaria.standardsettings.mixins.LanguageManagerAccessor;
 import com.kingcontaria.standardsettings.mixins.MinecraftClientAccessor;
+import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.options.GameOptions;
 import net.minecraft.client.options.KeyBinding;
@@ -22,11 +23,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 public class StandardSettings {
 
-    public static final int[] version = new int[]{1,2,1,0};
+    public static final int[] version = new int[]{1,2,1,1};
     public static final Logger LOGGER = LogManager.getLogger();
     public static final MinecraftClient client = MinecraftClient.getInstance();
     public static final GameOptions options = client.options;
-    public static final File standardoptionsFile = new File("config/standardoptions.txt");
+    public static final File standardoptionsFile = new File(FabricLoader.getInstance().getConfigDir().resolve("standardoptions.txt").toUri());
     public static boolean changeOnWindowActivation = false;
     public static boolean changeOnResize = false;
     private static int renderDistanceOnWorldJoin;
@@ -35,7 +36,8 @@ public class StandardSettings {
     public static OptionsCache optionsCache = new OptionsCache(client);
     public static String lastQuitWorld;
     public static String[] standardoptionsCache;
-    private static Map<File, Long> filesLastModifiedMap;
+    public static Map<File, Long> filesLastModifiedMap;
+    public static File lastUsedFile;
 
     public static void load() {
         long start = System.nanoTime();
@@ -85,11 +87,12 @@ public class StandardSettings {
         return wasModified.get();
     }
 
-    private static List<String> resolveGlobalFile(File file) {
+    public static List<String> resolveGlobalFile(File file) {
         filesLastModifiedMap = new HashMap<>();
         List<String> lines = null;
         do {
             filesLastModifiedMap.put(file, file.lastModified());
+            lastUsedFile = file;
             try {
                 lines = Files.readLines(file, StandardCharsets.UTF_8);
             } catch (IOException e) {
@@ -204,6 +207,7 @@ public class StandardSettings {
 
         if (renderDistanceOnWorldJoin != 0) {
             options.viewDistance = renderDistanceOnWorldJoin;
+            client.worldRenderer.scheduleTerrainUpdate();
         }
         if (fovOnWorldJoin != 0) {
             options.fov = fovOnWorldJoin;
