@@ -4,6 +4,7 @@ import com.google.common.io.Files;
 import com.kingcontaria.standardsettings.mixins.BakedModelManagerAccessor;
 import com.kingcontaria.standardsettings.mixins.MinecraftClientAccessor;
 import me.jellysquid.mods.sodium.client.SodiumClientMod;
+import me.jellysquid.mods.sodium.client.gui.SodiumGameOptions;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.fabricmc.loader.api.FabricLoader;
@@ -18,6 +19,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.*;
+import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -25,12 +27,12 @@ import java.util.concurrent.atomic.AtomicBoolean;
 @Environment(value= EnvType.CLIENT)
 public class StandardSettings {
 
-    public static final int[] version = new int[]{1,2,1,0};
+    public static final int[] version = new int[]{1,2,1,1};
     public static final Logger LOGGER = LogManager.getLogger();
     public static final MinecraftClient client = MinecraftClient.getInstance();
     public static final GameOptions options = client.options;
     private static final Window window = client.getWindow();
-    public static final File standardoptionsFile = new File("config/standardoptions.txt");
+    public static final File standardoptionsFile = new File(FabricLoader.getInstance().getConfigDir().resolve("standardoptions.txt").toUri());
     public static boolean changeOnWindowActivation = false;
     public static boolean changeOnResize = false;
     private static int renderDistanceOnWorldJoin;
@@ -40,7 +42,9 @@ public class StandardSettings {
     public static OptionsCache optionsCache = new OptionsCache(client);
     public static String lastQuitWorld;
     public static String[] standardoptionsCache;
-    private static Map<File, Long> filesLastModifiedMap;
+    public static Map<File, Long> filesLastModifiedMap;
+    public static File lastUsedFile;
+    private static final Field[] entityCulling = new Field[2];
 
     public static void load() {
         long start = System.nanoTime();
@@ -90,11 +94,12 @@ public class StandardSettings {
         return wasModified.get();
     }
 
-    private static List<String> resolveGlobalFile(File file) {
+    public static List<String> resolveGlobalFile(File file) {
         filesLastModifiedMap = new HashMap<>();
         List<String> lines = null;
         do {
             filesLastModifiedMap.put(file, file.lastModified());
+            lastUsedFile = file;
             try {
                 lines = Files.readLines(file, StandardCharsets.UTF_8);
             } catch (IOException e) {
@@ -210,12 +215,7 @@ public class StandardSettings {
                                 options.setPlayerModelPart(playerModelPart, Boolean.parseBoolean(strings[1])); break;
                             }
                         } break;
-                    case "entityCulling":
-                        if (FabricLoader.getInstance().getModContainer("sodium").isPresent()) {
-                            if (SodiumClientMod.options().advanced.useEntityCulling != (SodiumClientMod.options().advanced.useEntityCulling = Boolean.parseBoolean(strings[1]))) {
-                                SodiumClientMod.options().writeChanges();
-                            }
-                        } break;
+                    case "entityCulling": setEntityCulling(Boolean.parseBoolean(strings[1])); break;
                     case "sneaking": options.keySneak.setPressed(options.sneakToggled && (Boolean.parseBoolean(strings[1]) != options.keySneak.isPressed())); break;
                     case "sprinting": options.keySprint.setPressed(options.sprintToggled && (Boolean.parseBoolean(strings[1]) != options.keySprint.isPressed())); break;
                     case "chunkborders":
@@ -247,6 +247,7 @@ public class StandardSettings {
 
         if (renderDistanceOnWorldJoin != 0) {
             options.viewDistance = renderDistanceOnWorldJoin;
+            client.worldRenderer.scheduleTerrainUpdate();
         }
         if (entityDistanceScalingOnWorldJoin != 0) {
             options.entityDistanceScaling = entityDistanceScalingOnWorldJoin;
@@ -441,9 +442,59 @@ public class StandardSettings {
         for (PlayerModelPart playerModelPart : PlayerModelPart.values()) {
             string.append("modelPart_").append(playerModelPart.getName()).append(":").append(options.getEnabledPlayerModelParts().contains(playerModelPart)).append(l);
         }
-        string.append("entityCulling:").append(FabricLoader.getInstance().getModContainer("sodium").isPresent() ? SodiumClientMod.options().advanced.useEntityCulling : "").append(l).append("sneaking:").append(l).append("sprinting:").append(l).append("chunkborders:").append(l).append("hitboxes:").append(l).append("perspective:").append(l).append("piedirectory:").append(l).append("f1:").append(l).append("fovOnWorldJoin:").append(l).append("guiScaleOnWorldJoin:").append(l).append("renderDistanceOnWorldJoin:").append(l).append("entityDistanceScalingOnWorldJoin:").append(l).append("changeOnResize:false");
+        string.append("entityCulling:").append(getEntityCulling().isPresent() ? getEntityCulling().get() : "").append(l).append("sneaking:").append(l).append("sprinting:").append(l).append("chunkborders:").append(l).append("hitboxes:").append(l).append("perspective:").append(l).append("piedirectory:").append(l).append("f1:").append(l).append("fovOnWorldJoin:").append(l).append("guiScaleOnWorldJoin:").append(l).append("renderDistanceOnWorldJoin:").append(l).append("entityDistanceScalingOnWorldJoin:").append(l).append("changeOnResize:false");
 
         return string.toString();
+    }
+
+    public static void initializeEntityCulling() {
+        if (!FabricLoader.getInstance().getModContainer("sodium").isPresent()) return;
+        Class entityCullingClass;
+        label:
+        {
+            for (Class clas : SodiumGameOptions.class.getClasses()) {
+                for (Field field : clas.getFields()) {
+                    if (field.toString().toLowerCase().contains("entityculling")) {
+                        entityCulling[0] = field;
+                        entityCullingClass = clas;
+                        break label;
+                    }
+                }
+            }
+            return;
+        }
+        for (Field field : SodiumGameOptions.class.getFields()) {
+            if (field.getType().equals(entityCullingClass)) {
+                entityCulling[1] = field; return;
+            }
+        }
+    }
+
+    public static Optional<Boolean> getEntityCulling() {
+        if (entityCulling[0] == null || entityCulling[1] == null) return Optional.empty();
+        try {
+            return Optional.of((boolean) entityCulling[0].get(entityCulling[1].get(SodiumClientMod.options())));
+        } catch (IllegalAccessException e) {
+            LOGGER.error("Failed to get EntityCulling", e);
+        }
+        return Optional.empty();
+    }
+
+    public static void setEntityCulling(boolean value) {
+        if (entityCulling[0] == null || entityCulling[1] == null) return;
+        Optional<Boolean> entityCullingTemp = getEntityCulling();
+        try {
+            entityCulling[0].set(entityCulling[1].get(SodiumClientMod.options()), value);
+        } catch (IllegalAccessException e) {
+            LOGGER.error("Failed to set EntityCulling to " + value, e);
+        }
+        if (!(entityCullingTemp.isPresent() && entityCullingTemp.get() != getEntityCulling().get())) {
+            try {
+                SodiumClientMod.options().writeChanges();
+            } catch (IOException e) {
+                LOGGER.error("Failed to save sodium options");
+            }
+        }
     }
 
     public static List<String> checkVersion(int[] fileVersion, List<String> existingLines) {
@@ -467,7 +518,7 @@ public class StandardSettings {
                 LOGGER.info("Didn't find anything to update, good luck on the runs!");
                 return lines;
             }
-            lines.add("entityCulling:" + (FabricLoader.getInstance().getModContainer("sodium").isPresent() ? SodiumClientMod.options().advanced.useEntityCulling : ""));
+            lines.add("entityCulling:" + (getEntityCulling().isPresent() ? getEntityCulling().get() : ""));
             lines.add("f1:");
             lines.add("guiScaleOnWorldJoin:");
             lines.add("changeOnResize:false");
