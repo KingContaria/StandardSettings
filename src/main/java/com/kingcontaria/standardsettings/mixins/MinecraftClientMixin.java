@@ -14,8 +14,7 @@ import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.attribute.UserDefinedFileAttributeView;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Stream;
 
 @Mixin(MinecraftClient.class)
@@ -24,8 +23,10 @@ public class MinecraftClientMixin {
 
     @Inject(method = "<init>", at = @At("RETURN"))
     private void initializeStandardSettings(RunArgs args, CallbackInfo ci) {
-        UserDefinedFileAttributeView view = Files.getFileAttributeView(StandardSettings.standardoptionsFile.toPath(), UserDefinedFileAttributeView.class);
+        StandardSettings.initializeEntityCulling();
+
         if (!StandardSettings.standardoptionsFile.exists()) {
+            UserDefinedFileAttributeView view = Files.getFileAttributeView(StandardSettings.standardoptionsFile.toPath(), UserDefinedFileAttributeView.class);
             StandardSettings.LOGGER.info("Creating StandardSettings File...");
 
             long start = System.nanoTime();
@@ -44,46 +45,38 @@ public class MinecraftClientMixin {
             return;
         }
 
-        File globalFile = null;
-        UserDefinedFileAttributeView globalFileView = null;
+        Map<UserDefinedFileAttributeView, int[]> fileVersionsMap = new HashMap<>();
+        List<String> lines = new ArrayList<>();
         try {
-            List<String> lines = com.google.common.io.Files.readLines(StandardSettings.standardoptionsFile, Charset.defaultCharset());
-            if (lines.size() > 0) {
-                String firstLine = com.google.common.io.Files.readLines(StandardSettings.standardoptionsFile, Charset.defaultCharset()).get(0);
-                globalFile = new File(firstLine);
-                if (!globalFile.exists()) {
-                    globalFile = null;
-                } else {
-                    globalFileView = Files.getFileAttributeView(globalFile.toPath(), UserDefinedFileAttributeView.class);
-                }
+            lines = StandardSettings.resolveGlobalFile(StandardSettings.standardoptionsFile);
+            for (File file : StandardSettings.filesLastModifiedMap.keySet()) {
+                UserDefinedFileAttributeView view = Files.getFileAttributeView(file.toPath(), UserDefinedFileAttributeView.class);
+                fileVersionsMap.put(view, readVersion(view));
             }
-        } catch (IOException e) {
-            StandardSettings.LOGGER.error("Failed to check for global file", e);
+        } catch (Exception e) {
+            StandardSettings.LOGGER.error("Failed to check for file versions", e);
         }
 
-        int[] fileVersion = readVersion(view);
-        if (globalFile != null) {
-            int[] globalFileVersion = readVersion(globalFileView);
-            if (StandardSettings.compareVersions(fileVersion, globalFileVersion)) {
-                fileVersion = globalFileVersion;
-                try {
-                    view.write("standardsettings", Charset.defaultCharset().encode(String.join(".", Arrays.stream(globalFileVersion).mapToObj(String::valueOf).toArray(String[]::new))));
-                } catch (IOException e) {
-                    StandardSettings.LOGGER.error("Failed to adjust standardoptions.txt version to global file version", e);
-                }
+        int[] highestVersion = new int[]{1,2,0,0};
+        for (int[] fileVersion : fileVersionsMap.values()) {
+            if (StandardSettings.compareVersions(highestVersion, fileVersion)) {
+                highestVersion = fileVersion;
             }
         }
 
         try {
-            String[] linesToAdd = StandardSettings.checkVersion(fileVersion);
+            List<String> linesToAdd = StandardSettings.checkVersion(highestVersion, lines);
             if (linesToAdd != null) {
-                com.google.common.io.Files.append(System.lineSeparator() + String.join(System.lineSeparator(), linesToAdd), globalFile != null ? globalFile : StandardSettings.standardoptionsFile, Charset.defaultCharset());
+                com.google.common.io.Files.append(System.lineSeparator() + String.join(System.lineSeparator(), linesToAdd), StandardSettings.lastUsedFile, Charset.defaultCharset());
                 StandardSettings.LOGGER.info("Finished updating standardoptions.txt");
             }
-            if (StandardSettings.compareVersions(fileVersion, StandardSettings.version)) {
-                view.write("standardsettings", Charset.defaultCharset().encode(StandardSettings.getVersion()));
-                if (globalFile != null) {
-                    globalFileView.write("standardsettings", Charset.defaultCharset().encode(StandardSettings.getVersion()));
+            for (Map.Entry<UserDefinedFileAttributeView, int[]> entry : fileVersionsMap.entrySet()) {
+                if (StandardSettings.compareVersions(entry.getValue(), StandardSettings.version)) {
+                    try {
+                        entry.getKey().write("standardsettings", Charset.defaultCharset().encode(StandardSettings.getVersion()));
+                    } catch (IOException e) {
+                        StandardSettings.LOGGER.error("Failed to sign version number to file", e);
+                    }
                 }
             }
         } catch (IOException e) {
