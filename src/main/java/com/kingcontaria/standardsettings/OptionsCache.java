@@ -2,8 +2,6 @@ package com.kingcontaria.standardsettings;
 
 import com.kingcontaria.standardsettings.mixins.BakedModelManagerAccessor;
 import com.kingcontaria.standardsettings.mixins.MinecraftClientAccessor;
-import me.jellysquid.mods.sodium.client.SodiumClientMod;
-import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.options.*;
 import net.minecraft.client.render.entity.PlayerModelPart;
@@ -14,7 +12,6 @@ import net.minecraft.client.util.Window;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.util.Arm;
 
-import java.io.IOException;
 import java.util.Optional;
 import java.util.Set;
 
@@ -73,7 +70,7 @@ public class OptionsCache {
     private int biomeBlendRadius;
     private double mouseWheelSensitivity;
     private boolean rawMouseInput;
-    private boolean entityCulling;
+    private Optional<Boolean> entityCulling;
     private boolean sneaking;
     private boolean sprinting;
     private boolean chunkborders;
@@ -143,9 +140,7 @@ public class OptionsCache {
         biomeBlendRadius = options.biomeBlendRadius;
         mouseWheelSensitivity = options.mouseWheelSensitivity;
         rawMouseInput = options.rawMouseInput;
-        if (FabricLoader.getInstance().getModContainer("sodium").isPresent()) {
-            entityCulling = SodiumClientMod.options().advanced.useEntityCulling;
-        }
+        entityCulling = StandardSettings.getEntityCulling();
         sneaking = options.keySneak.isPressed();
         sprinting = options.keySprint.isPressed();
         client.debugRenderer.toggleShowChunkBorder();
@@ -238,15 +233,7 @@ public class OptionsCache {
         options.biomeBlendRadius = biomeBlendRadius;
         options.mouseWheelSensitivity = mouseWheelSensitivity;
         options.rawMouseInput = rawMouseInput;
-        if (FabricLoader.getInstance().getModContainer("sodium").isPresent()) {
-            if (SodiumClientMod.options().advanced.useEntityCulling != (SodiumClientMod.options().advanced.useEntityCulling = entityCulling)) {
-                try {
-                    SodiumClientMod.options().writeChanges();
-                } catch (IOException e) {
-                    // empty catch block
-                }
-            }
-        }
+        entityCulling.ifPresent(StandardSettings::setEntityCulling);
         if (options.sneakToggled && (sneaking != options.keySneak.isPressed())) {
             options.keySneak.setPressed(true);
         }
