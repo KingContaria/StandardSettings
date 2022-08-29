@@ -25,6 +25,7 @@ public class WorldSaveHandlerMixin {
         isNewWorld = !worldDir.exists();
     }
 
+    // saves the standardoptions to world file for verification purposes
     @Inject(method = "<init>", at = @At("TAIL"))
     private void saveStandardoptionsTxt(File savesFolder, String worldName, boolean createPlayerDataDir, CallbackInfo ci) {
         if (isNewWorld && StandardSettings.standardoptionsCache != null) {
