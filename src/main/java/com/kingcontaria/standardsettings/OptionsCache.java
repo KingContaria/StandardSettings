@@ -1,7 +1,7 @@
 package com.kingcontaria.standardsettings;
 
-import com.kingcontaria.standardsettings.mixins.BakedModelManagerAccessor;
-import com.kingcontaria.standardsettings.mixins.MinecraftClientAccessor;
+import com.kingcontaria.standardsettings.mixins.accessors.BakedModelManagerAccessor;
+import com.kingcontaria.standardsettings.mixins.accessors.MinecraftClientAccessor;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.options.*;
 import net.minecraft.client.render.entity.PlayerModelPart;
@@ -175,11 +175,7 @@ public class OptionsCache {
         options.showSubtitles = showSubtitles;
         options.touchscreen = touchscreen;
         if (window.isFullscreen() != fullscreen) {
-            if (client.isWindowFocused()) {
-                window.toggleFullscreen();
-            } else {
-                StandardSettings.LOGGER.error("Could not reset fullscreen mode because window wasn't focused!");
-            }
+            window.toggleFullscreen();
             options.fullscreen = window.isFullscreen();
         }
         options.bobView = bobView;
@@ -189,7 +185,7 @@ public class OptionsCache {
         options.fov = fov;
         options.gamma = gamma;
         options.viewDistance = viewDistance;
-        window.calculateScaleFactor(options.guiScale = guiScale, options.forceUnicodeFont);
+        window.setScaleFactor(window.calculateScaleFactor(options.guiScale = guiScale, options.forceUnicodeFont));
         options.particles = particles;
         window.setFramerateLimit(options.maxFps = maxFps);
         options.fancyGraphics = fancyGraphics;
