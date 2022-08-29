@@ -1,7 +1,7 @@
 package com.kingcontaria.standardsettings;
 
-import com.kingcontaria.standardsettings.mixins.BakedModelManagerAccessor;
-import com.kingcontaria.standardsettings.mixins.MinecraftClientAccessor;
+import com.kingcontaria.standardsettings.mixins.accessors.BakedModelManagerAccessor;
+import com.kingcontaria.standardsettings.mixins.accessors.MinecraftClientAccessor;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.option.*;
 import net.minecraft.client.render.entity.PlayerModelPart;
