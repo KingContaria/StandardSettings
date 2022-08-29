@@ -11,21 +11,23 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 public class CreateWorldScreenMixin {
 
-    private static boolean bl = true;
+    private static boolean shouldResetSettings = true;
 
-    @Inject(method = "createLevel()V", at = @At("HEAD"))
+    // reset settings to standardoptions at the start of world creation
+    @Inject(method = "createLevel", at = @At("HEAD"))
     private void resetSettings(CallbackInfo info) {
-        if (bl) {
+        // don't reset settings if the last world was reset on world preview
+        if (shouldResetSettings) {
             StandardSettings.LOGGER.info("Reset to StandardSettings...");
             StandardSettings.load();
-            StandardSettings.LOGGER.info("Checking Settings...");
+            StandardSettings.LOGGER.info("Checking and saving Settings...");
             StandardSettings.checkSettings();
-            StandardSettings.options.write();
-            StandardSettings.changeOnWindowActivation = false;
-            bl = false;
+            shouldResetSettings = false;
         }
     }
 
+    // activate OnWorldJoin options when finishing world creation
+    // if instance is unfocused, it will instead wait
     @Inject(method = "createLevel", at = @At("RETURN"))
     private void onWorldJoin(CallbackInfo ci) {
         if (StandardSettings.client.isWindowFocused()) {
@@ -33,7 +35,7 @@ public class CreateWorldScreenMixin {
         } else {
             StandardSettings.changeOnWindowActivation = true;
         }
-        bl = true;
+        shouldResetSettings = true;
     }
 
 }
