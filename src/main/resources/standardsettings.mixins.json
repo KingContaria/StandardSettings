@@ -4,9 +4,9 @@
   "package": "com.kingcontaria.standardsettings.mixins",
   "compatibilityLevel": "JAVA_8",
   "client": [
-    "BakedModelManagerAccessor",
-    "LanguageManagerAccessor",
+    "accessors.BakedModelManagerAccessor",
     "CreateWorldScreenMixin",
+    "accessors.LanguageManagerAccessor",
     "MinecraftClientMixin",
     "WorldListWidgetEntryMixin",
     "WorldSaveHandlerMixin"
