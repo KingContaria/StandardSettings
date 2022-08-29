@@ -1,8 +1,8 @@
 package com.kingcontaria.standardsettings;
 
 import com.google.common.io.Files;
-import com.kingcontaria.standardsettings.mixins.BakedModelManagerAccessor;
-import com.kingcontaria.standardsettings.mixins.MinecraftClientAccessor;
+import com.kingcontaria.standardsettings.mixins.accessors.BakedModelManagerAccessor;
+import com.kingcontaria.standardsettings.mixins.accessors.MinecraftClientAccessor;
 import me.jellysquid.mods.sodium.client.SodiumClientMod;
 import me.jellysquid.mods.sodium.client.gui.SodiumGameOptions;
 import net.fabricmc.api.EnvType;
@@ -12,6 +12,7 @@ import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.option.*;
 import net.minecraft.client.render.entity.PlayerModelPart;
 import net.minecraft.client.util.InputUtil;
+import net.minecraft.client.util.VideoMode;
 import net.minecraft.client.util.Window;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.util.Arm;
@@ -22,12 +23,11 @@ import java.io.*;
 import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 @Environment(value= EnvType.CLIENT)
 public class StandardSettings {
 
-    public static final int[] version = new int[]{1,2,1,1};
+    public static final int[] version = new int[]{1,2,2,-1000};
     public static final Logger LOGGER = LogManager.getLogger();
     public static final MinecraftClient client = MinecraftClient.getInstance();
     public static final GameOptions options = client.options;
@@ -35,24 +35,21 @@ public class StandardSettings {
     public static final File standardoptionsFile = new File(FabricLoader.getInstance().getConfigDir().resolve("standardoptions.txt").toUri());
     public static boolean changeOnWindowActivation = false;
     public static boolean changeOnResize = false;
-    private static int renderDistanceOnWorldJoin;
-    private static int simulationDistanceOnWorldJoin;
-    private static float entityDistanceScalingOnWorldJoin;
-    private static double fovOnWorldJoin;
-    private static int guiScaleOnWorldJoin;
+    private static Optional<Integer> renderDistanceOnWorldJoin = Optional.empty();
+    private static Optional<Integer> simulationDistanceOnWorldJoin = Optional.empty();
+    private static Optional<Float> entityDistanceScalingOnWorldJoin = Optional.empty();
+    private static Optional<Double> fovOnWorldJoin = Optional.empty();
+    private static Optional<Integer> guiScaleOnWorldJoin = Optional.empty();
     public static OptionsCache optionsCache = new OptionsCache(client);
-    public static String lastQuitWorld;
+    public static String lastWorld;
     public static String[] standardoptionsCache;
     public static Map<File, Long> filesLastModifiedMap;
-    public static File lastUsedFile;
     private static final Field[] entityCulling = new Field[2];
 
     public static void load() {
         long start = System.nanoTime();
 
-        fovOnWorldJoin = entityDistanceScalingOnWorldJoin = renderDistanceOnWorldJoin = simulationDistanceOnWorldJoin = 0;
-        guiScaleOnWorldJoin = -1;
-        changeOnResize = false;
+        emptyOnWorldJoinOptions();
 
         try {
             if (!standardoptionsFile.exists()) {
@@ -61,20 +58,20 @@ public class StandardSettings {
                 return;
             }
 
-            if (lastQuitWorld != null) {
-                optionsCache.save(lastQuitWorld);
-                lastQuitWorld = null;
+            // caches options for last world before applying standardoptions to reload later if necessary
+            // allows for verifiability when rejoining a world after accidentally quitting with Atum
+            if (lastWorld != null) {
+                optionsCache.save(lastWorld);
+                lastWorld = null;
             }
 
+            // reload and cache standardoptions if necessary
             if (standardoptionsCache == null || wereFilesModified(filesLastModifiedMap)) {
                 LOGGER.info("Reloading & caching StandardSettings...");
                 List<String> lines = resolveGlobalFile(standardoptionsFile);
                 if (lines == null) {
                     LOGGER.error("standardoptions.txt is empty");
                     return;
-                }
-                if (filesLastModifiedMap.size() > 1) {
-                    LOGGER.info("Using global standardoptions file");
                 }
                 standardoptionsCache = lines.toArray(new String[0]);
             }
@@ -86,21 +83,25 @@ public class StandardSettings {
         }
     }
 
+    // checks if standardoptions file chain has been modified
     private static boolean wereFilesModified(Map<File, Long> map) {
         if (map == null) {
-            return false;
+            return true;
         }
-        AtomicBoolean wasModified = new AtomicBoolean(false);
-        map.forEach((file, lastModified) -> wasModified.set(file.lastModified() != lastModified || !file.exists() || wasModified.get()));
-        return wasModified.get();
+        for (Map.Entry<File, Long> entry : map.entrySet()) {
+            if (entry.getKey().lastModified() != entry.getValue() || !entry.getKey().exists()) return true;
+        }
+        return false;
     }
 
+    // creates a standardoptions file chain by checking if the first line of a file points to another file directory
     public static List<String> resolveGlobalFile(File file) {
         filesLastModifiedMap = new HashMap<>();
         List<String> lines = null;
         do {
+            // save the last modified time of each file to be checked later
             filesLastModifiedMap.put(file, file.lastModified());
-            lastUsedFile = file;
+
             try {
                 lines = Files.readLines(file, StandardCharsets.UTF_8);
             } catch (IOException e) {
@@ -110,14 +111,18 @@ public class StandardSettings {
         return lines;
     }
 
+    // load standardoptions from cache, the heart of the mod if you will
     private static void load(String[] lines) {
         for (String line : lines) {
             try {
                 String[] strings = line.split(":", 2);
+
+                // skip line if value is empty
                 if (strings.length < 2 || (strings[1] = strings[1].trim()).equals("") && !strings[0].equals("fullscreenResolution")) {
                     continue;
                 }
                 String[] string0_split = strings[0].split("_", 2);
+
                 switch (string0_split[0]) {
                     case "autoJump" -> options.autoJump = Boolean.parseBoolean(strings[1]);
                     case "autoSuggestions" -> options.autoSuggestions = Boolean.parseBoolean(strings[1]);
@@ -172,18 +177,9 @@ public class StandardSettings {
                     case "textBackgroundOpacity" -> options.textBackgroundOpacity = Double.parseDouble(strings[1]);
                     case "backgroundForChatOnly" -> options.backgroundForChatOnly = Boolean.parseBoolean(strings[1]);
                     case "fullscreenResolution" -> {
-                        if (!strings[1].equals(options.fullscreenResolution)) {
-                            if (strings[1].equals("")) {
-                                window.setVideoMode(Optional.empty());
-                                window.applyVideoMode(); break;
-                            }
-                            for (int i = 0; i < window.getMonitor().getVideoModeCount(); i++) {
-                                if (window.getMonitor().getVideoMode(i).asString().equals(strings[1])) {
-                                    window.setVideoMode(Optional.ofNullable(window.getMonitor().getVideoMode(i)));
-                                    window.applyVideoMode(); break;
-                                }
-                            }
-                            LOGGER.warn("Could not resolve Fullscreen Resolution: " + strings[1]);
+                        if (!strings[1].equals(window.getVideoMode().isPresent() ? window.getVideoMode().get().asString() : "")) {
+                            window.setVideoMode(VideoMode.fromString(strings[1]));
+                            window.applyVideoMode();
                         }
                     }
                     case "advancedItemTooltips" -> options.advancedItemTooltips = Boolean.parseBoolean(strings[1]);
@@ -241,14 +237,15 @@ public class StandardSettings {
                         ((MinecraftClientAccessor) client).setOpenProfilerSection(strings[1].replace('.', '\u001e'));
                     }
                     case "f1" -> options.hudHidden = Boolean.parseBoolean(strings[1]);
-                    case "fovOnWorldJoin" -> fovOnWorldJoin = Double.parseDouble(strings[1]) < 5 ? Double.parseDouble(strings[1]) * 40.0f + 70.0f : Integer.parseInt(strings[1]);
-                    case "guiScaleOnWorldJoin" -> guiScaleOnWorldJoin = Integer.parseInt(strings[1]);
-                    case "renderDistanceOnWorldJoin" -> renderDistanceOnWorldJoin = Integer.parseInt(strings[1]);
-                    case "simulationDistanceOnWorldJoin" -> simulationDistanceOnWorldJoin = Integer.parseInt(strings[1]);
-                    case "entityDistanceScalingOnWorldJoin" -> entityDistanceScalingOnWorldJoin = Float.parseFloat(strings[1]);
+                    case "fovOnWorldJoin" -> fovOnWorldJoin = Optional.of(Double.parseDouble(strings[1]) < 5 ? Double.parseDouble(strings[1]) * 40.0f + 70.0f : Integer.parseInt(strings[1]));
+                    case "guiScaleOnWorldJoin" -> guiScaleOnWorldJoin = Optional.of(Integer.parseInt(strings[1]));
+                    case "renderDistanceOnWorldJoin" -> renderDistanceOnWorldJoin = Optional.of(Integer.parseInt(strings[1]));
+                    case "simulationDistanceOnWorldJoin" -> simulationDistanceOnWorldJoin = Optional.of(Integer.parseInt(strings[1]));
+                    case "entityDistanceScalingOnWorldJoin" -> entityDistanceScalingOnWorldJoin = Optional.of(Float.parseFloat(strings[1]));
                     case "changeOnResize" -> changeOnResize = Boolean.parseBoolean(strings[1]);
                 }
                 // Some options.txt settings which aren't accessible in vanilla Minecraft and some unnecessary settings (like Multiplayer stuff) are not included.
+                // also has a few extra settings that can be reset that Minecraft doesn't save to options.txt, but are important in speedrunning
             } catch (Exception e) {
                 LOGGER.warn("Skipping bad StandardSetting: " + line);
             }
@@ -256,39 +253,46 @@ public class StandardSettings {
         KeyBinding.updateKeysByCode();
     }
 
+    // load OnWorldJoin options if present
     public static void changeSettingsOnJoin() {
         long start = System.nanoTime();
 
-        if (renderDistanceOnWorldJoin != 0) {
-            options.viewDistance = renderDistanceOnWorldJoin;
-        }
-        if (simulationDistanceOnWorldJoin != 0) {
-            options.simulationDistance = simulationDistanceOnWorldJoin;
+        renderDistanceOnWorldJoin.ifPresent(viewDistance -> {
+            options.viewDistance = viewDistance;
             client.worldRenderer.scheduleTerrainUpdate();
-        }
-        if (entityDistanceScalingOnWorldJoin != 0) {
-            options.entityDistanceScaling = entityDistanceScalingOnWorldJoin;
-        }
-        if (fovOnWorldJoin != 0) {
-            options.fov = fovOnWorldJoin;
-        }
-        if (guiScaleOnWorldJoin != -1) {
-            options.guiScale = guiScaleOnWorldJoin;
+        });
+        simulationDistanceOnWorldJoin.ifPresent(simulationDistance -> options.simulationDistance = simulationDistance);
+        entityDistanceScalingOnWorldJoin.ifPresent(entityDistanceScaling -> options.entityDistanceScaling = entityDistanceScaling);
+        fovOnWorldJoin.ifPresent(fov -> options.fov = fov);
+        guiScaleOnWorldJoin.ifPresent(guiScale -> {
+            options.guiScale = guiScale;
             client.onResolutionChanged();
-        }
-        if (fovOnWorldJoin != 0 || guiScaleOnWorldJoin != -1 || renderDistanceOnWorldJoin != 0 || simulationDistanceOnWorldJoin != 0 || entityDistanceScalingOnWorldJoin != 0) {
-            fovOnWorldJoin = entityDistanceScalingOnWorldJoin = renderDistanceOnWorldJoin = simulationDistanceOnWorldJoin = 0;
-            guiScaleOnWorldJoin = -1;
+        });
+
+        if (fovOnWorldJoin.isPresent() || guiScaleOnWorldJoin.isPresent() || renderDistanceOnWorldJoin.isPresent()) {
+            emptyOnWorldJoinOptions();
             options.write();
             LOGGER.info("Changed Settings on World Join ({} ms)", (System.nanoTime() - start) / 1000000.0f);
         }
     }
 
+    // resets OnWorldJoin options to their default (empty) state
+    private static void emptyOnWorldJoinOptions() {
+        fovOnWorldJoin = Optional.empty();
+        entityDistanceScalingOnWorldJoin = Optional.empty();
+        guiScaleOnWorldJoin = Optional.empty();
+        renderDistanceOnWorldJoin = Optional.empty();
+        simulationDistanceOnWorldJoin = Optional.empty();
+        changeOnResize = false;
+        changeOnWindowActivation = false;
+    }
+
+    // makes sure the values are within the boundaries of vanilla minecraft / the speedrun.com rule set
     public static void checkSettings() {
         long start = System.nanoTime();
 
         options.mouseSensitivity = check("Sensitivity", options.mouseSensitivity * 2, 0, 2, true) / 2;
-        options.fov = Math.round(check("FOV", options.fov, 30, 110, false));
+        options.fov = (int) (check("FOV", options.fov, 30, 110, false));
         options.distortionEffectScale = check("Distortion Effects", options.distortionEffectScale, 0, 1, true);
         options.fovEffectScale = check("FOV Effects", options.fovEffectScale, 0, 1, true);
         options.gamma = check("Brightness", options.gamma, 0, 5, true);
@@ -296,7 +300,7 @@ public class StandardSettings {
         options.simulationDistance = check("Simulation Distance", options.simulationDistance, 5, 32);
         options.entityDistanceScaling = check("Entity Distance", options.entityDistanceScaling, 0.5f, 5, true);
         float entityDistanceScalingTemp = options.entityDistanceScaling;
-        if (entityDistanceScalingTemp != (options.entityDistanceScaling = Math.round(options.entityDistanceScaling * 4) / 4.0f)) {
+        if (entityDistanceScalingTemp != (options.entityDistanceScaling = (int) (options.entityDistanceScaling * 4) / 4.0f)) {
             LOGGER.warn("Entity Distance was set to a false interval ({})", entityDistanceScalingTemp);
         }
         options.guiScale = check("GUI Scale", options.guiScale, 0, Integer.MAX_VALUE);
@@ -319,30 +323,35 @@ public class StandardSettings {
             options.setSoundVolume(soundCategory, check("(Music & Sounds) " + SoundCategoryName.valueOf(soundCategory.name()).assignedName, options.getSoundVolume(soundCategory), 0, 1, true));
         }
 
-        if (renderDistanceOnWorldJoin != 0) {
-            renderDistanceOnWorldJoin = check("Render Distance (On World Join)",renderDistanceOnWorldJoin,2,32);
+        if (renderDistanceOnWorldJoin.isPresent()) {
+            renderDistanceOnWorldJoin = Optional.of(check("Render Distance (On World Join)", renderDistanceOnWorldJoin.get(), 2, 32));
         }
-        if (simulationDistanceOnWorldJoin != 0) {
-            simulationDistanceOnWorldJoin = check("Simulation Distance (On World Join)", simulationDistanceOnWorldJoin, 5, 32);
+        if (simulationDistanceOnWorldJoin.isPresent()) {
+            simulationDistanceOnWorldJoin = Optional.of(check("Render Distance (On World Join)", simulationDistanceOnWorldJoin.get(), 5, 32));
         }
-        if (entityDistanceScalingOnWorldJoin != 0) {
-            entityDistanceScalingOnWorldJoin = check("Entity Distance (On World Join)", entityDistanceScalingOnWorldJoin, 0.5f, 5, true);
-            entityDistanceScalingTemp = entityDistanceScalingOnWorldJoin;
-            if (entityDistanceScalingTemp != (entityDistanceScalingOnWorldJoin = Math.round(entityDistanceScalingOnWorldJoin * 4) / 4.0f)) {
+        if (entityDistanceScalingOnWorldJoin.isPresent()) {
+            entityDistanceScalingOnWorldJoin = Optional.of(check("Entity Distance (On World Join)", entityDistanceScalingOnWorldJoin.get(), 0.5f, 5, true));
+            entityDistanceScalingTemp = entityDistanceScalingOnWorldJoin.get();
+            entityDistanceScalingOnWorldJoin = Optional.of((int) (entityDistanceScalingOnWorldJoin.get() * 4) / 4.0f);
+            if (entityDistanceScalingTemp != entityDistanceScalingOnWorldJoin.get()) {
                 LOGGER.warn("Entity Distance (On World Join) was set to a false interval ({})", entityDistanceScalingTemp);
             }
         }
-        if (fovOnWorldJoin != 0) {
-            fovOnWorldJoin = Math.round(check("FOV (On World Join)", fovOnWorldJoin, 30, 110, false));
+        if (fovOnWorldJoin.isPresent()) {
+            fovOnWorldJoin = Optional.of((double) (int) check("FOV (On World Join)", fovOnWorldJoin.get(), 30, 110, false));
         }
-        if (guiScaleOnWorldJoin != -1) {
-            guiScaleOnWorldJoin = check("GUI Scale (On World Join)", guiScaleOnWorldJoin, 0, Integer.MAX_VALUE);
+        if (guiScaleOnWorldJoin.isPresent()) {
+            guiScaleOnWorldJoin = Optional.of(check("GUI Scale (On World Join)", guiScaleOnWorldJoin.get(), 0, Integer.MAX_VALUE));
         }
 
         window.setScaleFactor(window.calculateScaleFactor(options.guiScale, options.forceUnicodeFont));
-        LOGGER.info("Finished checking Settings ({} ms)", (System.nanoTime() - start) / 1000000.0f);
+        options.write();
+
+        LOGGER.info("Finished checking and saving Settings ({} ms)", (System.nanoTime() - start) / 1000000.0f);
     }
 
+    // check methods return the value of the setting, adjusted to be in the given bounds
+    // if a setting is outside the bounds, it also gives a log output to signal the value has been corrected
     private static double check(String settingName, double setting, double min, double max, boolean percent) {
         if (setting < min) {
             LOGGER.warn(settingName + " was too low! ({})", percent ? asPercent(setting) : setting);
@@ -401,6 +410,7 @@ public class StandardSettings {
         }
     }
 
+    // returns the contents for a new standardoptions.txt file
     public static String getStandardoptionsTxt() {
         String l = System.lineSeparator();
         StringBuilder string = new StringBuilder("autoJump:" + options.autoJump + l +
@@ -512,13 +522,15 @@ public class StandardSettings {
         } catch (IllegalAccessException e) {
             LOGGER.error("Failed to set EntityCulling to " + value, e);
         }
-        if (!(entityCullingTemp.isPresent() && entityCullingTemp.get() != getEntityCulling().get())) {
-            try {
-                SodiumClientMod.options().writeChanges();
-            } catch (IOException e) {
-                LOGGER.error("Failed to save sodium options");
+        entityCullingTemp.ifPresent(entityCullingBefore -> {
+            if (entityCullingBefore != getEntityCulling().get()) {
+                try {
+                    SodiumClientMod.options().writeChanges();
+                } catch (IOException e) {
+                    LOGGER.error("Failed to save sodium options");
+                }
             }
-        }
+        });
     }
 
     public static List<String> checkVersion(int[] fileVersion, List<String> existingLines) {
@@ -528,25 +540,27 @@ public class StandardSettings {
             return null;
         }
 
-        int i = 0;
+        // remove the values from the lines
         if (existingLines != null) {
-            for (String line : existingLines) {
-                existingLines.set(i++, line.split(":", 2)[0]);
-            }
+            existingLines.replaceAll(line -> line.split(":", 2)[0]);
         }
 
         List<String> lines = new ArrayList<>();
 
-        if (compareVersions(fileVersion, new int[]{1,2,1,-1000})) {
-            if (existingLines != null && (existingLines.contains("entityCulling") || existingLines.contains("f1") || existingLines.contains("guiScaleOnWorldJoin") || existingLines.contains("changeOnResize"))) {
-                LOGGER.info("Didn't find anything to update, good luck on the runs!");
-                return lines;
+        checking:
+        {
+            // add lines added in the pre-releases of StandardSettings v1.2.1
+            if (compareVersions(fileVersion, new int[]{1, 2, 1, -1000})) {
+                if (existingLines != null && (existingLines.contains("entityCulling") || existingLines.contains("f1") || existingLines.contains("guiScaleOnWorldJoin") || existingLines.contains("changeOnResize"))) {
+                    break checking;
+                }
+                lines.add("entityCulling:" + (getEntityCulling().isPresent() ? getEntityCulling().get() : ""));
+                lines.add("f1:");
+                lines.add("guiScaleOnWorldJoin:");
+                lines.add("changeOnResize:false");
             }
-            lines.add("entityCulling:" + (getEntityCulling().isPresent() ? getEntityCulling().get() : ""));
-            lines.add("f1:");
-            lines.add("guiScaleOnWorldJoin:");
-            lines.add("changeOnResize:false");
         }
+
         if (lines.size() == 0) {
             LOGGER.info("Didn't find anything to update, good luck on the runs!");
             return null;
@@ -556,9 +570,9 @@ public class StandardSettings {
 
     // returns true when versionToCheck is older than versionToCompareTo
     public static boolean compareVersions(int[] versionToCheck, int[] versionToCompareTo) {
-        int i = 0;
-        for (int v1 : versionToCheck) {
-            int v2 = versionToCompareTo[i++];
+        for (int i = 0; i < Math.max(versionToCheck.length, versionToCompareTo.length); i++) {
+            int v1 = versionToCheck.length <= i ? 0 : versionToCheck[i];
+            int v2 = versionToCompareTo.length <= i ? 0 : versionToCompareTo[i];
             if (v1 == v2) continue;
             return v1 < v2;
         }
