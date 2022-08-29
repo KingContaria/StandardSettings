@@ -1,6 +1,6 @@
 package com.kingcontaria.standardsettings;
 
-import com.kingcontaria.standardsettings.mixins.MinecraftClientAccessor;
+import com.kingcontaria.standardsettings.mixins.accessors.MinecraftClientAccessor;
 import net.minecraft.class_4107;
 import net.minecraft.class_4117;
 import net.minecraft.client.MinecraftClient;

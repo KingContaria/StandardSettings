@@ -1,12 +1,13 @@
 package com.kingcontaria.standardsettings;
 
 import com.google.common.io.Files;
-import com.kingcontaria.standardsettings.mixins.LanguageManagerAccessor;
-import com.kingcontaria.standardsettings.mixins.MinecraftClientAccessor;
+import com.kingcontaria.standardsettings.mixins.accessors.LanguageManagerAccessor;
+import com.kingcontaria.standardsettings.mixins.accessors.MinecraftClientAccessor;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.class_4107;
+import net.minecraft.class_4115;
 import net.minecraft.class_4117;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.screen.options.HandOption;
@@ -23,12 +24,11 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 @Environment(value= EnvType.CLIENT)
 public class StandardSettings {
 
-    public static final int[] version = new int[]{1,2,1,1};
+    public static final int[] version = new int[]{1,2,2,-1000};
     public static final Logger LOGGER = LogManager.getLogger();
     public static final MinecraftClient client = MinecraftClient.getInstance();
     public static final GameOptions options = client.options;
@@ -36,21 +36,18 @@ public class StandardSettings {
     public static final File standardoptionsFile = new File(FabricLoader.getInstance().getConfigDir().resolve("standardoptions.txt").toUri());
     public static boolean changeOnWindowActivation = false;
     public static boolean changeOnResize = false;
-    private static int renderDistanceOnWorldJoin;
-    private static double fovOnWorldJoin;
-    private static int guiScaleOnWorldJoin;
+    private static Optional<Integer> renderDistanceOnWorldJoin = Optional.empty();
+    private static Optional<Double> fovOnWorldJoin = Optional.empty();
+    private static Optional<Integer> guiScaleOnWorldJoin = Optional.empty();
     public static OptionsCache optionsCache = new OptionsCache(client);
-    public static String lastQuitWorld;
+    public static String lastWorld;
     public static String[] standardoptionsCache;
     public static Map<File, Long> filesLastModifiedMap;
-    public static File lastUsedFile;
 
     public static void load() {
         long start = System.nanoTime();
 
-        fovOnWorldJoin = renderDistanceOnWorldJoin = 0;
-        guiScaleOnWorldJoin = -1;
-        changeOnResize = false;
+        emptyOnWorldJoinOptions();
 
         try {
             if (!standardoptionsFile.exists()) {
@@ -59,20 +56,20 @@ public class StandardSettings {
                 return;
             }
 
-            if (lastQuitWorld != null) {
-                optionsCache.save(lastQuitWorld);
-                lastQuitWorld = null;
+            // caches options for last world before applying standardoptions to reload later if necessary
+            // allows for verifiability when rejoining a world after accidentally quitting with Atum
+            if (lastWorld != null) {
+                optionsCache.save(lastWorld);
+                lastWorld = null;
             }
 
+            // reload and cache standardoptions if necessary
             if (standardoptionsCache == null || wereFilesModified(filesLastModifiedMap)) {
                 LOGGER.info("Reloading & caching StandardSettings...");
                 List<String> lines = resolveGlobalFile(standardoptionsFile);
                 if (lines == null) {
                     LOGGER.error("standardoptions.txt is empty");
                     return;
-                }
-                if (filesLastModifiedMap.size() > 1) {
-                    LOGGER.info("Using global standardoptions file");
                 }
                 standardoptionsCache = lines.toArray(new String[0]);
             }
@@ -84,21 +81,25 @@ public class StandardSettings {
         }
     }
 
+    // checks if standardoptions file chain has been modified
     private static boolean wereFilesModified(Map<File, Long> map) {
         if (map == null) {
-            return false;
+            return true;
         }
-        AtomicBoolean wasModified = new AtomicBoolean(false);
-        map.forEach((file, lastModified) -> wasModified.set(file.lastModified() != lastModified || !file.exists() || wasModified.get()));
-        return wasModified.get();
+        for (Map.Entry<File, Long> entry : map.entrySet()) {
+            if (entry.getKey().lastModified() != entry.getValue() || !entry.getKey().exists()) return true;
+        }
+        return false;
     }
 
+    // creates a standardoptions file chain by checking if the first line of a file points to another file directory
     public static List<String> resolveGlobalFile(File file) {
         filesLastModifiedMap = new HashMap<>();
         List<String> lines = null;
         do {
+            // save the last modified time of each file to be checked later
             filesLastModifiedMap.put(file, file.lastModified());
-            lastUsedFile = file;
+
             try {
                 lines = Files.readLines(file, StandardCharsets.UTF_8);
             } catch (IOException e) {
@@ -108,14 +109,18 @@ public class StandardSettings {
         return lines;
     }
 
+    // load standardoptions from cache, the heart of the mod if you will
     private static void load(String[] lines) {
         for (String line : lines) {
             try {
                 String[] strings = line.split(":", 2);
+
+                // skip line if value is empty
                 if (strings.length < 2 || (strings[1] = strings[1].trim()).equals("") && !strings[0].equals("fullscreenResolution")) {
                     continue;
                 }
                 String[] string0_split = strings[0].split("_", 2);
+
                 switch (string0_split[0]) {
                     case "autoJump": options.field_14902 = Boolean.parseBoolean(strings[1]); break;
                     case "autoSuggestions": options.field_19978 = Boolean.parseBoolean(strings[1]); break;
@@ -159,6 +164,28 @@ public class StandardSettings {
                         } break;
                     case "chatVisibility": options.chatVisibilityType = PlayerEntity.ChatVisibilityType.getById(Integer.parseInt(strings[1])); break;
                     case "chatOpacity": options.field_19989 = Double.parseDouble(strings[1]); break;
+                    case "fullscreenResolution":
+                        if (!strings[1].equals(window.method_18310().isPresent() ? window.method_18310().get().method_18287() : "")) {
+                            try {
+                                String fullscreenResolution = class_4115.method_18281(strings[1]).get().toString();
+                                String resolution = null;
+                                for (int i = 0; true; i++) {
+                                    String newResolution = window.method_18294(i);
+                                    if (newResolution.equals(resolution)) {
+                                        window.method_18303(0);
+                                        break;
+                                    }
+                                    resolution = newResolution;
+                                    if (resolution.equals(fullscreenResolution)) {
+                                        window.method_18303(i + 1);
+                                        break;
+                                    }
+                                }
+                            } catch (Exception e) {
+                                window.method_18303(0);
+                            }
+                            window.method_18312();
+                        } break;
                     case "advancedItemTooltips": options.field_19992 = Boolean.parseBoolean(strings[1]); break;
                     case "pauseOnLostFocus": options.field_19973 = Boolean.parseBoolean(strings[1]); break;
                     case "chatHeightFocused": options.field_19977 = Double.parseDouble(strings[1]); break;
@@ -204,11 +231,12 @@ public class StandardSettings {
                         if (!strings[1].split("\\.")[0].equals("root")) break;
                         ((MinecraftClientAccessor)client).setOpenProfilerSection(strings[1].replace('.','\u001e')); break;
                     case "f1": options.field_19987 = Boolean.parseBoolean(strings[1]); break;
-                    case "fovOnWorldJoin": fovOnWorldJoin = Double.parseDouble(strings[1]) < 5 ? Double.parseDouble(strings[1]) * 40.0f + 70.0f : Integer.parseInt(strings[1]); break;
-                    case "guiScaleOnWorldJoin": guiScaleOnWorldJoin = Integer.parseInt(strings[1]); break;
-                    case "renderDistanceOnWorldJoin": renderDistanceOnWorldJoin = Integer.parseInt(strings[1]); break;
+                    case "fovOnWorldJoin": fovOnWorldJoin = Optional.of(Double.parseDouble(strings[1]) < 5 ? Double.parseDouble(strings[1]) * 40.0f + 70.0f : Integer.parseInt(strings[1])); break;
+                    case "guiScaleOnWorldJoin": guiScaleOnWorldJoin = Optional.of(Integer.parseInt(strings[1])); break;
+                    case "renderDistanceOnWorldJoin": renderDistanceOnWorldJoin = Optional.of(Integer.parseInt(strings[1])); break;
                     case "changeOnResize": changeOnResize = Boolean.parseBoolean(strings[1]); break;
                     // Some options.txt settings which aren't accessible in vanilla Minecraft and some unnecessary settings (like Multiplayer stuff) are not included.
+                    // also has a few extra settings that can be reset that Minecraft doesn't save to options.txt, but are important in speedrunning
                 }
             } catch (Exception e) {
                 LOGGER.warn("Skipping bad StandardSetting: " + line);
@@ -217,33 +245,42 @@ public class StandardSettings {
         KeyBinding.updateKeysByCode();
     }
 
+    // load OnWorldJoin options if present
     public static void changeSettingsOnJoin() {
         long start = System.nanoTime();
 
-        if (renderDistanceOnWorldJoin != 0) {
-            options.viewDistance = renderDistanceOnWorldJoin;
+        renderDistanceOnWorldJoin.ifPresent(viewDistance -> {
+            options.viewDistance = viewDistance;
             client.worldRenderer.scheduleTerrainUpdate();
-        }
-        if (fovOnWorldJoin != 0) {
-            options.field_19984 = fovOnWorldJoin;
-        }
-        if (guiScaleOnWorldJoin != -1) {
-            options.guiScale = guiScaleOnWorldJoin;
+        });
+        fovOnWorldJoin.ifPresent(fov -> options.field_19984 = fov);
+        guiScaleOnWorldJoin.ifPresent(guiScale -> {
+            options.guiScale = guiScale;
             window.method_18314();
-        }
-        if (fovOnWorldJoin != 0 || guiScaleOnWorldJoin != -1 || renderDistanceOnWorldJoin != 0) {
-            fovOnWorldJoin = renderDistanceOnWorldJoin = 0;
-            guiScaleOnWorldJoin = -1;
+        });
+
+        if (fovOnWorldJoin.isPresent() || guiScaleOnWorldJoin.isPresent() || renderDistanceOnWorldJoin.isPresent()) {
+            emptyOnWorldJoinOptions();
             options.save();
             LOGGER.info("Changed Settings on World Join ({} ms)", (System.nanoTime() - start) / 1000000.0f);
         }
     }
 
+    // resets OnWorldJoin options to their default (empty) state
+    private static void emptyOnWorldJoinOptions() {
+        fovOnWorldJoin = Optional.empty();
+        guiScaleOnWorldJoin = Optional.empty();
+        renderDistanceOnWorldJoin = Optional.empty();
+        changeOnResize = false;
+        changeOnWindowActivation = false;
+    }
+
+    // makes sure the values are within the boundaries of vanilla minecraft / the speedrun.com rule set
     public static void checkSettings() {
         long start = System.nanoTime();
 
         options.field_19988 = check("Sensitivity", options.field_19988 * 2, 0, 2, true) / 2;
-        options.field_19984 = Math.round(check("FOV", options.field_19984, 30, 110, false));
+        options.field_19984 = (int) (check("FOV", options.field_19984, 30, 110, false));
         options.field_19985 = check("Brightness", options.field_19985, 0, 5, true);
         options.viewDistance = check("Render Distance", options.viewDistance, 2, 32);
         options.guiScale = check("GUI Scale", options.guiScale, 0, Integer.MAX_VALUE);
@@ -265,20 +302,24 @@ public class StandardSettings {
             options.setSoundVolume(soundCategory, check("(Music & Sounds) " + SoundCategoryName.valueOf(soundCategory.name()).assignedName, options.getSoundVolume(soundCategory), 0, 1, true));
         }
 
-        if (renderDistanceOnWorldJoin != 0) {
-            renderDistanceOnWorldJoin = check("Render Distance (On World Join)", renderDistanceOnWorldJoin, 2, 32);
+        if (renderDistanceOnWorldJoin.isPresent()) {
+            renderDistanceOnWorldJoin = Optional.of(check("Render Distance (On World Join)", renderDistanceOnWorldJoin.get(), 2, 32));
         }
-        if (fovOnWorldJoin != 0) {
-            fovOnWorldJoin = Math.round(check("FOV (On World Join)", fovOnWorldJoin, 30, 110, false));
+        if (fovOnWorldJoin.isPresent()) {
+            fovOnWorldJoin = Optional.of((double) (int) check("FOV (On World Join)", fovOnWorldJoin.get(), 30, 110, false));
         }
-        if (guiScaleOnWorldJoin != -1) {
-            guiScaleOnWorldJoin = check("GUI Scale (On World Join)", guiScaleOnWorldJoin, 0, Integer.MAX_VALUE);
+        if (guiScaleOnWorldJoin.isPresent()) {
+            guiScaleOnWorldJoin = Optional.of(check("GUI Scale (On World Join)", guiScaleOnWorldJoin.get(), 0, Integer.MAX_VALUE));
         }
 
         window.method_18314();
-        LOGGER.info("Finished checking Settings ({} ms)", (System.nanoTime() - start) / 1000000.0f);
+        options.save();
+
+        LOGGER.info("Finished checking and saving Settings ({} ms)", (System.nanoTime() - start) / 1000000.0f);
     }
 
+    // check methods return the value of the setting, adjusted to be in the given bounds
+    // if a setting is outside the bounds, it also gives a log output to signal the value has been corrected
     private static double check(String settingName, double setting, double min, double max, boolean percent) {
         if (setting < min) {
             LOGGER.warn(settingName + " was too low! ({})", percent ? asPercent(setting) : setting);
@@ -337,6 +378,7 @@ public class StandardSettings {
         }
     }
 
+    // returns the contents for a new standardoptions.txt file
     public static String getStandardoptionsTxt() {
         String l = System.lineSeparator();
         StringBuilder string = new StringBuilder("autoJump:" + options.field_14902 + l +
@@ -368,6 +410,7 @@ public class StandardSettings {
                 "lang:" + options.language + l +
                 "chatVisibility:" + options.chatVisibilityType.getId() + l +
                 "chatOpacity:" + options.field_19989 + l +
+                "fullscreenResolution:" + (options.field_19990 == null ? "" : options.field_19990) + l +
                 "advancedItemTooltips:" + options.field_19992 + l +
                 "pauseOnLostFocus:" + options.field_19973 + l +
                 "chatHeightFocused:" + options.field_19977 + l +
@@ -400,24 +443,33 @@ public class StandardSettings {
             return null;
         }
 
-        int i = 0;
+        // remove the values from the lines
         if (existingLines != null) {
-            for (String line : existingLines) {
-                existingLines.set(i++, line.split(":", 2)[0]);
-            }
+            existingLines.replaceAll(line -> line.split(":", 2)[0]);
         }
 
         List<String> lines = new ArrayList<>();
 
-        if (compareVersions(fileVersion, new int[]{1,2,1,-1000})) {
-            if (existingLines != null && (existingLines.contains("entityCulling") || existingLines.contains("f1") || existingLines.contains("guiScaleOnWorldJoin") || existingLines.contains("changeOnResize"))) {
-                LOGGER.info("Didn't find anything to update, good luck on the runs!");
-                return lines;
+        checking:
+        {
+            // add lines add in StandardSettings v1.2.2-pre1
+            if (compareVersions(fileVersion, new int[]{1,2,2,-1000})) {
+                if (existingLines != null && existingLines.contains("fullscreenResolution")) {
+                    break checking;
+                }
+                lines.add("fullscreenResolution:" + (options.field_19990 == null ? "" : options.field_19990));
             }
-            lines.add("f1:");
-            lines.add("guiScaleOnWorldJoin:");
-            lines.add("changeOnResize:false");
+            // add lines added in the pre-releases of StandardSettings v1.2.1
+            if (compareVersions(fileVersion, new int[]{1, 2, 1, -1000})) {
+                if (existingLines != null && (existingLines.contains("entityCulling") || existingLines.contains("f1") || existingLines.contains("guiScaleOnWorldJoin") || existingLines.contains("changeOnResize"))) {
+                    break checking;
+                }
+                lines.add("f1:");
+                lines.add("guiScaleOnWorldJoin:");
+                lines.add("changeOnResize:false");
+            }
         }
+
         if (lines.size() == 0) {
             LOGGER.info("Didn't find anything to update, good luck on the runs!");
             return null;
@@ -427,9 +479,9 @@ public class StandardSettings {
 
     // returns true when versionToCheck is older than versionToCompareTo
     public static boolean compareVersions(int[] versionToCheck, int[] versionToCompareTo) {
-        int i = 0;
-        for (int v1 : versionToCheck) {
-            int v2 = versionToCompareTo[i++];
+        for (int i = 0; i < Math.max(versionToCheck.length, versionToCompareTo.length); i++) {
+            int v1 = versionToCheck.length <= i ? 0 : versionToCheck[i];
+            int v2 = versionToCompareTo.length <= i ? 0 : versionToCompareTo[i];
             if (v1 == v2) continue;
             return v1 < v2;
         }
