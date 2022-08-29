@@ -11,6 +11,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 public class GameRendererMixin {
 
+    // activate OnWorldJoin Options when resizing the instance
     @Inject(method = "onResized", at = @At("HEAD"))
     private void changeSettingsOnResize(CallbackInfo ci) {
         if (StandardSettings.changeOnWindowActivation && StandardSettings.changeOnResize) {
