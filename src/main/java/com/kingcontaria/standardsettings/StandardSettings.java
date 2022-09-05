@@ -27,7 +27,7 @@ import java.util.*;
 @Environment(value= EnvType.CLIENT)
 public class StandardSettings {
 
-    public static final int[] version = new int[]{1,2,2,-1000};
+    public static final int[] version = new int[]{1,2,2,0};
     public static final Logger LOGGER = LogManager.getLogger();
     public static final MinecraftClient client = MinecraftClient.getInstance();
     public static final GameOptions options = client.options;
@@ -84,10 +84,11 @@ public class StandardSettings {
         if (map == null) {
             return true;
         }
+        boolean wereFilesModified = false;
         for (Map.Entry<File, Long> entry : map.entrySet()) {
-            if (entry.getKey().lastModified() != entry.getValue() || !entry.getKey().exists()) return true;
+            wereFilesModified |= !entry.getKey().exists() || entry.getKey().lastModified() != entry.getValue();
         }
-        return false;
+        return wereFilesModified;
     }
 
     // creates a standardoptions file chain by checking if the first line of a file points to another file directory
@@ -204,7 +205,7 @@ public class StandardSettings {
                     case "perspective": options.perspective = Integer.parseInt(strings[1]) % 3; break;
                     case "piedirectory":
                         if (!strings[1].split("\\.")[0].equals("root")) break;
-                        ((MinecraftClientAccessor)client).setOpenProfilerSection(strings[1].replace('.','\u001e')); break;
+                        ((MinecraftClientAccessor)client).setOpenProfilerSection(strings[1]); break;
                     case "f1": options.hudHidden = Boolean.parseBoolean(strings[1]); break;
                     case "fovOnWorldJoin": fovOnWorldJoin = Optional.of(Float.parseFloat(strings[1]) < 5 ? Float.parseFloat(strings[1]) * 40.0f + 70.0f : Integer.parseInt(strings[1])); break;
                     case "guiScaleOnWorldJoin": guiScaleOnWorldJoin = Optional.of(Integer.parseInt(strings[1])); break;

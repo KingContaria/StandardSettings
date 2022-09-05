@@ -140,6 +140,7 @@ public class OptionsCache {
         options.chatLink = chatLinks;
         options.chatLinkPrompt = chatLinksPrompt;
         Display.setVSyncEnabled(options.vsync = enableVsync);
+        options.vbo = vbo;
         options.entityShadows = entityShadows;
         client.textRenderer.method_960(client.getLanguageManager().method_5938() || (options.forceUnicode = forceUnicodeFont));
         options.invertYMouse = invertYMouse;
