@@ -2,6 +2,7 @@ package com.kingcontaria.standardsettings;
 
 import com.kingcontaria.standardsettings.mixins.accessors.MinecraftClientAccessor;
 import net.minecraft.class_4107;
+import net.minecraft.class_4115;
 import net.minecraft.class_4117;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.screen.options.HandOption;
@@ -13,6 +14,7 @@ import net.minecraft.client.sound.SoundCategory;
 import net.minecraft.client.texture.SpriteAtlasTexture;
 import net.minecraft.entity.player.PlayerEntity;
 
+import java.util.Optional;
 import java.util.Set;
 
 public class OptionsCache {
@@ -50,6 +52,7 @@ public class OptionsCache {
     private LanguageDefinition language;
     private PlayerEntity.ChatVisibilityType chatVisibilityType;
     private double chatOpacity;
+    private Optional<class_4115> fullscreenResolution;
     private boolean advancedItemTooltips;
     private boolean pauseOnLostFocus;
     private double chatHeightFocused;
@@ -108,6 +111,7 @@ public class OptionsCache {
         language = client.getLanguageManager().getLanguage();
         chatVisibilityType = options.chatVisibilityType;
         chatOpacity = options.field_19989;
+        fullscreenResolution = window.method_18310();
         advancedItemTooltips = options.field_19992;
         pauseOnLostFocus = options.field_19973;
         chatHeightFocused = options.field_19977;
@@ -148,6 +152,7 @@ public class OptionsCache {
         options.chatLink = chatLinks;
         options.chatLinkPrompt = chatLinksPrompt;
         options.field_19991 = enableVsync;
+        options.vbo = vbo;
         client.field_19944.method_18306();
         options.entityShadows = entityShadows;
         client.method_9391().method_18454(options.forceUnicode = forceUnicodeFont);
@@ -181,6 +186,27 @@ public class OptionsCache {
         }
         options.chatVisibilityType = chatVisibilityType;
         options.field_19989 = chatOpacity;
+        if (!fullscreenResolution.equals(window.method_18310())) {
+            try {
+                String fullscreenResolutionString = fullscreenResolution.get().toString();
+                String resolution = null;
+                for (int i = 0; true; i++) {
+                    String newResolution = window.method_18294(i);
+                    if (newResolution.equals(resolution)) {
+                        window.method_18303(0);
+                        break;
+                    }
+                    resolution = newResolution;
+                    if (resolution.equals(fullscreenResolutionString)) {
+                        window.method_18303(i + 1);
+                        break;
+                    }
+                }
+            } catch (Exception e) {
+                window.method_18303(0);
+            }
+            window.method_18312();
+        }
         options.field_19992 = advancedItemTooltips;
         options.field_19973 = pauseOnLostFocus;
         options.field_19977 = chatHeightFocused;
