@@ -24,7 +24,7 @@ public class MinecraftClientMixin {
 
     // initialize StandardSettings, doesn't use ClientModInitializer because GameOptions need to be initialized first
     @Inject(method = "init", at = @At("RETURN"))
-    private void initializeStandardSettings(RunArgs args, CallbackInfo ci) {
+    private void initializeStandardSettings(CallbackInfo ci) {
         // create standardoptions.txt
         if (!StandardSettings.standardoptionsFile.exists()) {
             StandardSettings.LOGGER.info("Creating StandardSettings File...");
