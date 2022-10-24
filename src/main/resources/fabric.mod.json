@@ -9,7 +9,8 @@
     "KingContaria"
   ],
   "contact": {
-    "sources": "https://github.com/KingContaria/StandardSettings"
+    "sources": "https://github.com/KingContaria/StandardSettings",
+    "issues": "https://github.com/KingContaria/StandardSettings/issues"
   },
 
   "license": "CC0-1.0",
@@ -21,6 +22,6 @@
 
   "depends": {
     "fabricloader": ">=0.7.4",
-    "minecraft": "1.16.1"
+    "minecraft": ">=1.16 <=1.16.1"
   }
 }

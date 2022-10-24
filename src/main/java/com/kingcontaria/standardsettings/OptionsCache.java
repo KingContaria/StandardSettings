@@ -56,6 +56,7 @@ public class OptionsCache {
     private double chatLineSpacing;
     private double textBackgroundOpacity;
     private boolean backgroundForChatOnly;
+    @SuppressWarnings("OptionalUsedAsFieldOrParameterType") // this is minecraft ¯\_ (ツ)_/¯
     private Optional<VideoMode> fullscreenResolution;
     private boolean advancedItemTooltips;
     private boolean pauseOnLostFocus;
@@ -70,7 +71,7 @@ public class OptionsCache {
     private int biomeBlendRadius;
     private double mouseWheelSensitivity;
     private boolean rawMouseInput;
-    private Optional<Boolean> entityCulling;
+    private Boolean entityCulling;
     private boolean sneaking;
     private boolean sprinting;
     private boolean chunkborders;
@@ -147,7 +148,7 @@ public class OptionsCache {
         chunkborders = client.debugRenderer.toggleShowChunkBorder();
         hitboxes = client.getEntityRenderManager().shouldRenderHitboxes();
         perspective = options.perspective;
-        piedirectory = ((MinecraftClientAccessor)client).getOpenProfilerSection();
+        piedirectory = ((MinecraftClientAccessor) client).standardSettings_getOpenProfilerSection();
         hudHidden = options.hudHidden;
         int i = 0;
         for (KeyBinding key : options.keysAll) {
@@ -166,6 +167,7 @@ public class OptionsCache {
         if (!levelName.equals(this.levelName)) {
             return;
         }
+
         options.autoJump = autoJump;
         options.autoSuggestions = autoSuggestions;
         options.chatColors = chatColors;
@@ -173,18 +175,14 @@ public class OptionsCache {
         options.chatLinksPrompt = chatLinksPrompt;
         options.enableVsync = enableVsync;
         options.entityShadows = entityShadows;
-        ((MinecraftClientAccessor)client).callInitFont(options.forceUnicodeFont = forceUnicodeFont);
+        ((MinecraftClientAccessor) client).standardSettings_initFont(options.forceUnicodeFont = forceUnicodeFont);
         options.discreteMouseScroll = discreteMouseScroll;
         options.invertYMouse = invertYMouse;
         options.reducedDebugInfo = reducedDebugInfo;
         options.showSubtitles = showSubtitles;
         options.touchscreen = touchscreen;
         if (window.isFullscreen() != fullscreen) {
-            if (client.isWindowFocused()) {
-                window.toggleFullscreen();
-            } else {
-                StandardSettings.LOGGER.error("Could not reset fullscreen mode because window wasn't focused!");
-            }
+            window.toggleFullscreen();
             options.fullscreen = window.isFullscreen();
         }
         options.bobView = bobView;
@@ -226,14 +224,16 @@ public class OptionsCache {
         options.chatWidth = chatWidth;
         if (options.mipmapLevels != mipmapLevels) {
             client.resetMipmapLevels(options.mipmapLevels = mipmapLevels);
-            ((BakedModelManagerAccessor)client.getBakedModelManager()).callApply(((BakedModelManagerAccessor)client.getBakedModelManager()).callPrepare(client.getResourceManager(), client.getProfiler()), client.getResourceManager(), client.getProfiler());
+            ((BakedModelManagerAccessor) client.getBakedModelManager()).standardSettings_apply(((BakedModelManagerAccessor) client.getBakedModelManager()).standardSettings_prepare(client.getResourceManager(), client.getProfiler()), client.getResourceManager(), client.getProfiler());
         }
         options.mainArm = mainArm;
         options.narrator = narrator;
         options.biomeBlendRadius = biomeBlendRadius;
         options.mouseWheelSensitivity = mouseWheelSensitivity;
         options.rawMouseInput = rawMouseInput;
-        entityCulling.ifPresent(StandardSettings::setEntityCulling);
+        if (entityCulling != null) {
+            StandardSettings.setEntityCulling(entityCulling);
+        }
         if (options.sneakToggled && (sneaking != options.keySneak.isPressed())) {
             options.keySneak.setPressed(true);
         }
@@ -245,7 +245,7 @@ public class OptionsCache {
         }
         client.getEntityRenderManager().setRenderHitboxes(hitboxes);
         options.perspective = perspective;
-        ((MinecraftClientAccessor)client).setOpenProfilerSection(piedirectory);
+        ((MinecraftClientAccessor) client).standardSettings_setOpenProfilerSection(piedirectory);
         options.hudHidden = hudHidden;
         int i = 0;
         for (KeyBinding keyBinding : options.keysAll) {
@@ -263,5 +263,4 @@ public class OptionsCache {
         StandardSettings.LOGGER.info("Restored cached options for '{}'", this.levelName);
         this.levelName = null;
     }
-
 }

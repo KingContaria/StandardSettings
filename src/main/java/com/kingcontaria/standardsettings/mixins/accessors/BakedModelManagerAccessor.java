@@ -8,11 +8,10 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.gen.Invoker;
 
 @Mixin(BakedModelManager.class)
-
 public interface BakedModelManagerAccessor {
-    @Invoker
-    ModelLoader callPrepare(ResourceManager resourceManager, Profiler profiler);
+    @Invoker("prepare")
+    ModelLoader standardSettings_prepare(ResourceManager resourceManager, Profiler profiler);
 
-    @Invoker
-    void callApply(ModelLoader modelLoader, ResourceManager resourceManager, Profiler profiler);
+    @Invoker("apply")
+    void standardSettings_apply(ModelLoader modelLoader, ResourceManager resourceManager, Profiler profiler);
 }

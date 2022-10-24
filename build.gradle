@@ -23,12 +23,8 @@ dependencies {
 	minecraft "com.mojang:minecraft:${project.minecraft_version}"
 	mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
 	modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
+
 	compileOnlyApi files('libs/sodium-1.16.1-backport-fabric-0.2.1+build.10.jar')
-
-	// Fabric API. This is technically optional, but you probably want it anyway.
-
-	// PSA: Some older mods, compiled on Loom 0.2.1, might have outdated Maven POMs.
-	// You may need to force-disable transitiveness on them.
 }
 
 processResources {
@@ -55,13 +51,6 @@ tasks.withType(JavaCompile).configureEach {
 	}
 }
 
-java {
-	// Loom will automatically attach sourcesJar to a RemapSourcesJar task and to the "build" task
-	// if it is present.
-	// If you remove this line, sources will not be generated.
-	withSourcesJar()
-}
-
 jar {
 	from("LICENSE") {
 		rename { "${it}_${project.archivesBaseName}"}
@@ -75,9 +64,6 @@ publishing {
 			// add all the jars that should be included when publishing to maven
 			artifact(remapJar) {
 				builtBy remapJar
-			}
-			artifact(sourcesJar) {
-				builtBy remapSourcesJar
 			}
 		}
 	}

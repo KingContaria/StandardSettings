@@ -6,10 +6,7 @@
   "client": [
     "accessors.BakedModelManagerAccessor",
     "accessors.MinecraftClientAccessor",
-    "CreateWorldScreenMixin",
-    "MinecraftClientMixin",
-    "WorldListWidgetEntryMixin",
-    "WorldSaveHandlerMixin"
+    "MinecraftClientMixin"
   ],
   "injectors": {
     "defaultRequire": 1

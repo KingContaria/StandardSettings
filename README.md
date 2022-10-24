@@ -57,6 +57,8 @@ Depending on the Minecraft version you are playing some of these might not be in
 
 **changeOnResize**: If you set this to true, resizing the window of your instance will also result in the OnWorldJoin options being triggered. This is mainly useful for macros to implement delays between activating OnWorldJoin options and joining the instance.
 
+**skipWhenPossible**: If this is set to true, settings won't be reset when the last world was reset in WorldPreview or was never focused. The setting is enabled by default and there is no real reason to turn it off. If you change your standardoptions.txt, that will still be detected.
+
 ### How can I use a global standardoptions file?
 
 To do this, you have to replace the text in the 'standardoptions.txt' of all your instances to the file directory of that global file, for example:
