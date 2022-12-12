@@ -11,7 +11,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(MinecraftClient.class)
-public class MinecraftClientMixin {
+public abstract class MinecraftClientMixin {
 
     // initialize StandardSettings, doesn't use ClientModInitializer because GameOptions need to be initialized first
     @Inject(method = "<init>", at = @At("RETURN"))
@@ -21,7 +21,7 @@ public class MinecraftClientMixin {
 
     // activate OnWorldJoin options when focusing the instance
     @Inject(method = "onWindowFocusChanged", at = @At("HEAD"))
-    private void standardSettings_changeSettingsOnJoin(CallbackInfo ci) {
+    private void standardSettings_changeSettingsOnFocus(CallbackInfo ci) {
         if (StandardSettings.changeOnFocus) {
             StandardSettings.onWorldJoin();
         }
@@ -30,7 +30,7 @@ public class MinecraftClientMixin {
     // activate OnWorldJoin Options when resizing the instance
     @Inject(method = "onResolutionChanged", at = @At("HEAD"))
     private void standardSettings_changeSettingsOnResize(CallbackInfo ci) {
-        if (StandardSettings.changeOnFocus && StandardSettings.changeOnResize) {
+        if (StandardSettings.changeOnFocus & StandardSettings.changeOnResize) {
             StandardSettings.onWorldJoin();
         }
     }

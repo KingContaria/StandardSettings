@@ -1,7 +1,7 @@
 package com.kingcontaria.standardsettings;
 
-import com.kingcontaria.standardsettings.mixins.accessors.BakedModelManagerAccessor;
-import com.kingcontaria.standardsettings.mixins.accessors.MinecraftClientAccessor;
+import com.kingcontaria.standardsettings.mixins.BakedModelManagerAccessor;
+import com.kingcontaria.standardsettings.mixins.MinecraftClientAccessor;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.options.*;
 import net.minecraft.client.render.entity.PlayerModelPart;
@@ -12,6 +12,8 @@ import net.minecraft.client.util.Window;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.util.Arm;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
@@ -79,19 +81,21 @@ public class OptionsCache {
     private int perspective;
     private String piedirectory;
     private boolean hudHidden;
-    private final String[] keysAll;
-    private final float[] soundCategories;
+    private final Map<KeyBinding, String> keysAll = new HashMap<>();
+    private final Map<SoundCategory, Float> soundCategories = new HashMap<>();
     private Set<PlayerModelPart> playerModelParts;
 
     public OptionsCache(MinecraftClient client) {
         this.client = client;
         this.options = client.options;
         this.window = client.getWindow();
-        keysAll = new String[options.keysAll.length];
-        soundCategories = new float[SoundCategory.values().length];
     }
 
     public void save(String levelName) {
+        if (levelName == null) {
+            return;
+        }
+
         autoJump = options.autoJump;
         autoSuggestions = options.autoSuggestions;
         chatColors = options.chatColors;
@@ -150,13 +154,13 @@ public class OptionsCache {
         perspective = options.perspective;
         piedirectory = ((MinecraftClientAccessor) client).standardSettings_getOpenProfilerSection();
         hudHidden = options.hudHidden;
-        int i = 0;
+        keysAll.clear();
         for (KeyBinding key : options.keysAll) {
-            keysAll[i++] = key.getBoundKeyTranslationKey();
+            keysAll.put(key, key.getBoundKeyTranslationKey());
         }
-        i = 0;
+        soundCategories.clear();
         for (SoundCategory sound : SoundCategory.values()) {
-            soundCategories[i++] = options.getSoundVolume(sound);
+            soundCategories.put(sound, options.getSoundVolume(sound));
         }
         playerModelParts = options.getEnabledPlayerModelParts();
 
@@ -200,7 +204,7 @@ public class OptionsCache {
         options.ao = ao;
         options.cloudRenderMode = cloudRenderMode;
         options.attackIndicator = attackIndicator;
-        if (!language.getCode().equals(options.language)) {
+        if (!options.language.equals(language.getCode())) {
             client.getLanguageManager().setLanguage(language);
             client.getLanguageManager().apply(client.getResourceManager());
             options.language = client.getLanguageManager().getLanguage().getCode();
@@ -210,7 +214,7 @@ public class OptionsCache {
         options.chatLineSpacing = chatLineSpacing;
         options.textBackgroundOpacity = textBackgroundOpacity;
         options.backgroundForChatOnly = backgroundForChatOnly;
-        if (fullscreenResolution != window.getVideoMode()) {
+        if (!window.getVideoMode().equals(fullscreenResolution)) {
             window.setVideoMode(fullscreenResolution);
             window.applyVideoMode();
             options.fullscreenResolution = window.getVideoMode().toString();
@@ -247,15 +251,9 @@ public class OptionsCache {
         options.perspective = perspective;
         ((MinecraftClientAccessor) client).standardSettings_setOpenProfilerSection(piedirectory);
         options.hudHidden = hudHidden;
-        int i = 0;
-        for (KeyBinding keyBinding : options.keysAll) {
-            keyBinding.setBoundKey(InputUtil.fromTranslationKey(keysAll[i++]));
-        }
+        keysAll.forEach((key, boundKey) -> key.setBoundKey(InputUtil.fromTranslationKey(boundKey)));
         KeyBinding.updateKeysByCode();
-        i = 0;
-        for (SoundCategory soundCategory : SoundCategory.values()) {
-            options.setSoundVolume(soundCategory, soundCategories[i++]);
-        }
+        soundCategories.forEach(options::setSoundVolume);
         for (PlayerModelPart playerModelPart : PlayerModelPart.values()) {
             options.setPlayerModelPart(playerModelPart, playerModelParts.contains(playerModelPart));
         }

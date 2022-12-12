@@ -4,8 +4,8 @@
   "package": "com.kingcontaria.standardsettings.mixins",
   "compatibilityLevel": "JAVA_8",
   "client": [
-    "accessors.BakedModelManagerAccessor",
-    "accessors.MinecraftClientAccessor",
+    "BakedModelManagerAccessor",
+    "MinecraftClientAccessor",
     "MinecraftClientMixin"
   ],
   "injectors": {

@@ -1,7 +1,7 @@
 package com.kingcontaria.standardsettings;
 
-import com.kingcontaria.standardsettings.mixins.accessors.BakedModelManagerAccessor;
-import com.kingcontaria.standardsettings.mixins.accessors.MinecraftClientAccessor;
+import com.kingcontaria.standardsettings.mixins.BakedModelManagerAccessor;
+import com.kingcontaria.standardsettings.mixins.MinecraftClientAccessor;
 import me.jellysquid.mods.sodium.client.SodiumClientMod;
 import me.jellysquid.mods.sodium.client.gui.SodiumGameOptions;
 import net.fabricmc.api.EnvType;
@@ -23,19 +23,25 @@ import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.UserDefinedFileAttributeView;
 import java.util.*;
 import java.util.stream.Stream;
 
+import static java.lang.Boolean.parseBoolean;
+import static java.lang.Double.parseDouble;
+import static java.lang.Float.parseFloat;
+import static java.lang.Integer.parseInt;
+
 @Environment(value= EnvType.CLIENT)
 public class StandardSettings {
 
-    private static final int[] VERSION = new int[]{1,2,3,-999};
+    private static final int[] VERSION = new int[]{1,2,3,-998};
     protected static final Logger LOGGER = LogManager.getLogger();
-    public static final MinecraftClient client = MinecraftClient.getInstance();
+    private static final MinecraftClient client = MinecraftClient.getInstance();
     private static final GameOptions options = client.options;
     private static final Window window = client.getWindow();
     private static final File standardoptionsFile = FabricLoader.getInstance().getConfigDir().resolve("standardoptions.txt").toFile();
@@ -48,9 +54,13 @@ public class StandardSettings {
     public static boolean changeOnResize;
     public static boolean inPreview;
     private static boolean skipWhenPossible;
+    @Nullable
     private static Integer renderDistanceOnWorldJoin;
+    @Nullable
     private static Float entityDistanceScalingOnWorldJoin;
+    @Nullable
     private static Integer fovOnWorldJoin;
+    @Nullable
     private static Integer guiScaleOnWorldJoin;
 
     public static void load() {
@@ -61,21 +71,15 @@ public class StandardSettings {
         try {
             if (!standardoptionsFile.exists()) {
                 standardoptionsCache = null;
-                LOGGER.error(standardoptionsFile.getName() + " is missing");
+                LOGGER.error("{} is missing", standardoptionsFile.getName());
                 return;
             }
 
             // reload and cache standardoptions if necessary
             if (standardoptionsCache == null || wereFilesModified()) {
                 LOGGER.info("Reloading & caching StandardSettings...");
-                List<String> lines = resolveGlobalFile();
-                if (lines == null) {
-                    standardoptionsCache = null;
-                    LOGGER.error(standardoptionsFile.getName() + " is empty");
-                    return;
-                }
-                standardoptionsCache = lines.toArray(new String[0]);
-            } else if (skipWhenPossible && (inPreview || changeOnFocus)) {
+                standardoptionsCache = readStandardOptions().toArray(new String[0]);
+            } else if (skipWhenPossible & (inPreview | changeOnFocus)) {
                 changeOnFocus = false;
                 LOGGER.info("Skipped loading StandardSettings because {}", inPreview ? "last world was reset in preview" : "instance wasn't focused since last settings reset");
                 return;
@@ -83,12 +87,10 @@ public class StandardSettings {
 
             // cache options for last world before applying standardoptions to reload later if necessary
             // allows for verifiability when rejoining a world after accidentally quitting with Atum
-            if (lastWorld != null) {
-                optionsCache.save(lastWorld);
-            }
+            optionsCache.save(lastWorld);
 
             resetOnWorldJoinOptions();
-            loadStandardoptions();
+            loadStandardOptions();
             LOGGER.info("Finished loading StandardSettings ({})", getMs(start));
 
             checkSettings();
@@ -100,16 +102,11 @@ public class StandardSettings {
 
     // checks if standardoptions file chain has been modified
     private static boolean wereFilesModified() {
-        for (Map.Entry<File, Long> entry : filesLastModifiedMap.entrySet()) {
-            if (!entry.getKey().exists() || entry.getKey().lastModified() != entry.getValue()) {
-                return true;
-            }
-        }
-        return false;
+        return filesLastModifiedMap.entrySet().stream().anyMatch(entry -> !entry.getKey().isFile() || entry.getKey().lastModified() != entry.getValue());
     }
 
     // creates a standardoptions file chain by checking if the first line of a file points to another file directory
-    private static List<String> resolveGlobalFile() throws IOException {
+    private static List<String> readStandardOptions() throws IOException {
         filesLastModifiedMap.clear();
         List<String> lines;
         File file = standardoptionsFile;
@@ -123,8 +120,8 @@ public class StandardSettings {
     }
 
     // load standardoptions from cache, the heart of the mod if you will
-    private static void loadStandardoptions() {
-        for (String line : standardoptionsCache) {
+    private static void loadStandardOptions() {
+        for (final String line : standardoptionsCache) {
             try {
                 String[] strings = line.split(":", 2);
 
@@ -132,81 +129,82 @@ public class StandardSettings {
                 if (strings.length < 2 || (strings[1] = strings[1].trim()).isEmpty() && !strings[0].equals("fullscreenResolution")) {
                     continue;
                 }
+
                 String[] optionKey_split = strings[0].split("_", 2);
 
                 switch (optionKey_split[0]) {
-                    case "autoJump": options.autoJump = Boolean.parseBoolean(strings[1]); break;
-                    case "autoSuggestions": options.autoSuggestions = Boolean.parseBoolean(strings[1]); break;
-                    case "chatColors": options.chatColors = Boolean.parseBoolean(strings[1]); break;
-                    case "chatLinks": options.chatLinks = Boolean.parseBoolean(strings[1]); break;
-                    case "chatLinksPrompt": options.chatLinksPrompt = Boolean.parseBoolean(strings[1]); break;
-                    case "enableVsync": window.setVsync(options.enableVsync = Boolean.parseBoolean(strings[1])); break;
-                    case "entityShadows": options.entityShadows = Boolean.parseBoolean(strings[1]); break;
-                    case "forceUnicodeFont": ((MinecraftClientAccessor) client).standardSettings_initFont(options.forceUnicodeFont = Boolean.parseBoolean(strings[1])); break;
+                    case "autoJump": options.autoJump = parseBoolean(strings[1]); break;
+                    case "autoSuggestions": options.autoSuggestions = parseBoolean(strings[1]); break;
+                    case "chatColors": options.chatColors = parseBoolean(strings[1]); break;
+                    case "chatLinks": options.chatLinks = parseBoolean(strings[1]); break;
+                    case "chatLinksPrompt": options.chatLinksPrompt = parseBoolean(strings[1]); break;
+                    case "enableVsync": window.setVsync(options.enableVsync = parseBoolean(strings[1])); break;
+                    case "entityShadows": options.entityShadows = parseBoolean(strings[1]); break;
+                    case "forceUnicodeFont": ((MinecraftClientAccessor) client).standardSettings_initFont(options.forceUnicodeFont = parseBoolean(strings[1])); break;
                     case "discrete":
                         if (optionKey_split[1].equals("mouse_scroll")) {
-                            options.discreteMouseScroll = Boolean.parseBoolean(strings[1]);
+                            options.discreteMouseScroll = parseBoolean(strings[1]);
                         } break;
-                    case "invertYMouse": options.invertYMouse = Boolean.parseBoolean(strings[1]); break;
-                    case "reducedDebugInfo": options.reducedDebugInfo = Boolean.parseBoolean(strings[1]); break;
-                    case "showSubtitles": options.showSubtitles = Boolean.parseBoolean(strings[1]); break;
-                    case "touchscreen": options.touchscreen = Boolean.parseBoolean(strings[1]); break;
+                    case "invertYMouse": options.invertYMouse = parseBoolean(strings[1]); break;
+                    case "reducedDebugInfo": options.reducedDebugInfo = parseBoolean(strings[1]); break;
+                    case "showSubtitles": options.showSubtitles = parseBoolean(strings[1]); break;
+                    case "touchscreen": options.touchscreen = parseBoolean(strings[1]); break;
                     case "fullscreen":
-                        if (window.isFullscreen() != Boolean.parseBoolean(strings[1])) {
+                        if (window.isFullscreen() != parseBoolean(strings[1])) {
                             window.toggleFullscreen();
                             options.fullscreen = window.isFullscreen();
                         } break;
-                    case "bobView": options.bobView = Boolean.parseBoolean(strings[1]); break;
-                    case "toggleCrouch": options.sneakToggled = Boolean.parseBoolean(strings[1]); break;
-                    case "toggleSprint": options.sprintToggled = Boolean.parseBoolean(strings[1]); break;
-                    case "mouseSensitivity": options.mouseSensitivity = Double.parseDouble(strings[1]); break;
+                    case "bobView": options.bobView = parseBoolean(strings[1]); break;
+                    case "toggleCrouch": options.sneakToggled = parseBoolean(strings[1]); break;
+                    case "toggleSprint": options.sprintToggled = parseBoolean(strings[1]); break;
+                    case "mouseSensitivity": options.mouseSensitivity = parseDouble(strings[1]); break;
                     case "fov":
-                        float fov = Float.parseFloat(strings[1]);
+                        float fov = parseFloat(strings[1]);
                         options.fov = fov < 5 ? fov * 40.0f + 70.0f : fov; break;
-                    case "gamma": options.gamma = Double.parseDouble(strings[1]); break;
-                    case "renderDistance": options.viewDistance = Integer.parseInt(strings[1]); break;
-                    case "entityDistanceScaling": options.entityDistanceScaling = Float.parseFloat(strings[1]); break;
-                    case "guiScale": window.setScaleFactor(window.calculateScaleFactor(options.guiScale = Integer.parseInt(strings[1]), options.forceUnicodeFont)); break;
-                    case "particles": options.particles = ParticlesOption.byId(Integer.parseInt(strings[1])); break;
-                    case "maxFps": window.setFramerateLimit(options.maxFps = Integer.parseInt(strings[1])); break;
-                    case "graphicsMode": options.graphicsMode = GraphicsMode.byId(Integer.parseInt(strings[1])); break;
-                    case "ao": options.ao = AoOption.getOption(Integer.parseInt(strings[1])); break;
+                    case "gamma": options.gamma = parseDouble(strings[1]); break;
+                    case "renderDistance": options.viewDistance = parseInt(strings[1]); break;
+                    case "entityDistanceScaling": options.entityDistanceScaling = parseFloat(strings[1]); break;
+                    case "guiScale": window.setScaleFactor(window.calculateScaleFactor(options.guiScale = parseInt(strings[1]), options.forceUnicodeFont)); break;
+                    case "particles": options.particles = ParticlesOption.byId(parseInt(strings[1])); break;
+                    case "maxFps": window.setFramerateLimit(options.maxFps = parseInt(strings[1])); break;
+                    case "graphicsMode": options.graphicsMode = GraphicsMode.byId(parseInt(strings[1])); break;
+                    case "ao": options.ao = AoOption.getOption(parseInt(strings[1])); break;
                     case "renderClouds": options.cloudRenderMode = strings[1].equals("true") ? CloudRenderMode.FANCY : strings[1].equals("false") ? CloudRenderMode.OFF : CloudRenderMode.FAST; break;
-                    case "attackIndicator": options.attackIndicator = AttackIndicator.byId(Integer.parseInt(strings[1])); break;
+                    case "attackIndicator": options.attackIndicator = AttackIndicator.byId(parseInt(strings[1])); break;
                     case "lang":
                         if (!strings[1].equals(options.language)) {
                             client.getLanguageManager().setLanguage(client.getLanguageManager().getLanguage(strings[1]));
                             client.getLanguageManager().apply(client.getResourceManager());
                             options.language = client.getLanguageManager().getLanguage().getCode();
                         } break;
-                    case "chatVisibility": options.chatVisibility = ChatVisibility.byId(Integer.parseInt(strings[1])); break;
-                    case "chatOpacity": options.chatOpacity = Double.parseDouble(strings[1]); break;
-                    case "chatLineSpacing": options.chatLineSpacing = Double.parseDouble(strings[1]); break;
-                    case "textBackgroundOpacity": options.textBackgroundOpacity = Double.parseDouble(strings[1]); break;
-                    case "backgroundForChatOnly": options.backgroundForChatOnly = Boolean.parseBoolean(strings[1]); break;
+                    case "chatVisibility": options.chatVisibility = ChatVisibility.byId(parseInt(strings[1])); break;
+                    case "chatOpacity": options.chatOpacity = parseDouble(strings[1]); break;
+                    case "chatLineSpacing": options.chatLineSpacing = parseDouble(strings[1]); break;
+                    case "textBackgroundOpacity": options.textBackgroundOpacity = parseDouble(strings[1]); break;
+                    case "backgroundForChatOnly": options.backgroundForChatOnly = parseBoolean(strings[1]); break;
                     case "fullscreenResolution":
                         if (!strings[1].equals(window.getVideoMode().isPresent() ? window.getVideoMode().get().asString() : "")) {
                             window.setVideoMode(VideoMode.fromString(strings[1]));
                             window.applyVideoMode();
                         } break;
-                    case "advancedItemTooltips": options.advancedItemTooltips = Boolean.parseBoolean(strings[1]); break;
-                    case "pauseOnLostFocus": options.pauseOnLostFocus = Boolean.parseBoolean(strings[1]); break;
-                    case "chatHeightFocused": options.chatHeightFocused = Double.parseDouble(strings[1]); break;
-                    case "chatDelay": options.chatDelay = Double.parseDouble(strings[1]); break;
-                    case "chatHeightUnfocused": options.chatHeightUnfocused = Double.parseDouble(strings[1]); break;
-                    case "chatScale": options.chatScale = Double.parseDouble(strings[1]); break;
-                    case "chatWidth": options.chatWidth = Double.parseDouble(strings[1]); break;
+                    case "advancedItemTooltips": options.advancedItemTooltips = parseBoolean(strings[1]); break;
+                    case "pauseOnLostFocus": options.pauseOnLostFocus = parseBoolean(strings[1]); break;
+                    case "chatHeightFocused": options.chatHeightFocused = parseDouble(strings[1]); break;
+                    case "chatDelay": options.chatDelay = parseDouble(strings[1]); break;
+                    case "chatHeightUnfocused": options.chatHeightUnfocused = parseDouble(strings[1]); break;
+                    case "chatScale": options.chatScale = parseDouble(strings[1]); break;
+                    case "chatWidth": options.chatWidth = parseDouble(strings[1]); break;
                     case "mipmapLevels":
-                        int mipmapLevels = Integer.parseInt(strings[1]);
+                        int mipmapLevels = parseInt(strings[1]);
                         if (options.mipmapLevels != mipmapLevels) {
                             client.resetMipmapLevels(options.mipmapLevels = mipmapLevels);
                             ((BakedModelManagerAccessor) client.getBakedModelManager()).standardSettings_apply(((BakedModelManagerAccessor) client.getBakedModelManager()).standardSettings_prepare(client.getResourceManager(), client.getProfiler()), client.getResourceManager(), client.getProfiler());
                         } break;
                     case "mainHand": options.mainArm = "left".equalsIgnoreCase(strings[1]) ? Arm.LEFT : Arm.RIGHT; break;
-                    case "narrator": options.narrator = NarratorOption.byId(Integer.parseInt(strings[1])); break;
-                    case "biomeBlendRadius": options.biomeBlendRadius = Integer.parseInt(strings[1]); break;
-                    case "mouseWheelSensitivity": options.mouseWheelSensitivity = Double.parseDouble(strings[1]); break;
-                    case "rawMouseInput": window.setRawMouseMotion(options.rawMouseInput = Boolean.parseBoolean(strings[1])); break;
+                    case "narrator": options.narrator = NarratorOption.byId(parseInt(strings[1])); break;
+                    case "biomeBlendRadius": options.biomeBlendRadius = parseInt(strings[1]); break;
+                    case "mouseWheelSensitivity": options.mouseWheelSensitivity = parseDouble(strings[1]); break;
+                    case "rawMouseInput": window.setRawMouseMotion(options.rawMouseInput = parseBoolean(strings[1])); break;
                     case "key":
                         for (KeyBinding keyBinding : options.keysAll) {
                             if (optionKey_split[1].equals(keyBinding.getTranslationKey())) {
@@ -216,37 +214,37 @@ public class StandardSettings {
                     case "soundCategory":
                         for (SoundCategory soundCategory : SoundCategory.values()) {
                             if (optionKey_split[1].equals(soundCategory.getName())) {
-                                options.setSoundVolume(soundCategory, Float.parseFloat(strings[1])); break;
+                                options.setSoundVolume(soundCategory, parseFloat(strings[1])); break;
                             }
                         } break;
                     case "modelPart":
                         for (PlayerModelPart playerModelPart : PlayerModelPart.values()) {
                             if (optionKey_split[1].equals(playerModelPart.getName())) {
-                                options.setPlayerModelPart(playerModelPart, Boolean.parseBoolean(strings[1])); break;
+                                options.setPlayerModelPart(playerModelPart, parseBoolean(strings[1])); break;
                             }
                         } break;
-                    case "entityCulling": setEntityCulling(Boolean.parseBoolean(strings[1])); break;
-                    case "sneaking": options.keySneak.setPressed(options.sneakToggled && (Boolean.parseBoolean(strings[1]) != options.keySneak.isPressed())); break;
-                    case "sprinting": options.keySprint.setPressed(options.sprintToggled && (Boolean.parseBoolean(strings[1]) != options.keySprint.isPressed())); break;
+                    case "entityCulling": setEntityCulling(parseBoolean(strings[1])); break;
+                    case "sneaking": options.keySneak.setPressed(options.sneakToggled && (parseBoolean(strings[1]) != options.keySneak.isPressed())); break;
+                    case "sprinting": options.keySprint.setPressed(options.sprintToggled && (parseBoolean(strings[1]) != options.keySprint.isPressed())); break;
                     case "chunkborders":
-                        if (client.debugRenderer.toggleShowChunkBorder() != Boolean.parseBoolean(strings[1])) {
+                        if (client.debugRenderer.toggleShowChunkBorder() != parseBoolean(strings[1])) {
                             client.debugRenderer.toggleShowChunkBorder();
                         } break;
-                    case "hitboxes": client.getEntityRenderManager().setRenderHitboxes(Boolean.parseBoolean(strings[1])); break;
-                    case "perspective": options.perspective = Integer.parseInt(strings[1]) % 3; break;
+                    case "hitboxes": client.getEntityRenderManager().setRenderHitboxes(parseBoolean(strings[1])); break;
+                    case "perspective": options.perspective = parseInt(strings[1]) % 3; break;
                     case "piedirectory":
                         if (strings[1].split("\\.")[0].equals("root")) {
                             ((MinecraftClientAccessor) client).standardSettings_setOpenProfilerSection(strings[1].replace('.', '\u001e'));
                         } break;
-                    case "f1": options.hudHidden = Boolean.parseBoolean(strings[1]); break;
+                    case "f1": options.hudHidden = parseBoolean(strings[1]); break;
                     case "fovOnWorldJoin":
-                        fov = Float.parseFloat(strings[1]);
+                        fov = parseFloat(strings[1]);
                         fovOnWorldJoin = fov < 5 ? (int) (fov * 40 + 70) : (int) fov; break;
-                    case "guiScaleOnWorldJoin": guiScaleOnWorldJoin = Integer.parseInt(strings[1]); break;
-                    case "renderDistanceOnWorldJoin": renderDistanceOnWorldJoin = Integer.parseInt(strings[1]); break;
-                    case "entityDistanceScalingOnWorldJoin": entityDistanceScalingOnWorldJoin = Float.parseFloat(strings[1]); break;
-                    case "changeOnResize": changeOnResize = Boolean.parseBoolean(strings[1]); break;
-                    case "skipWhenPossible": skipWhenPossible = Boolean.parseBoolean(strings[1]); break;
+                    case "guiScaleOnWorldJoin": guiScaleOnWorldJoin = parseInt(strings[1]); break;
+                    case "renderDistanceOnWorldJoin": renderDistanceOnWorldJoin = parseInt(strings[1]); break;
+                    case "entityDistanceScalingOnWorldJoin": entityDistanceScalingOnWorldJoin = parseFloat(strings[1]); break;
+                    case "changeOnResize": changeOnResize = parseBoolean(strings[1]); break;
+                    case "skipWhenPossible": skipWhenPossible = parseBoolean(strings[1]); break;
                 }
                 // Some options.txt settings which aren't accessible in vanilla Minecraft and some unnecessary settings (like Multiplayer stuff) are not included.
                 // also has a few extra settings that can be reset that Minecraft doesn't save to options.txt, but are important in speedrunning
@@ -259,7 +257,7 @@ public class StandardSettings {
 
     // actions when world finishes loading
     public static void onWorldLoad(String worldName) {
-        // skip if the world was reset in preview (and with atum)
+        // skip if the world was reset in preview (and with Atum)
         if (worldName.equals(lastWorld)) {
             saveToWorldFile(worldName);
 
@@ -278,7 +276,7 @@ public class StandardSettings {
         // needs to be reset at the beginning to prevent loop with changeOnResize and guiScaleOnWorldJoin
         changeOnFocus = false;
 
-        if (renderDistanceOnWorldJoin != null) {
+        if (renderDistanceOnWorldJoin != null && options.viewDistance != renderDistanceOnWorldJoin) {
             options.viewDistance = renderDistanceOnWorldJoin;
             client.worldRenderer.scheduleTerrainUpdate();
         }
@@ -288,7 +286,7 @@ public class StandardSettings {
         if (fovOnWorldJoin != null) {
             options.fov = fovOnWorldJoin;
         }
-        if (guiScaleOnWorldJoin != null) {
+        if (guiScaleOnWorldJoin != null && options.guiScale != guiScaleOnWorldJoin) {
             options.guiScale = guiScaleOnWorldJoin;
             client.onResolutionChanged();
         }
@@ -300,7 +298,7 @@ public class StandardSettings {
         }
     }
 
-    // resets OnWorldJoin options to their default (empty) state
+    // resets OnWorldJoin options to their default state
     private static void resetOnWorldJoinOptions() {
         fovOnWorldJoin = null;
         entityDistanceScalingOnWorldJoin = null;
@@ -345,7 +343,7 @@ public class StandardSettings {
         }
         options.mouseWheelSensitivity = check("Scroll Sensitivity", options.mouseWheelSensitivity, 0.01, 10.0, false);
         for (SoundCategory soundCategory : SoundCategory.values()) {
-            options.setSoundVolume(soundCategory, check("(Music & Sounds) " + SoundCategoryName.valueOf(soundCategory.name()).assignedName, options.getSoundVolume(soundCategory), 0.0f, 1.0f, true));
+            options.setSoundVolume(soundCategory, check("(Music & Sounds) " + SoundCategoryName.get(soundCategory), options.getSoundVolume(soundCategory), 0.0f, 1.0f, true));
         }
 
         if (renderDistanceOnWorldJoin != null) {
@@ -402,9 +400,17 @@ public class StandardSettings {
         AMBIENT("Ambient/Environment"),
         VOICE("Voice/Speech");
 
-        private final String assignedName;
+        private final String name;
         SoundCategoryName(String name) {
-            this.assignedName = name;
+            this.name = name;
+        }
+
+        private static String get(SoundCategory soundCategory) {
+            try {
+                return SoundCategoryName.valueOf(soundCategory.name()).name;
+            } catch (IllegalArgumentException e) {
+                return soundCategory.toString();
+            }
         }
     }
 
@@ -496,7 +502,9 @@ public class StandardSettings {
         if (standardoptionsCache != null) {
             try {
                 long start = System.nanoTime();
-                Files.write(client.getLevelStorage().getSavesDirectory().resolve(worldName).resolve(standardoptionsFile.getName()), String.join(System.lineSeparator(), standardoptionsCache).getBytes());
+                Path path = client.getLevelStorage().getSavesDirectory().resolve(worldName).resolve(standardoptionsFile.getName());
+                Files.write(path, String.join(System.lineSeparator(), standardoptionsCache).getBytes(StandardCharsets.UTF_8));
+                writeVersion(Files.getFileAttributeView(path, UserDefinedFileAttributeView.class));
                 LOGGER.info("Saved {} to world file '{}' ({})", standardoptionsFile.getName(), worldName, getMs(start));
             } catch (Exception e) {
                 LOGGER.error("Failed to save {} to world file '{}'", standardoptionsFile.getName(), worldName, e);
@@ -514,7 +522,7 @@ public class StandardSettings {
                     }
                 }
             }
-            LOGGER.warn("Couldn't find Entity Culling option in sodium options");
+            LOGGER.warn("StandardSettings couldn't find Entity Culling option in sodium options");
         }
         return null;
     }
@@ -524,7 +532,7 @@ public class StandardSettings {
             try {
                 return (boolean) entityCulling[0].get(entityCulling[1].get(SodiumClientMod.options()));
             } catch (Exception e) {
-                LOGGER.error("Failed to get Entity Culling", e);
+                LOGGER.error("StandardSettings failed to get Entity Culling", e);
             }
         }
         return null;
@@ -537,9 +545,9 @@ public class StandardSettings {
                     entityCulling[0].set(entityCulling[1].get(SodiumClientMod.options()), value);
                     SodiumClientMod.options().writeChanges();
                 } catch (IOException e) {
-                    LOGGER.error("Failed to save sodium options", e);
+                    LOGGER.error("StandardSettings failed to save sodium options", e);
                 } catch (Exception e) {
-                    LOGGER.error("Failed to set Entity Culling to " + value, e);
+                    LOGGER.error("StandardSettings failed to set Entity Culling to " + value, e);
                 }
             }
         }
@@ -547,21 +555,18 @@ public class StandardSettings {
 
     public static void initialize() {
         // create standardoptions.txt
-        if (!standardoptionsFile.exists()) {
+        if (!standardoptionsFile.isFile()) {
             LOGGER.info("Creating {}...", standardoptionsFile.getName());
 
             long start = System.nanoTime();
 
-            // create config directory if necessary
-            if (!standardoptionsFile.getParentFile().exists()) {
+            try {
+                // create config directory if necessary
                 if (!standardoptionsFile.getParentFile().mkdirs()) {
                     LOGGER.error("Failed to create config directory");
                     return;
                 }
-            }
-
-            // create file and mark with current StandardSettings version
-            try {
+                // create file and mark with current StandardSettings version
                 Files.write(standardoptionsFile.toPath(), getStandardoptionsTxt().getBytes());
                 writeVersion(Files.getFileAttributeView(standardoptionsFile.toPath(), UserDefinedFileAttributeView.class));
                 LOGGER.info("Finished creating {} ({})", standardoptionsFile.getName(), getMs(start));
@@ -581,7 +586,7 @@ public class StandardSettings {
             do {
                 lines = Files.readAllLines(file.toPath());
                 fileChain.add(file);
-            } while (lines.size() > 0 && (file = new File(lines.get(0))).exists() && !fileChain.contains(file));
+            } while (!lines.isEmpty() && (file = new File(lines.get(0))).isFile() && !fileChain.contains(file));
 
             // get the StandardSettings versions marked to the files
             for (File file2 : fileChain) {
@@ -596,20 +601,20 @@ public class StandardSettings {
         // Finds the highest StandardSettings version of the file chain
         int[] highestVersion = new int[]{1,2,0,0};
         for (int[] fileVersion : fileVersionsMap.values()) {
-            if (compareVersions(highestVersion, fileVersion)) {
+            if (checkVersion(highestVersion, fileVersion)) {
                 highestVersion = fileVersion;
             }
         }
 
         // Update standardoptions file if necessary and update the StandardSettings versions marked to the file
         try {
-            List<String> linesToAdd = checkVersion(highestVersion, lines);
+            List<String> linesToAdd = updateStandardOptions(highestVersion, lines);
             if (linesToAdd != null) {
                 Files.write(fileChain.get(fileChain.size() - 1).toPath(), (System.lineSeparator() + String.join(System.lineSeparator(), linesToAdd)).getBytes(), StandardOpenOption.APPEND);
                 LOGGER.info("Finished updating {}", standardoptionsFile.getName());
             }
             for (Map.Entry<UserDefinedFileAttributeView, int[]> entry : fileVersionsMap.entrySet()) {
-                if (compareVersions(entry.getValue(), VERSION)) {
+                if (checkVersion(entry.getValue())) {
                     writeVersion(entry.getKey());
                 }
             }
@@ -620,17 +625,17 @@ public class StandardSettings {
 
     // marks the current StandardSettings version to the file
     private static void writeVersion(UserDefinedFileAttributeView view) throws IOException {
-        view.write("standardsettings", Charset.defaultCharset().encode(versionToString(VERSION)));
+        view.write("standardsettings", StandardCharsets.UTF_8.encode(versionToString(VERSION)));
     }
 
-    // reads the last marked StandardSettings version from the file
+    // reads the marked StandardSettings version from the file
     private static int[] readVersion(UserDefinedFileAttributeView view) {
         try {
             String name = "standardsettings";
             ByteBuffer buf = ByteBuffer.allocate(view.size(name));
             view.read(name, buf);
             buf.flip();
-            String value = Charset.defaultCharset().decode(buf).toString();
+            String value = StandardCharsets.UTF_8.decode(buf).toString();
             return Stream.of(value.split("\\.")).mapToInt(Integer::parseInt).toArray();
         } catch (Exception e) {
             return new int[]{1,2,0,0};
@@ -638,16 +643,15 @@ public class StandardSettings {
     }
 
     // checks if fileVersion is outdated and returns a list of new lines to add to the standardoptions file
-    private static @Nullable List<String> checkVersion(int[] fileVersion, List<String> existingLines) {
-        if (compareVersions(fileVersion, VERSION)) {
-            LOGGER.warn(standardoptionsFile.getName() + " was marked with an outdated StandardSettings version ({}), updating now...", versionToString(fileVersion));
-        } else {
+    private static @Nullable List<String> updateStandardOptions(final int[] fileVersion, List<String> existingLines) {
+        if (!checkVersion(fileVersion)) {
             return null;
         }
+        LOGGER.warn("{} was marked with an outdated StandardSettings version ({}), updating now...", standardoptionsFile.getName(), versionToString(fileVersion));
 
         // remove the values from the lines
         if (existingLines != null) {
-            existingLines.replaceAll(line -> line.split(":", 2)[0]);
+            existingLines = removeValues(existingLines);
         } else {
             existingLines = new ArrayList<>();
         }
@@ -657,22 +661,26 @@ public class StandardSettings {
         checking:
         {
             // add lines added in 1.2.3-pre1
-            if (compareVersions(fileVersion, new int[]{1,2,3,-1000})) {
-                if (existingLines.contains("skipWhenPossible")) {
+            if (checkVersion(fileVersion, new int[]{1,2,3,-1000})) {
+                List<String> newLines = new ArrayList<>();
+                newLines.add("skipWhenPossible:true");
+                if (!Collections.disjoint(removeValues(newLines), existingLines)) {
                     break checking;
                 }
-                lines.add("skipWhenPossible:true");
+                lines.addAll(newLines);
             }
             // add lines added in the pre-releases of StandardSettings v1.2.1
-            if (compareVersions(fileVersion, new int[]{1,2,1,-1000})) {
-                if (existingLines.contains("entityCulling") || existingLines.contains("f1") || existingLines.contains("guiScaleOnWorldJoin") || existingLines.contains("changeOnResize")) {
+            if (checkVersion(fileVersion, new int[]{1,2,1,-1000})) {
+                List<String> newLines = new ArrayList<>();
+                Boolean entityCulling = getEntityCulling();
+                newLines.add("entityCulling:" + (entityCulling != null ? entityCulling : ""));
+                newLines.add("f1:");
+                newLines.add("guiScaleOnWorldJoin:");
+                newLines.add("changeOnResize:false");
+                if (!Collections.disjoint(removeValues(newLines), existingLines)) {
                     break checking;
                 }
-                Boolean entityCulling = getEntityCulling();
-                lines.add("entityCulling:" + (entityCulling != null ? entityCulling : ""));
-                lines.add("f1:");
-                lines.add("guiScaleOnWorldJoin:");
-                lines.add("changeOnResize:false");
+                lines.addAll(newLines);
             }
         }
 
@@ -683,9 +691,19 @@ public class StandardSettings {
         return lines;
     }
 
+    private static List<String> removeValues(List<String> list) {
+        list = new ArrayList<>(list);
+        list.replaceAll(line -> line.split(":", 2)[0]);
+        return list;
+    }
+
+    private static boolean checkVersion(final int[] versionToCheck) {
+        return checkVersion(versionToCheck, VERSION);
+    }
+
     // returns true when versionToCheck is older than versionToCompareTo
-    private static boolean compareVersions(int[] versionToCheck, int[] versionToCompareTo) {
-        int maxLength = Math.max(versionToCheck.length, versionToCompareTo.length);
+    private static boolean checkVersion(final int[] versionToCheck, final int[] versionToCompareTo) {
+        final int maxLength = Math.max(versionToCheck.length, versionToCompareTo.length);
         for (int i = 0; i < maxLength; i++) {
             int v1 = versionToCheck.length > i ? versionToCheck[i] : 0;
             int v2 = versionToCompareTo.length > i ? versionToCompareTo[i] : 0;
@@ -701,7 +719,7 @@ public class StandardSettings {
     }
 
     // returns milliseconds that have passed since start (in nanoseconds) in a nice String
-    private static String getMs(long start) {
-        return (System.nanoTime() - start) / 1000000.0 + " ms";
+    private static String getMs(long startNano) {
+        return (System.nanoTime() - startNano) / 1000000.0 + " ms";
     }
 }
