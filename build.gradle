@@ -24,6 +24,7 @@ dependencies {
 	mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
 	modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
 
+	compileOnlyApi files('libs/sodium-fabric-mc1.19.4-0.4.10+build.24.jar')
 	// Fabric API. This is technically optional, but you probably want it anyway.
 
 	// Uncomment the following line to enable the deprecated Fabric API modules. 

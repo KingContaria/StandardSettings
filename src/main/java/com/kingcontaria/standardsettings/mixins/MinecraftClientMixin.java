@@ -3,7 +3,12 @@ package com.kingcontaria.standardsettings.mixins;
 import com.kingcontaria.standardsettings.StandardSettings;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.RunArgs;
+import net.minecraft.client.gui.screen.GameMenuScreen;
+import net.minecraft.client.gui.screen.Screen;
+import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
@@ -20,7 +25,13 @@ import java.util.stream.Stream;
 
 @Mixin(MinecraftClient.class)
 
-public class MinecraftClientMixin {
+public abstract class MinecraftClientMixin {
+
+    @Shadow public abstract void openPauseMenu(boolean pause);
+
+    @Shadow @Nullable public Screen currentScreen;
+    @Unique
+    private int tickCount = 22;
 
     // initialize StandardSettings, doesn't use ClientModInitializer because GameOptions need to be initialized first
     @Inject(method = "<init>", at = @At("RETURN"))
@@ -146,6 +157,18 @@ public class MinecraftClientMixin {
             StandardSettings.lastWorld = StandardSettings.client.getServer().getIconFile().get().getParent().getFileName().toString();
         } catch (Exception e) {
             // empty catch block
+        }
+    }
+    @Inject(method = "tick", at = @At("HEAD"))
+    private void standardSettings_OnPauseNextTick(CallbackInfo ci) {
+        if (StandardSettings.f3PauseSoon) {
+            if (tickCount > 0) {
+                tickCount--;
+                return;
+            }
+            tickCount = 1;
+            openPauseMenu(true);
+            StandardSettings.f3PauseSoon = !(currentScreen instanceof GameMenuScreen);
         }
     }
 
