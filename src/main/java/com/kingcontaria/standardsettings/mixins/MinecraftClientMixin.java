@@ -4,6 +4,7 @@ import com.kingcontaria.standardsettings.StandardSettings;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.RunArgs;
 import net.minecraft.client.gui.screen.GameMenuScreen;
+import net.minecraft.client.gui.screen.LevelLoadingScreen;
 import net.minecraft.client.gui.screen.Screen;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
@@ -30,8 +31,9 @@ public abstract class MinecraftClientMixin {
     @Shadow public abstract void openPauseMenu(boolean pause);
 
     @Shadow @Nullable public Screen currentScreen;
+    @Shadow private boolean windowFocused;
     @Unique
-    private int tickCount = 22;
+    private int tickCount = -3;
 
     // initialize StandardSettings, doesn't use ClientModInitializer because GameOptions need to be initialized first
     @Inject(method = "<init>", at = @At("RETURN"))
@@ -161,7 +163,14 @@ public abstract class MinecraftClientMixin {
     }
     @Inject(method = "tick", at = @At("HEAD"))
     private void standardSettings_OnPauseNextTick(CallbackInfo ci) {
-        if (StandardSettings.f3PauseSoon) {
+        if (StandardSettings.f3PauseSoon && !(currentScreen instanceof LevelLoadingScreen)) {
+            // System.out.println("WHATt: " + tickCount); // useful debug line
+            if (windowFocused) {
+                StandardSettings.f3PauseSoon = false;
+                tickCount = 1;
+                return;
+            }
+            if (tickCount == -3) { tickCount = 1 + StandardSettings.firstWorldF3PauseDelay; }
             if (tickCount > 0) {
                 tickCount--;
                 return;
