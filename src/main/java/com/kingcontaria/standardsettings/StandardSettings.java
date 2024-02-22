@@ -209,7 +209,9 @@ public class StandardSettings {
                     case "mouseWheelSensitivity" -> options.getMouseWheelSensitivity().setValue(Double.parseDouble(strings[1]));
                     case "rawMouseInput" -> options.getRawMouseInput().setValue(Boolean.parseBoolean(strings[1]));
                     case "showAutosaveIndicator" -> options.getShowAutosaveIndicator().setValue(Boolean.parseBoolean(strings[1]));
-                    case "chatPreview" -> options.getChatPreview().setValue(Boolean.parseBoolean(strings[1]));
+                    // Option removed to keep compatibility with 1.19.2
+                     case "chatPreview" -> System.out.println("Option \"chatPreview\" not supported in 1.19.x");
+                             //options.getChatPreview().setValue(Boolean.parseBoolean(strings[1]));
                     case "onlyShowSecureChat" -> options.getOnlyShowSecureChat().setValue(Boolean.parseBoolean(strings[1]));
                     case "key" -> {
                         for (KeyBinding keyBinding : options.allKeys) {
@@ -488,7 +490,7 @@ public class StandardSettings {
                 "mouseWheelSensitivity:" + options.getMouseWheelSensitivity().getValue() + l +
                 "rawMouseInput:" + options.getRawMouseInput().getValue() + l +
                 "showAutosaveIndicator:" + options.getShowAutosaveIndicator().getValue() + l +
-                "chatPreview:" + options.getChatPreview().getValue() + l +
+               // "chatPreview:" + options.getChatPreview().getValue() + l +
                 "onlyShowSecureChat:" + options.getOnlyShowSecureChat().getValue() + l);
         for (KeyBinding keyBinding : options.allKeys) {
             string.append("key_").append(keyBinding.getTranslationKey()).append(":").append(keyBinding.getBoundKeyTranslationKey()).append(l);
