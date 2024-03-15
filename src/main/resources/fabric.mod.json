@@ -1,27 +1,37 @@
 {
-  "schemaVersion": 1,
-  "id": "standardsettings",
-  "version": "${version}",
-
-  "name": "StandardSettings",
-  "description": "Resetting Mod for Minecraft Speedrunning",
-  "authors": [
-    "KingContaria"
-  ],
-  "contact": {
-    "sources": "https://github.com/KingContaria/StandardSettings",
-    "issues": "https://github.com/KingContaria/StandardSettings/issues"
-  },
-
-  "license": "CC0-1.0",
-
-  "environment": "client",
-  "mixins": [
-    "standardsettings.mixins.json"
-  ],
-
-  "depends": {
-    "fabricloader": ">=0.7.4",
-    "minecraft": ">=1.16 <=1.16.1"
-  }
+	"schemaVersion": 1,
+	"id": "standardsettings",
+	"version": "${version}",
+	"name": "StandardSettings",
+	"description": "Resets settings to a configured default at the start of a run.",
+	"authors": [
+		{
+			"name": "contaria",
+			"contact": {
+				"homepage": "https://github.com/KingContaria/"
+			}
+		}
+	],
+	"contact": {
+		"sources": "https://github.com/KingContaria/StandardSettings",
+		"issues": "https://github.com/KingContaria/StandardSettings/issues"
+	},
+	"license": "MIT",
+	"environment": "client",
+	"custom": {
+		"speedrunapi": {
+			"config": "me.contaria.standardsettings.StandardSettingsConfig"
+		}
+	},
+	"mixins": [
+		"standardsettings.mixins.json"
+	],
+	"depends": {
+		"fabricloader": ">=0.15.0",
+		"minecraft": "1.16.1",
+		"speedrunapi": "*"
+	},
+	"breaks": {
+		"worldpreview": "<6.0"
+	}
 }

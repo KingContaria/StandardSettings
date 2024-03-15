@@ -1,12 +1,17 @@
 {
   "required": true,
-  "minVersion": "0.8",
-  "package": "com.kingcontaria.standardsettings.mixins",
+  "package": "me.contaria.standardsettings.mixin",
   "compatibilityLevel": "JAVA_8",
   "client": [
-    "BakedModelManagerAccessor",
-    "MinecraftClientAccessor",
-    "MinecraftClientMixin"
+    "MinecraftClientMixin",
+    "accessors.BakedModelManagerAccessor",
+    "accessors.BooleanOptionAccessor",
+    "accessors.DoubleOptionAccessor",
+    "accessors.MinecraftClientAccessor",
+    "accessors.OptionAccessor",
+    "fix.GameOptionsMixin",
+    "fix.LanguageOptionsScreenMixin",
+    "fix.OptionMixin"
   ],
   "injectors": {
     "defaultRequire": 1
