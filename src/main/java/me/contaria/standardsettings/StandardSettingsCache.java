@@ -37,7 +37,7 @@ public class StandardSettingsCache {
             this.value = setting.getOption();
         }
 
-        protected void load() {
+        public void load() {
             this.setting.setOption(this.value);
         }
 
