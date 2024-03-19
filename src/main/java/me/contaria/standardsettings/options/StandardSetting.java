@@ -9,10 +9,13 @@ import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.widget.AbstractButtonWidget;
 import net.minecraft.client.options.GameOptions;
 import net.minecraft.text.LiteralText;
+import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.mcsr.speedrunapi.config.api.SpeedrunOption;
+
+import java.util.List;
 
 public abstract class StandardSetting<T> implements SpeedrunOption<T> {
     private final String id;
@@ -138,5 +141,26 @@ public abstract class StandardSetting<T> implements SpeedrunOption<T> {
 
     public void disable() {
         this.enabled = false;
+    }
+
+    protected static Text getTextWithoutPrefix(Text text, Text prefix) {
+        if (!text.copy().equals(prefix.copy())) {
+            return text;
+        }
+
+        List<Text> prefixSiblings = prefix.getSiblings();
+        List<Text> textSiblings = text.getSiblings();
+
+        if (prefixSiblings.size() >= textSiblings.size()) {
+            return new LiteralText("");
+        }
+
+        List<Text> restText = textSiblings.subList(prefixSiblings.size(), textSiblings.size());
+
+        MutableText newText = restText.remove(0).shallowCopy();
+        for (Text t : restText) {
+            newText.append(t);
+        }
+        return newText;
     }
 }

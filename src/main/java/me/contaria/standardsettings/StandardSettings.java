@@ -6,9 +6,6 @@ import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.options.KeyBinding;
 import net.minecraft.client.resource.language.LanguageManager;
-import net.minecraft.text.LiteralText;
-import net.minecraft.text.MutableText;
-import net.minecraft.text.Text;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
@@ -26,6 +23,10 @@ public class StandardSettings {
 
     @Nullable
     private static StandardSettingsCache settingsCache;
+
+    public static String lastWorld;
+    public static boolean onWorldJoinPending;
+    public static boolean autoF3EscPending;
 
     public static void reset() {
         config.update();
@@ -58,13 +59,14 @@ public class StandardSettings {
         for (StandardSetting<?> setting : config.standardSettingsOnWorldJoin) {
             setting.resetOption();
         }
+        onWorldJoinPending = false;
         LOGGER.info("Loaded StandardSettings on World Join");
     }
 
-    public static void createCache(String worldName) {
-        if (worldName != null) {
-            settingsCache = new StandardSettingsCache(worldName);
-            LOGGER.info("Cached options for '{}'", worldName);
+    public static void createCache() {
+        if (lastWorld != null && !(settingsCache != null && lastWorld.equals(settingsCache.getId()))) {
+            settingsCache = new StandardSettingsCache(lastWorld);
+            LOGGER.info("Cached options for '{}'", lastWorld);
         }
     }
 
@@ -74,6 +76,11 @@ public class StandardSettings {
             settingsCache = null;
             LOGGER.info("Restored cached options for '{}'", worldName);
         }
+    }
+
+    public static void resetPendingActions() {
+        onWorldJoinPending = false;
+        autoF3EscPending = false;
     }
 
     public static void saveToWorldFile(String worldName) {
@@ -90,26 +97,5 @@ public class StandardSettings {
         } catch (IOException e) {
             LOGGER.warn("Failed to save standardoptions to world file.");
         }
-    }
-
-    public static Text getTextWithoutPrefix(Text text, Text prefix) {
-        if (!text.copy().equals(prefix.copy())) {
-            return text;
-        }
-
-        List<Text> prefixSiblings = prefix.getSiblings();
-        List<Text> textSiblings = text.getSiblings();
-
-        if (prefixSiblings.size() >= textSiblings.size()) {
-            return new LiteralText("");
-        }
-
-        List<Text> restText = textSiblings.subList(prefixSiblings.size(), textSiblings.size());
-
-        MutableText newText = restText.remove(0).shallowCopy();
-        for (Text t : restText) {
-            newText.append(t);
-        }
-        return newText;
     }
 }

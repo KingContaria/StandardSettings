@@ -65,7 +65,7 @@ public class CyclingOptionStandardSetting extends StandardSetting<Integer> {
 
     @Override
     public @NotNull Text getDisplayText() {
-        return StandardSettings.getTextWithoutPrefix(this.option.getMessage(this.options), this.option.getDisplayPrefix());
+        return StandardSetting.getTextWithoutPrefix(this.option.getMessage(this.options), this.option.getDisplayPrefix());
     }
 
     @Override

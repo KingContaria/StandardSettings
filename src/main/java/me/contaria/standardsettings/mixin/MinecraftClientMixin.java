@@ -21,7 +21,6 @@ import net.minecraft.world.level.storage.LevelStorage;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
-import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Coerce;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -36,13 +35,6 @@ public abstract class MinecraftClientMixin {
     @Nullable
     private IntegratedServer server;
 
-    @Unique
-    private String lastWorld;
-    @Unique
-    private boolean onWorldJoinPending;
-    @Unique
-    private boolean autoF3EscPending;
-
     @Shadow
     public abstract boolean isWindowFocused();
 
@@ -51,7 +43,7 @@ public abstract class MinecraftClientMixin {
 
     @Inject(method = "method_29607", at = @At("HEAD"))
     private void reset(String worldName, LevelInfo levelInfo, RegistryTracker.Modifiable registryTracker, GeneratorOptions generatorOptions, CallbackInfo ci) {
-        StandardSettings.createCache(this.lastWorld);
+        StandardSettings.createCache();
         StandardSettings.reset();
     }
 
@@ -61,31 +53,28 @@ public abstract class MinecraftClientMixin {
         if (this.isWindowFocused()) {
             StandardSettings.onWorldJoin();
         } else {
-            this.onWorldJoinPending = true;
-            this.autoF3EscPending = StandardSettings.config.autoF3Esc;
+            StandardSettings.onWorldJoinPending = true;
+            StandardSettings.autoF3EscPending = StandardSettings.config.autoF3Esc;
         }
     }
 
     @Inject(method = "onWindowFocusChanged", at = @At("RETURN"))
     private void onWorldJoin_onWindowFocus(boolean focused, CallbackInfo ci) {
-        if (this.onWorldJoinPending && focused) {
+        if (StandardSettings.onWorldJoinPending && focused) {
             StandardSettings.onWorldJoin();
-            this.onWorldJoinPending = false;
         }
     }
 
     @Inject(method = "onResolutionChanged", at = @At("RETURN"))
     private void onWorldJoin_onResize(CallbackInfo ci) {
-        if (this.onWorldJoinPending && StandardSettings.config.triggerOnResize) {
+        if (StandardSettings.onWorldJoinPending && StandardSettings.config.triggerOnResize) {
             StandardSettings.onWorldJoin();
-            this.onWorldJoinPending = false;
         }
     }
 
     @Inject(method = "startIntegratedServer(Ljava/lang/String;Lnet/minecraft/util/registry/RegistryTracker$Modifiable;Ljava/util/function/Function;Lcom/mojang/datafixers/util/Function4;ZLnet/minecraft/client/MinecraftClient$WorldLoadAction;)V", at = @At("HEAD"))
     private void resetPendingActions(CallbackInfo ci) {
-        this.onWorldJoinPending = false;
-        this.autoF3EscPending = false;
+        StandardSettings.resetPendingActions();
     }
 
     @Inject(method = "startIntegratedServer(Ljava/lang/String;)V", at = @At("HEAD"))
@@ -95,13 +84,13 @@ public abstract class MinecraftClientMixin {
 
     @Inject(method = "startIntegratedServer(Ljava/lang/String;Lnet/minecraft/util/registry/RegistryTracker$Modifiable;Ljava/util/function/Function;Lcom/mojang/datafixers/util/Function4;ZLnet/minecraft/client/MinecraftClient$WorldLoadAction;)V", at = @At("TAIL"))
     private void setLastWorld(String worldName, RegistryTracker.Modifiable registryTracker, Function<LevelStorage.Session, DataPackSettings> function, Function4<LevelStorage.Session, RegistryTracker.Modifiable, ResourceManager, DataPackSettings, SaveProperties> function4, boolean safeMode, @Coerce Object worldLoadAction, CallbackInfo ci) {
-        this.lastWorld = worldName;
+        StandardSettings.lastWorld = worldName;
     }
 
     @Inject(method = "tick", at = @At("HEAD"))
     private void autoF3Esc(CallbackInfo ci) {
-        this.autoF3EscPending &= this.server != null && !this.isWindowFocused();
-        if (this.autoF3EscPending) {
+        StandardSettings.autoF3EscPending &= this.server != null && !this.isWindowFocused();
+        if (StandardSettings.autoF3EscPending) {
             if (StandardSettings.config.autoF3EscDelay > 0) {
                 StandardSettings.config.autoF3EscDelay--;
             } else {
@@ -126,6 +115,6 @@ public abstract class MinecraftClientMixin {
             }
         }
 
-        this.autoF3EscPending &= !(screen instanceof GameMenuScreen);
+        StandardSettings.autoF3EscPending &= !(screen instanceof GameMenuScreen);
     }
 }

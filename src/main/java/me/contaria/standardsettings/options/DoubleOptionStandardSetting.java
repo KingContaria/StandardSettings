@@ -3,7 +3,6 @@ package me.contaria.standardsettings.options;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonPrimitive;
 import me.contaria.standardsettings.StandardGameOptions;
-import me.contaria.standardsettings.StandardSettings;
 import me.contaria.standardsettings.mixin.accessors.DoubleOptionAccessor;
 import me.contaria.standardsettings.mixin.accessors.OptionAccessor;
 import net.minecraft.client.gui.widget.AbstractButtonWidget;
@@ -52,7 +51,7 @@ public class DoubleOptionStandardSetting extends StandardSetting<Double> {
 
     @Override
     public @NotNull Text getDisplayText() {
-        return StandardSettings.getTextWithoutPrefix(this.option.getDisplayString(this.options), this.option.getDisplayPrefix());
+        return StandardSetting.getTextWithoutPrefix(this.option.getDisplayString(this.options), this.option.getDisplayPrefix());
     }
 
     @Override
