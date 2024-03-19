@@ -3,11 +3,12 @@ package me.contaria.standardsettings;
 import me.contaria.standardsettings.options.StandardSetting;
 
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
 
 public class StandardSettingsCache {
     private final String id;
-    private final Set<Entry<?>> cache;
+    protected final Set<Entry<?>> cache;
 
     public StandardSettingsCache(String id) {
         this.id = id;
@@ -27,8 +28,8 @@ public class StandardSettingsCache {
         }
     }
 
-    private static class Entry<T> {
-        private final StandardSetting<T> setting;
+    protected static class Entry<T> {
+        protected final StandardSetting<T> setting;
         private final T value;
 
         private Entry(StandardSetting<T> setting) {
@@ -36,8 +37,20 @@ public class StandardSettingsCache {
             this.value = setting.getOption();
         }
 
-        private void load() {
+        protected void load() {
             this.setting.setOption(this.value);
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            Entry<?> entry = (Entry<?>) o;
+            return Objects.equals(this.setting, entry.setting) && Objects.equals(this.value, entry.value);
         }
     }
 }
