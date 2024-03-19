@@ -29,7 +29,7 @@ public class StandardSettingsCache {
     }
 
     protected static class Entry<T> {
-        protected final StandardSetting<T> setting;
+        public final StandardSetting<T> setting;
         private final T value;
 
         private Entry(StandardSetting<T> setting) {
