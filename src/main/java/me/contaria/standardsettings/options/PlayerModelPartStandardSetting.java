@@ -13,7 +13,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public class PlayerModelPartStandardSetting extends StandardSetting<Boolean> {
-    private final PlayerModelPart playerModelPart;
+    public final PlayerModelPart playerModelPart;
 
     public PlayerModelPartStandardSetting(String id, @Nullable String category, StandardGameOptions options, PlayerModelPart playerModelPart) {
         super(id, category, options);

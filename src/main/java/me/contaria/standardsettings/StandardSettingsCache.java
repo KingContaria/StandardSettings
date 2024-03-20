@@ -30,7 +30,7 @@ public class StandardSettingsCache {
 
     protected static class Entry<T> {
         public final StandardSetting<T> setting;
-        private final T value;
+        public final T value;
 
         private Entry(StandardSetting<T> setting) {
             this.setting = setting;
