@@ -32,6 +32,6 @@
 		"speedrunapi": "*"
 	},
 	"breaks": {
-		"worldpreview": "<6.0"
+		"worldpreview": "<6.0-beta.1"
 	}
 }
