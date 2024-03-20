@@ -101,7 +101,7 @@ public abstract class MinecraftClientMixin {
 
     @Inject(method = "openScreen", at = @At("TAIL"))
     private void autoF3Esc_onPreview(Screen screen, CallbackInfo ci) {
-        if (screen instanceof LevelLoadingScreen) {
+        if (StandardSettings.config.autoF3Esc && screen instanceof LevelLoadingScreen) {
             Text backToGame = new TranslatableText("menu.returnToGame");
             for (Element e : screen.children()) {
                 if (!(e instanceof ButtonWidget)) {
