@@ -6,6 +6,7 @@ import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.options.KeyBinding;
 import net.minecraft.client.resource.language.LanguageManager;
+import net.minecraft.client.util.Window;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
@@ -33,12 +34,19 @@ public class StandardSettings {
         for (StandardSetting<?> setting : config.standardSettings) {
             setting.resetOption();
         }
-        updateSettings(MinecraftClient.getInstance());
+        updateSettings();
         LOGGER.info("Loaded StandardSettings");
     }
 
-    private static void updateSettings(MinecraftClient client) {
-        client.getWindow().applyVideoMode();
+    private static void updateSettings() {
+        MinecraftClient client = MinecraftClient.getInstance();
+        Window window = client.getWindow();
+
+        window.applyVideoMode();
+
+        if (window.getScaleFactor() != client.options.guiScale) {
+            client.onResolutionChanged();
+        }
 
         LanguageManager languageManager = client.getLanguageManager();
         if (!languageManager.getLanguage().getCode().equals(client.options.language)) {
@@ -59,6 +67,7 @@ public class StandardSettings {
         for (StandardSetting<?> setting : config.standardSettingsOnWorldJoin) {
             setting.resetOption();
         }
+        updateSettings();
         onWorldJoinPending = false;
         LOGGER.info("Loaded StandardSettings on World Join");
     }
