@@ -104,7 +104,7 @@ public class StandardSettings {
             Files.write(MinecraftClient.getInstance().getLevelStorage().getSavesDirectory().resolve(worldName).resolve("standardoptions.txt"), options, StandardCharsets.UTF_8);
             LOGGER.info("Saved standardoptions to world file.");
         } catch (IOException e) {
-            LOGGER.warn("Failed to save standardoptions to world file.");
+            LOGGER.warn("Failed to save standardoptions to world file.", e);
         }
     }
 }
