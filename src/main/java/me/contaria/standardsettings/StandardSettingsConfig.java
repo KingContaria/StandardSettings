@@ -112,7 +112,7 @@ public class StandardSettingsConfig implements SpeedrunConfig {
         this.register(new CyclingOptionStandardSetting("guiScale", "options.video", this.options, Option.GUI_SCALE, options -> options.guiScale) {
             @Override
             public void set(GameOptions options, Integer value) {
-                options.guiScale = value;
+                options.guiScale = Math.max(0, value);
             }
         });
         this.register("attackIndicator", "options.video", Option.ATTACK_INDICATOR, options -> options.attackIndicator.getId());
@@ -222,7 +222,7 @@ public class StandardSettingsConfig implements SpeedrunConfig {
         this.onWorldJoin(new CyclingOptionStandardSetting("guiScaleOnWorldJoin", "onWorldJoin", this.optionsOnWorldJoin, Option.GUI_SCALE, options -> options.guiScale) {
             @Override
             public void set(GameOptions options, Integer value) {
-                options.guiScale = value;
+                options.guiScale = Math.max(0, value);
             }
         }).disable();
     }
