@@ -38,6 +38,15 @@ public class StandardSettings {
         LOGGER.info("Loaded StandardSettings");
     }
 
+    public static void onWorldJoin() {
+        for (StandardSetting<?> setting : config.standardSettingsOnWorldJoin) {
+            setting.resetOption();
+        }
+        updateSettings();
+        onWorldJoinPending = false;
+        LOGGER.info("Loaded StandardSettings on World Join");
+    }
+
     private static void updateSettings() {
         MinecraftClient client = MinecraftClient.getInstance();
         Window window = client.getWindow();
@@ -61,15 +70,8 @@ public class StandardSettings {
         }
 
         KeyBinding.updateKeysByCode();
-    }
 
-    public static void onWorldJoin() {
-        for (StandardSetting<?> setting : config.standardSettingsOnWorldJoin) {
-            setting.resetOption();
-        }
-        updateSettings();
-        onWorldJoinPending = false;
-        LOGGER.info("Loaded StandardSettings on World Join");
+        client.options.write();
     }
 
     public static void createCache() {
