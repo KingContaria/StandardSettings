@@ -212,8 +212,8 @@ public class StandardSettingsConfig implements SpeedrunConfig {
         // More Settings
         this.register("perspective", "more", new CyclingOption("standardsettings.options.perspective", (options, amount) -> options.perspective = (options.perspective + amount) % 3, (options, option) -> new TranslatableText("standardsettings.options.perspective." + options.perspective)), options -> options.perspective).disable();
         this.register("f1", "more", new BooleanOption("standardsettings.options.f1", options -> options.hudHidden, (options, value) -> options.hudHidden = value)).disable();
-        this.register("sneaking", "more", new BooleanOption("standardsettings.options.sneaking", options -> options.keySneak.isPressed(), (options, value) -> options.keySneak.setPressed((options instanceof StandardGameOptions || options.sneakToggled) && value))).disable();
-        this.register("sprinting", "more", new BooleanOption("standardsettings.options.sprinting", options -> options.keySprint.isPressed(), (options, value) -> options.keySprint.setPressed((options instanceof StandardGameOptions || options.sprintToggled) && value))).disable();
+        this.register("sneaking", "more", new BooleanOption("standardsettings.options.sneaking", StandardGameOptions::getSneaking, StandardGameOptions::setSneaking)).disable();
+        this.register("sprinting", "more", new BooleanOption("standardsettings.options.sprinting", StandardGameOptions::getSprinting, StandardGameOptions::setSprinting)).disable();
 
         // OnWorldJoin Settings
         this.onWorldJoin(new DoubleOptionStandardSetting("fovOnWorldJoin", "onWorldJoin", this.optionsOnWorldJoin, Option.FOV)).disable();

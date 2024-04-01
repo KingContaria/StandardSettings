@@ -67,6 +67,7 @@ public abstract class GameOptionsMixin {
         }
         return original.call(translationKey, type, code, category);
     }
+
     @WrapOperation(
             method = "<init>",
             at = @At(
@@ -93,8 +94,7 @@ public abstract class GameOptionsMixin {
     )
     private StickyKeyBinding doNotCreateKeyBindings(String id, int code, String category, BooleanSupplier toggleGetter, Operation<StickyKeyBinding> original) {
         if (this.isStandardSettings()) {
-            // we need the sticky keybindings for sneaking and sprinting standardsettings
-            return original.call("standardsettings." + id, InputUtil.UNKNOWN_KEY.getCode(), category, (BooleanSupplier) () -> false);
+            return null;
         }
         return original.call(id, code, category, toggleGetter);
     }

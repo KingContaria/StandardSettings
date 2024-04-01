@@ -13,6 +13,8 @@ public class StandardGameOptions extends GameOptions {
     private boolean hitBoxes;
     private boolean chunkBorders;
     private String pieDirectory;
+    private boolean sneaking;
+    private boolean sprinting;
     private boolean entityCulling;
 
     public StandardGameOptions(MinecraftClient client, File optionsFile) {
@@ -96,6 +98,36 @@ public class StandardGameOptions extends GameOptions {
             ((StandardGameOptions) options).pieDirectory = value;
         } else {
             ((MinecraftClientAccessor) MinecraftClient.getInstance()).standardsettings$setOpenProfilerSection(value);
+        }
+    }
+
+    public static boolean getSneaking(GameOptions options) {
+        if (options instanceof StandardGameOptions) {
+            return ((StandardGameOptions) options).sneaking;
+        }
+        return options.keySneak.isPressed();
+    }
+
+    public static void setSneaking(GameOptions options, boolean value) {
+        if (options instanceof StandardGameOptions) {
+            ((StandardGameOptions) options).sneaking = value;
+        } else {
+            options.keySneak.setPressed(options.sneakToggled && value);
+        }
+    }
+
+    public static boolean getSprinting(GameOptions options) {
+        if (options instanceof StandardGameOptions) {
+            return ((StandardGameOptions) options).sprinting;
+        }
+        return options.keySprint.isPressed();
+    }
+
+    public static void setSprinting(GameOptions options, boolean value) {
+        if (options instanceof StandardGameOptions) {
+            ((StandardGameOptions) options).sprinting = value;
+        } else {
+            options.keySprint.setPressed(options.sprintToggled && value);
         }
     }
 
