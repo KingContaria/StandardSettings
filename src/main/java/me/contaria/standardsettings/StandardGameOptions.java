@@ -111,8 +111,8 @@ public class StandardGameOptions extends GameOptions {
     public static void setSneaking(GameOptions options, boolean value) {
         if (options instanceof StandardGameOptions) {
             ((StandardGameOptions) options).sneaking = value;
-        } else {
-            options.keySneak.setPressed(options.sneakToggled && value);
+        } else if (options.sneakToggled && options.keySneak.isPressed() != value) {
+            options.keySneak.setPressed(true);
         }
     }
 
@@ -126,8 +126,8 @@ public class StandardGameOptions extends GameOptions {
     public static void setSprinting(GameOptions options, boolean value) {
         if (options instanceof StandardGameOptions) {
             ((StandardGameOptions) options).sprinting = value;
-        } else {
-            options.keySprint.setPressed(options.sprintToggled && value);
+        } else if (options.sprintToggled && options.keySprint.isPressed() != value) {
+            options.keySprint.setPressed(true);
         }
     }
 
