@@ -1,6 +1,7 @@
 package me.contaria.standardsettings;
 
 import com.google.gson.JsonParseException;
+import com.mojang.blaze3d.platform.GlStateManager;
 import me.contaria.standardsettings.options.*;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.screen.Screen;
@@ -103,7 +104,20 @@ public class StandardSettingsConfig implements SpeedrunConfig {
             }, (options, doubleOption) -> option.getText()).createButton(options, 0, 0, 120);
         });
         this.register("biomeBlendRadius", "options.video", Option.BIOME_BLEND_RADIUS);
-        this.register("graphicsMode", "options.video", Option.GRAPHICS, options -> options.graphicsMode.getId());
+        this.register(new CyclingOptionStandardSetting("graphicsMode", "options.video", this.options, Option.GRAPHICS, options -> options.graphicsMode.getId()) {
+            @Override
+            public void set(GameOptions options, Integer value) {
+                // see Option.GRAPHICS's setter
+                options.graphicsMode = GraphicsMode.byId(value);
+                if (!(options instanceof StandardGameOptions)) {
+                    if (options.graphicsMode == GraphicsMode.FABULOUS && (!GlStateManager.supportsGl30() || MinecraftClient.getInstance().method_30049().method_30142())) {
+                        StandardSettings.LOGGER.warn("Set Graphics Mode to 'Fancy' because 'Fabulous!' is not supported on this device.");
+                        options.graphicsMode = GraphicsMode.FANCY;
+                    }
+                    MinecraftClient.getInstance().worldRenderer.reload();
+                }
+            }
+        });
         this.register("renderDistance", "options.video", Option.RENDER_DISTANCE);
         this.register("ao", "options.video", Option.AO, options -> options.ao.getValue());
         this.register("maxFps", "options.video", Option.FRAMERATE_LIMIT);

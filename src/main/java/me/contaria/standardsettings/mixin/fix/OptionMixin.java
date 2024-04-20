@@ -49,4 +49,9 @@ public abstract class OptionMixin {
         }
         return window;
     }
+
+    @ModifyExpressionValue(method = "method_18554", at = @At(value = "INVOKE", target = "Lnet/minecraft/class_5407;method_30137()Z"))
+    private static boolean doNotWarnAboutFabulousGraphics(boolean original, @Local(argsOnly = true) GameOptions options) {
+        return original && !(options instanceof StandardGameOptions);
+    }
 }
