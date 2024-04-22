@@ -39,11 +39,11 @@ public class StandardSettings {
     }
 
     public static void onWorldJoin() {
+        onWorldJoinPending = false;
         for (StandardSetting<?> setting : config.standardSettingsOnWorldJoin) {
             setting.resetOption();
         }
         updateSettings();
-        onWorldJoinPending = false;
         LOGGER.info("Loaded StandardSettings on World Join");
     }
 
