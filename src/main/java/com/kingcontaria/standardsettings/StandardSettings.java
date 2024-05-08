@@ -1,7 +1,6 @@
 package com.kingcontaria.standardsettings;
 
 import com.google.common.io.Files;
-import com.kingcontaria.standardsettings.mixins.accessors.BakedModelManagerAccessor;
 import com.kingcontaria.standardsettings.mixins.accessors.MinecraftClientAccessor;
 import me.jellysquid.mods.sodium.client.SodiumClientMod;
 import me.jellysquid.mods.sodium.client.gui.SodiumGameOptions;
@@ -14,8 +13,12 @@ import net.minecraft.client.render.entity.PlayerModelPart;
 import net.minecraft.client.util.InputUtil;
 import net.minecraft.client.util.VideoMode;
 import net.minecraft.client.util.Window;
+import net.minecraft.network.message.ChatVisibility;
+import net.minecraft.resource.SimpleResourceReload;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.util.Arm;
+import net.minecraft.util.Unit;
+import net.minecraft.util.Util;
 import net.minecraft.util.math.MathHelper;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -24,6 +27,7 @@ import java.io.*;
 import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 
 @Environment(value= EnvType.CLIENT)
 public class StandardSettings {
@@ -165,21 +169,32 @@ public class StandardSettings {
                     case "darknessEffectScale" -> options.getDarknessEffectScale().setValue(Double.parseDouble(strings[1]));
                     case "gamma" -> options.getGamma().setValue(Double.parseDouble(strings[1]));
                     case "renderDistance" -> options.getViewDistance().setValue(Integer.parseInt(strings[1]));
+                    case "simulationDistance" -> options.getSimulationDistance().setValue(Integer.parseInt(strings[1]));
                     case "entityDistanceScaling" -> options.getEntityDistanceScaling().setValue(Double.parseDouble(strings[1]));
                     case "guiScale" -> options.getGuiScale().setValue(Integer.parseInt(strings[1]));
                     case "particles" -> options.getParticles().setValue(ParticlesMode.byId(Integer.parseInt(strings[1])));
                     case "maxFps" -> options.getMaxFps().setValue(Integer.parseInt(strings[1]));
                     case "graphicsMode" -> options.getGraphicsMode().setValue(GraphicsMode.byId(Integer.parseInt(strings[1])));
-                    case "ao" -> options.getAo().setValue(AoMode.byId(Integer.parseInt(strings[1])));
-                    case "renderClouds" -> options.getCloudRenderMod().setValue(strings[1].equals("\"true\"") ? CloudRenderMode.FANCY : strings[1].equals("\"false\"") ? CloudRenderMode.OFF : CloudRenderMode.FAST);
+                    // same conversion logic as net.minecraft.datafixer.fix.OptionsAmbientOcclusionFix.fixValue
+                    case "ao" -> options.getAo().setValue(switch (strings[1]) {
+                        case "false", "0" -> false;
+                        default -> true;
+                    });
+                    case "renderClouds" -> options.getCloudRenderMode().setValue(strings[1].equals("\"true\"") ? CloudRenderMode.FANCY : strings[1].equals("\"false\"") ? CloudRenderMode.OFF : CloudRenderMode.FAST);
                     case "attackIndicator" -> options.getAttackIndicator().setValue(AttackIndicator.byId(Integer.parseInt(strings[1])));
                     case "lang" -> {
-                        client.getLanguageManager().setLanguage(client.getLanguageManager().getLanguage(strings[1]));
-                        client.getLanguageManager().reload(client.getResourceManager());
-                        options.language = client.getLanguageManager().getLanguage().getCode();
+                        final var languages = client.getLanguageManager().getAllLanguages();
+                        final var languageCode = strings[1];
+                        if (languages.containsKey(languageCode)) {
+                            client.getLanguageManager().setLanguage(languageCode);
+                            client.getLanguageManager().reload(client.getResourceManager());
+                            options.language = languageCode;
+                        } else {
+                            LOGGER.warn("No language found for language code '{}', ignoring", languageCode);
+                        }
                     }
                     case "chatVisibility" -> options.getChatVisibility().setValue(ChatVisibility.byId(Integer.parseInt(strings[1])));
-                    case "chatOpacity" -> options.getChtOpacity().setValue(Double.parseDouble(strings[1]));
+                    case "chatOpacity" -> options.getChatOpacity().setValue(Double.parseDouble(strings[1]));
                     case "chatLineSpacing" -> options.getChatLineSpacing().setValue(Double.parseDouble(strings[1]));
                     case "textBackgroundOpacity" -> options.getTextBackgroundOpacity().setValue(Double.parseDouble(strings[1]));
                     case "backgroundForChatOnly" -> options.getBackgroundForChatOnly().setValue(Boolean.parseBoolean(strings[1]));
@@ -200,7 +215,7 @@ public class StandardSettings {
                         if (options.getMipmapLevels().getValue() != Integer.parseInt(strings[1])) {
                             options.getMipmapLevels().setValue(Integer.parseInt(strings[1]));
                             client.setMipmapLevels(options.getMipmapLevels().getValue());
-                            ((BakedModelManagerAccessor)client.getBakedModelManager()).callApply(((BakedModelManagerAccessor)client.getBakedModelManager()).callPrepare(client.getResourceManager(), client.getProfiler()), client.getResourceManager(), client.getProfiler());
+                            reloadBakedModelManager();
                         }
                     }
                     case "mainHand" -> options.getMainArm().setValue("\"left\"".equalsIgnoreCase(strings[1]) ? Arm.LEFT : Arm.RIGHT);
@@ -223,7 +238,8 @@ public class StandardSettings {
                     case "soundCategory" -> {
                         for (SoundCategory soundCategory : SoundCategory.values()) {
                             if (string0_split[1].equals(soundCategory.getName())) {
-                                options.setSoundVolume(soundCategory, Float.parseFloat(strings[1])); break;
+                                options.getSoundVolumeOption(soundCategory).setValue(Double.parseDouble(strings[1]));
+                                break;
                             }
                         }
                     }
@@ -288,7 +304,12 @@ public class StandardSettings {
             client.onResolutionChanged();
         });
 
-        if (fovOnWorldJoin.isPresent() || guiScaleOnWorldJoin.isPresent() || renderDistanceOnWorldJoin.isPresent()) {
+        if (fovOnWorldJoin.isPresent()
+                || guiScaleOnWorldJoin.isPresent()
+                || renderDistanceOnWorldJoin.isPresent()
+                || simulationDistanceOnWorldJoin.isPresent()
+                || entityDistanceScalingOnWorldJoin.isPresent()
+        ) {
             emptyOnWorldJoinOptions();
             options.write();
             LOGGER.info("Changed Settings on World Join ({} ms)", (System.nanoTime() - start) / 1000000.0f);
@@ -315,7 +336,7 @@ public class StandardSettings {
         options.getFov().setValue(check("FOV", options.getFov().getValue(), 30, 110));
         options.getDistortionEffectScale().setValue(check("Distortion Effects", options.getDistortionEffectScale().getValue(), 0, 1, true));
         options.getFovEffectScale().setValue(check("FOV Effects", options.getFovEffectScale().getValue(),0,1, true));
-        options.getGamma().setValue(check("Brightness", options.getGamma().getValue(), 0, 1, true));
+        options.getGamma().setValue(check("Brightness", options.getGamma().getValue(), 0, 5, true));
         options.getViewDistance().setValue(check("Render Distance", options.getViewDistance().getValue(), 2, 32));
         options.getSimulationDistance().setValue(check("Simulation Distance", options.getSimulationDistance().getValue(), 5, 32));
         options.getEntityDistanceScaling().setValue(check("Entity Distance", options.getEntityDistanceScaling().getValue(), 0.5f, 5, true));
@@ -327,7 +348,7 @@ public class StandardSettings {
         options.getGuiScale().setValue(check("GUI Scale", options.getGuiScale().getValue(), 0, Integer.MAX_VALUE));
         options.getMaxFps().setValue(check("Max Framerate", options.getMaxFps().getValue(), 1, 260));
         options.getBiomeBlendRadius().setValue(check("Biome Blend", options.getBiomeBlendRadius().getValue(), 0, 7));
-        options.getChtOpacity().setValue(check("Chat Text Opacity", options.getChtOpacity().getValue(), 0, 1, true));
+        options.getChatOpacity().setValue(check("Chat Text Opacity", options.getChatOpacity().getValue(), 0, 1, true));
         options.getChatLineSpacing().setValue(check("Line Spacing", options.getChatLineSpacing().getValue(), 0, 1, true));
         options.getTextBackgroundOpacity().setValue(check("Text Background Opacity", options.getTextBackgroundOpacity().getValue(), 0, 1, true));
         options.getChatHeightFocused().setValue(check("(Chat) Focused Height", options.getChatHeightFocused().getValue(), 0, 1, false));
@@ -338,18 +359,19 @@ public class StandardSettings {
         if (options.getMipmapLevels().getValue() < 0 || options.getMipmapLevels().getValue() > 4) {
             options.getMipmapLevels().setValue(check("Mipmap Levels", options.getMipmapLevels().getValue(), 0, 4));
             client.setMipmapLevels(options.getMipmapLevels().getValue());
-            ((BakedModelManagerAccessor)client.getBakedModelManager()).callApply(((BakedModelManagerAccessor)client.getBakedModelManager()).callPrepare(client.getResourceManager(), client.getProfiler()), client.getResourceManager(), client.getProfiler());
+            reloadBakedModelManager();
         }
         options.getMouseWheelSensitivity().setValue(check("Scroll Sensitivity", options.getMouseWheelSensitivity().getValue(), 0.01, 10, false));
         for (SoundCategory soundCategory : SoundCategory.values()) {
-            options.setSoundVolume(soundCategory, check("(Music & Sounds) " + SoundCategoryName.valueOf(soundCategory.name()).assignedName, options.getSoundVolume(soundCategory), 0, 1, true));
+            final var settingName = "(Music & Sounds) " + SoundCategoryName.valueOf(soundCategory.name()).assignedName;
+            options.getSoundVolumeOption(soundCategory).setValue((double) check(settingName, options.getSoundVolume(soundCategory), 0, 1, true));
         }
 
         if (renderDistanceOnWorldJoin.isPresent()) {
             renderDistanceOnWorldJoin = Optional.of(check("Render Distance (On World Join)", renderDistanceOnWorldJoin.get(), 2, 32));
         }
         if (simulationDistanceOnWorldJoin.isPresent()) {
-            simulationDistanceOnWorldJoin = Optional.of(check("Render Distance (On World Join)", simulationDistanceOnWorldJoin.get(), 5, 32));
+            simulationDistanceOnWorldJoin = Optional.of(check("Simulation Distance (On World Join)", simulationDistanceOnWorldJoin.get(), 5, 32));
         }
         if (entityDistanceScalingOnWorldJoin.isPresent()) {
             entityDistanceScalingOnWorldJoin = Optional.of(check("Entity Distance (On World Join)", entityDistanceScalingOnWorldJoin.get(), 0.5f, 5, true));
@@ -461,17 +483,18 @@ public class StandardSettings {
                 "darknessEffectScale:" + options.getDarknessEffectScale().getValue() + l +
                 "gamma:" + options.getGamma().getValue() + l +
                 "renderDistance:" + options.getViewDistance().getValue() + l +
+                "simulationDistance:" + options.getSimulationDistance().getValue() + l +
                 "entityDistanceScaling:" + options.getEntityDistanceScaling().getValue() + l +
                 "guiScale:" + options.getGuiScale().getValue() + l +
                 "particles:" + options.getParticles().getValue().getId() + l +
                 "maxFps:" + options.getMaxFps().getValue() + l +
                 "graphicsMode:" + options.getGraphicsMode().getValue().getId() + l +
-                "ao:" + options.getAo().getValue().getId() + l +
-                "renderClouds:\"" + (options.getCloudRenderMod().getValue() == CloudRenderMode.FAST ? "fast" : options.getCloudRenderMod().getValue() == CloudRenderMode.FANCY) + "\"" + l +
+                "ao:" + options.getAo().getValue() + l +
+                "renderClouds:\"" + (options.getCloudRenderMode().getValue() == CloudRenderMode.FAST ? "fast" : options.getCloudRenderMode().getValue() == CloudRenderMode.FANCY) + "\"" + l +
                 "attackIndicator:" + options.getAttackIndicator().getValue().getId() + l +
                 "lang:" + options.language + l +
                 "chatVisibility:" + options.getChatVisibility().getValue().getId() + l +
-                "chatOpacity:" + options.getChtOpacity().getValue() + l +
+                "chatOpacity:" + options.getChatOpacity().getValue() + l +
                 "chatLineSpacing:" + options.getChatLineSpacing().getValue() + l +
                 "textBackgroundOpacity:" + options.getTextBackgroundOpacity().getValue() + l +
                 "backgroundForChatOnly:" + options.getBackgroundForChatOnly().getValue() + l +
@@ -508,10 +531,10 @@ public class StandardSettings {
 
     public static void initializeEntityCulling() {
         if (!FabricLoader.getInstance().getModContainer("sodium").isPresent()) return;
-        Class entityCullingClass;
+        Class<?> entityCullingClass;
         label:
         {
-            for (Class clas : SodiumGameOptions.class.getClasses()) {
+            for (Class<?> clas : SodiumGameOptions.class.getClasses()) {
                 for (Field field : clas.getFields()) {
                     if (field.toString().toLowerCase().contains("entityculling")) {
                         entityCulling[0] = field;
@@ -550,7 +573,7 @@ public class StandardSettings {
         entityCullingTemp.ifPresent(entityCullingBefore -> {
             if (entityCullingBefore != getEntityCulling().get()) {
                 try {
-                    SodiumClientMod.options().writeChanges();
+                    SodiumGameOptions.writeToDisk(SodiumClientMod.options());
                 } catch (IOException e) {
                     LOGGER.error("Failed to save sodium options");
                 }
@@ -594,7 +617,6 @@ public class StandardSettings {
                 lines.add("entityCulling:" + (getEntityCulling().isPresent() ? getEntityCulling().get() : ""));
                 lines.add("f1:");
                 lines.add("guiScaleOnWorldJoin:");
-                lines.add("changeOnResize:false");
             }
         }
 
@@ -618,5 +640,16 @@ public class StandardSettings {
 
     public static String getVersion() {
         return String.join(".", Arrays.stream(version).mapToObj(String::valueOf).toArray(String[]::new));
+    }
+
+    static void reloadBakedModelManager() {
+        SimpleResourceReload.start(
+                client.getResourceManager(),
+                List.of(client.getBakedModelManager()),
+                Util.getMainWorkerExecutor(),
+                Util.getMainWorkerExecutor(),
+                CompletableFuture.completedFuture(Unit.INSTANCE),
+                false
+        ).whenComplete().join();
     }
 }

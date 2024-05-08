@@ -7,7 +7,7 @@ version = project.mod_version
 group = project.maven_group
 
 base {
-	archivesBaseName = project.archives_base_name
+	archivesName = project.archives_base_name
 }
 
 repositories {
@@ -24,7 +24,7 @@ dependencies {
 	mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
 	modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
 
-//	compileOnlyApi files('libs/sodium-fabric-mc1.19.4-0.4.10+build.24.jar')
+	compileOnlyApi files('libs/sodium-fabric-0.5.8+mc1.20.6.jar')
 }
 
 processResources {

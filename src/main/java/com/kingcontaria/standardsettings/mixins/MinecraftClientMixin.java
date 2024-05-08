@@ -4,8 +4,8 @@ import com.kingcontaria.standardsettings.StandardSettings;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.RunArgs;
 import net.minecraft.client.gui.screen.GameMenuScreen;
-import net.minecraft.client.gui.screen.LevelLoadingScreen;
 import net.minecraft.client.gui.screen.Screen;
+import net.minecraft.client.gui.screen.world.LevelLoadingScreen;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -28,7 +28,7 @@ import java.util.stream.Stream;
 
 public abstract class MinecraftClientMixin {
 
-    @Shadow public abstract void openPauseMenu(boolean pause);
+    @Shadow public abstract void openGameMenu(boolean pauseOnly);
 
     @Shadow @Nullable public Screen currentScreen;
     @Shadow private boolean windowFocused;
@@ -121,6 +121,7 @@ public abstract class MinecraftClientMixin {
     }
 
     // reads the last marked StandardSettings version from the file
+    @Unique
     private int[] readVersion(UserDefinedFileAttributeView view) {
         try {
             String name = "standardsettings";
@@ -176,7 +177,7 @@ public abstract class MinecraftClientMixin {
                 return;
             }
             tickCount = 1;
-            openPauseMenu(true);
+            openGameMenu(true);
             StandardSettings.f3PauseSoon = !(currentScreen instanceof GameMenuScreen);
         }
     }
