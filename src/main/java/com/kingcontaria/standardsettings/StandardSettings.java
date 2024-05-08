@@ -18,7 +18,6 @@ import net.minecraft.resource.SimpleResourceReload;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.util.Arm;
 import net.minecraft.util.Unit;
-import net.minecraft.util.Util;
 import net.minecraft.util.math.MathHelper;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -285,7 +284,7 @@ public class StandardSettings {
                 // Some options.txt settings which aren't accessible in vanilla Minecraft and some unnecessary settings (like Multiplayer stuff) are not included.
                 // also has a few extra settings that can be reset that Minecraft doesn't save to options.txt, but are important in speedrunning
             } catch (Exception exception) {
-                LOGGER.warn("Skipping bad StandardSetting: " + line);
+                LOGGER.warn("Skipping bad StandardSetting: " + line, exception);
             }
         }
         KeyBinding.updateKeysByCode();
@@ -646,8 +645,8 @@ public class StandardSettings {
         SimpleResourceReload.start(
                 client.getResourceManager(),
                 List.of(client.getBakedModelManager()),
-                Util.getMainWorkerExecutor(),
-                Util.getMainWorkerExecutor(),
+                Runnable::run,
+                Runnable::run,
                 CompletableFuture.completedFuture(Unit.INSTANCE),
                 false
         ).whenComplete().join();
