@@ -33,9 +33,9 @@ public class StandardSettings {
 
     public static final int[] version = new int[]{1,2,3, 0};
     public static final Logger LOGGER = LogManager.getLogger();
-    public static final MinecraftClient client = MinecraftClient.getInstance();
-    public static final GameOptions options = client.options;
-    private static final Window window = client.getWindow();
+    public static MinecraftClient client;
+    public static GameOptions options;
+    private static Window window;
     public static final File standardoptionsFile = new File(FabricLoader.getInstance().getConfigDir().resolve("standardoptions.txt").toUri());
     public static boolean changeOnWindowActivation = false;
     public static boolean changeOnResize = false;
@@ -47,11 +47,27 @@ public class StandardSettings {
     private static Optional<Double> entityDistanceScalingOnWorldJoin = Optional.empty();
     private static Optional<Integer> fovOnWorldJoin = Optional.empty();
     private static Optional<Integer> guiScaleOnWorldJoin = Optional.empty();
-    public static OptionsCache optionsCache = new OptionsCache(client);
+    public static OptionsCache optionsCache;
     public static String lastWorld;
     public static String[] standardoptionsCache;
     public static Map<File, Long> filesLastModifiedMap;
     private static final Field[] entityCulling = new Field[2];
+
+    /**
+     * True only when loading standard settings during a reset.
+     * Used to override Minecraft's stateful clamping of some option values.
+     */
+    private static boolean resetting;
+
+    /**
+     * Initializes static fields that require the client and its options to be initialized already.
+     */
+    public static void initializeClientRefs() {
+        client = MinecraftClient.getInstance();
+        window = client.getWindow();
+        options = client.options;
+        optionsCache = new OptionsCache(client);
+    }
 
     public static void load() {
         long start = System.nanoTime();
@@ -432,6 +448,14 @@ public class StandardSettings {
 
     private static String asPercent(double value) {
         return value * 100 == (int) (value * 100) ? (int) (value * 100) + "%" : value * 100 + "%";
+    }
+
+    public static void setResetting(boolean resetting) {
+        StandardSettings.resetting = resetting;
+    }
+
+    public static boolean isResetting() {
+        return resetting;
     }
 
     private enum SoundCategoryName {

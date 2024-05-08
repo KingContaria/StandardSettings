@@ -38,6 +38,8 @@ public abstract class MinecraftClientMixin {
     // initialize StandardSettings, doesn't use ClientModInitializer because GameOptions need to be initialized first
     @Inject(method = "<init>", at = @At("RETURN"))
     private void initializeStandardSettings(RunArgs args, CallbackInfo ci) {
+        StandardSettings.initializeClientRefs();
+
         StandardSettings.initializeEntityCulling();
 
         // create standardoptions.txt
