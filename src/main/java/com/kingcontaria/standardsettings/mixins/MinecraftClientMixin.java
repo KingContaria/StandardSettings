@@ -1,12 +1,13 @@
 package com.kingcontaria.standardsettings.mixins;
 
+import com.google.common.base.Suppliers;
 import com.kingcontaria.standardsettings.StandardSettings;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.RunArgs;
 import net.minecraft.client.gui.screen.GameMenuScreen;
 import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.gui.screen.world.LevelLoadingScreen;
 import org.jetbrains.annotations.Nullable;
+import org.spongepowered.asm.mixin.Dynamic;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
@@ -16,24 +17,53 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.attribute.UserDefinedFileAttributeView;
 import java.util.*;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 @Mixin(MinecraftClient.class)
 
 public abstract class MinecraftClientMixin {
-
-    @Shadow public abstract void openGameMenu(boolean pauseOnly);
-
     @Shadow @Nullable public Screen currentScreen;
     @Shadow private boolean windowFocused;
     @Unique
     private int tickCount = -3;
+
+    @Unique
+    private static Method openGameMenuMethod;
+
+    @Unique
+    private static Class<?> levelLoadingScreenClass;
+
+    /**
+     * Initializes symbols by their obfuscated names in order to handle different mappings across Minecraft versions.
+     */
+    @Inject(method = "<clinit>", at = @At("TAIL"))
+    private static void initializeObfuscatedSymbols(CallbackInfo ci) {
+        // this method's obfuscated name is stable, but it's mapped differently in 1.20-1.20.1 vs 1.20.2-1.20.6
+        openGameMenuMethod = Arrays.stream(MinecraftClient.class.getMethods())
+                .filter(method -> method.getParameterCount() == 1 && method.getName().equals("method_20539"))
+                .findAny()
+                .orElseThrow(() -> new RuntimeException("Couldn't find openPauseMenu/openGameMenu method"));
+
+        // this class's obfuscated name is stable, but it's mapped differently in 1.20-1.20.2 vs 1.20.3-1.20.6
+        try {
+            levelLoadingScreenClass = Class.forName(
+                    "net.minecraft.class_3928",
+                    false,
+                    MinecraftClient.class.getClassLoader()
+            );
+        } catch (ClassNotFoundException ex) {
+            throw new IllegalStateException("Couldn't find LevelLoadingScreen class", ex);
+        }
+    }
 
     // initialize StandardSettings, doesn't use ClientModInitializer because GameOptions need to be initialized first
     @Inject(method = "<init>", at = @At("RETURN"))
@@ -156,7 +186,18 @@ public abstract class MinecraftClientMixin {
     }
 
     // save the world file name of the last world
-    @Inject(method = "disconnect(Lnet/minecraft/client/gui/screen/Screen;)V", at = @At("HEAD"))
+    @Dynamic
+    @Inject(
+            method = {
+            // 1.20.5-1.20.6 and others? (mysteriously doesn't work in 1.20.4)
+            "disconnect(Lnet/minecraft/client/gui/screen/Screen;)V",
+            // 1.20.4
+            "Lnet/minecraft/class_310;method_18096(Lnet/minecraft/class_437;)V",
+            },
+            at = @At("HEAD"),
+            require = 1,
+            allow = 1
+    )
     private void cacheOptions(CallbackInfo ci) {
         try {
             StandardSettings.lastWorld = StandardSettings.client.getServer().getIconFile().get().getParent().getFileName().toString();
@@ -166,7 +207,7 @@ public abstract class MinecraftClientMixin {
     }
     @Inject(method = "tick", at = @At("HEAD"))
     private void standardSettings_OnPauseNextTick(CallbackInfo ci) {
-        if (StandardSettings.f3PauseSoon && !(currentScreen instanceof LevelLoadingScreen)) {
+        if (StandardSettings.f3PauseSoon && !levelLoadingScreenClass.isInstance(currentScreen)) {
             // System.out.println("WHATt: " + tickCount); // useful debug line
             if (windowFocused) {
                 StandardSettings.f3PauseSoon = false;
@@ -179,7 +220,11 @@ public abstract class MinecraftClientMixin {
                 return;
             }
             tickCount = 1;
-            openGameMenu(true);
+            try {
+                openGameMenuMethod.invoke(this, true);
+            } catch (IllegalAccessException | InvocationTargetException e) {
+                throw new RuntimeException("Failed to open game menu", e);
+            }
             StandardSettings.f3PauseSoon = !(currentScreen instanceof GameMenuScreen);
         }
     }

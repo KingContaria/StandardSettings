@@ -1,5 +1,6 @@
 package com.kingcontaria.standardsettings;
 
+import com.google.common.base.Suppliers;
 import com.google.common.io.Files;
 import com.kingcontaria.standardsettings.mixins.accessors.MinecraftClientAccessor;
 import me.jellysquid.mods.sodium.client.SodiumClientMod;
@@ -24,9 +25,12 @@ import org.apache.logging.log4j.Logger;
 
 import java.io.*;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 @Environment(value= EnvType.CLIENT)
 public class StandardSettings {
@@ -52,6 +56,38 @@ public class StandardSettings {
     public static String[] standardoptionsCache;
     public static Map<File, Long> filesLastModifiedMap;
     private static final Field[] entityCulling = new Field[2];
+
+    private static Supplier<Consumer<SodiumGameOptions>> saveSodiumOptionsSupplier = Suppliers.memoize(() -> {
+        // Sodium 0.5.5 and earlier
+        final var writeChangesMethod = Arrays.stream(SodiumGameOptions.class.getMethods())
+                .filter(method -> method.getName().equals("writeChanges") && method.getParameterCount() == 0)
+                .findAny();
+        if (writeChangesMethod.isPresent()) {
+            return options -> {
+                try {
+                    writeChangesMethod.get().invoke(options);
+                } catch (IllegalAccessException | InvocationTargetException e) {
+                    throw new RuntimeException("Failed to save Sodium options via writeChanges", e);
+                }
+            };
+        }
+
+        // Sodium 0.5.6+
+        final var writeToDiskMethod = Arrays.stream(SodiumGameOptions.class.getMethods())
+                .filter(method -> method.getName().equals("writeToDisk"))
+                .findAny();
+        if (writeToDiskMethod.isPresent()) {
+            return options -> {
+                try {
+                    writeToDiskMethod.get().invoke(null, SodiumClientMod.options());
+                } catch (IllegalAccessException | InvocationTargetException e) {
+                    throw new RuntimeException("Failed to save Sodium options via writeToDisk", e);
+                }
+            };
+        }
+
+        throw new RuntimeException("Couldn't determine how to write Sodium options to disk (unsupported Sodium version?)");
+    });
 
     /**
      * True only when loading standard settings during a reset.
@@ -595,11 +631,7 @@ public class StandardSettings {
         }
         entityCullingTemp.ifPresent(entityCullingBefore -> {
             if (entityCullingBefore != getEntityCulling().get()) {
-                try {
-                    SodiumGameOptions.writeToDisk(SodiumClientMod.options());
-                } catch (IOException e) {
-                    LOGGER.error("Failed to save sodium options");
-                }
+                saveSodiumOptionsSupplier.get().accept(SodiumClientMod.options());
             }
         });
     }
