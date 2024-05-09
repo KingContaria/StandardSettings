@@ -29,7 +29,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
-import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 @Environment(value= EnvType.CLIENT)
@@ -57,15 +56,15 @@ public class StandardSettings {
     public static Map<File, Long> filesLastModifiedMap;
     private static final Field[] entityCulling = new Field[2];
 
-    private static final Supplier<Consumer<SodiumGameOptions>> saveSodiumOptionsSupplier = Suppliers.memoize(() -> {
+    private static final Supplier<Runnable> saveSodiumOptionsSupplier = Suppliers.memoize(() -> {
         // Sodium 0.5.5 and earlier
         final var writeChangesMethod = Arrays.stream(SodiumGameOptions.class.getMethods())
                 .filter(method -> method.getName().equals("writeChanges") && method.getParameterCount() == 0)
                 .findAny();
         if (writeChangesMethod.isPresent()) {
-            return options -> {
+            return () -> {
                 try {
-                    writeChangesMethod.get().invoke(options);
+                    writeChangesMethod.get().invoke(SodiumClientMod.options());
                 } catch (IllegalAccessException e) {
                     throw new RuntimeException("Failed to access writeChanges when saving Sodium options", e);
                 } catch (InvocationTargetException e) {
@@ -79,7 +78,7 @@ public class StandardSettings {
                 .filter(method -> method.getName().equals("writeToDisk"))
                 .findAny();
         if (writeToDiskMethod.isPresent()) {
-            return options -> {
+            return () -> {
                 try {
                     writeToDiskMethod.get().invoke(null, SodiumClientMod.options());
                 } catch (IllegalAccessException e) {
@@ -638,7 +637,7 @@ public class StandardSettings {
         }
         entityCullingTemp.ifPresent(entityCullingBefore -> {
             if (entityCullingBefore != getEntityCulling().get()) {
-                saveSodiumOptionsSupplier.get().accept(SodiumClientMod.options());
+                saveSodiumOptionsSupplier.get().run();
             }
         });
     }
