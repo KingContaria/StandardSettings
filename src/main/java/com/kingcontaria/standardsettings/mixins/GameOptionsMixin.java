@@ -1,6 +1,7 @@
 package com.kingcontaria.standardsettings.mixins;
 
 import com.kingcontaria.standardsettings.StandardSettings;
+import com.kingcontaria.standardsettings.mixins.accessors.GameOptionsAccessor;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.option.GameOptions;
 import net.minecraft.client.option.SimpleOption;
@@ -10,6 +11,8 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.ModifyArgs;
 import org.spongepowered.asm.mixin.injection.Slice;
 import org.spongepowered.asm.mixin.injection.invoke.arg.Args;
+
+import java.util.function.Consumer;
 
 @Mixin(GameOptions.class)
 public class GameOptionsMixin {
@@ -37,5 +40,10 @@ public class GameOptionsMixin {
                     ? MAX_ENCODABLE_GUI_SCALE
                     : minecraftClient.getWindow().calculateScaleFactor(0, minecraftClient.forcesUnicodeFont());
         }, MAX_ENCODABLE_GUI_SCALE));
+
+        // This is equivalent to the `changeCallback` that vanilla passes in 1.20.5-1.20.6.
+        // We set it explicitly here because vanilla passes a no-op in 1.20-1.20.4,
+        // leading to a mismatch between the option's internal value and the rendered GUI scale.
+        args.set(5, (Consumer<Integer>)(value -> ((GameOptionsAccessor) this).getClient().onResolutionChanged()));
     }
 }

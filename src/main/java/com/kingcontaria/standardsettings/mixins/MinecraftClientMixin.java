@@ -1,6 +1,5 @@
 package com.kingcontaria.standardsettings.mixins;
 
-import com.google.common.base.Suppliers;
 import com.kingcontaria.standardsettings.StandardSettings;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.RunArgs;
@@ -25,7 +24,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.attribute.UserDefinedFileAttributeView;
 import java.util.*;
-import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 @Mixin(MinecraftClient.class)
@@ -42,27 +40,50 @@ public abstract class MinecraftClientMixin {
     @Unique
     private static Class<?> levelLoadingScreenClass;
 
+    // includes both intermediary and yarn names for compatibility with non-production environments.
+    @Unique
+    private static final List<String> OPEN_GAME_MENU_METHOD_NAMES = List.of(
+            // intermediary for 1.20-1.20.6
+            "method_20539",
+            // yarn for 1.20.2-1.20.6
+            "openGameMenu",
+            // yarn for 1.20-1.20.1
+            "openPauseMenu"
+    );
+
+    // includes both intermediary and yarn names for compatibility with non-production environments.
+    @Unique
+    private static final List<String> LEVEL_LOADING_SCREEN_CLASS_NAMES = List.of(
+            // intermediary for 1.20-1.20.6
+            "net.minecraft.class_3928",
+            // yarn for 1.20.3-1.20.6
+            "net.minecraft.client.gui.screen.world.LevelLoadingScreen",
+            // yarn for 1.20-1.20.2
+            "net.minecraft.client.gui.screen.LevelLoadingScreen"
+    );
+
     /**
-     * Initializes symbols by their obfuscated names in order to handle different mappings across Minecraft versions.
+     * Initializes handles to symbols that have different mappings across Minecraft versions
+     * and thus can't be referenced statically.
      */
     @Inject(method = "<clinit>", at = @At("TAIL"))
-    private static void initializeObfuscatedSymbols(CallbackInfo ci) {
-        // this method's obfuscated name is stable, but it's mapped differently in 1.20-1.20.1 vs 1.20.2-1.20.6
+    private static void initializeMultiMappedSymbolHandles(CallbackInfo ci) {
         openGameMenuMethod = Arrays.stream(MinecraftClient.class.getMethods())
-                .filter(method -> method.getParameterCount() == 1 && method.getName().equals("method_20539"))
+                .filter(method -> method.getParameterCount() == 1 && OPEN_GAME_MENU_METHOD_NAMES.contains(method.getName()))
                 .findAny()
                 .orElseThrow(() -> new RuntimeException("Couldn't find openPauseMenu/openGameMenu method"));
 
-        // this class's obfuscated name is stable, but it's mapped differently in 1.20-1.20.2 vs 1.20.3-1.20.6
-        try {
-            levelLoadingScreenClass = Class.forName(
-                    "net.minecraft.class_3928",
-                    false,
-                    MinecraftClient.class.getClassLoader()
-            );
-        } catch (ClassNotFoundException ex) {
-            throw new IllegalStateException("Couldn't find LevelLoadingScreen class", ex);
-        }
+        levelLoadingScreenClass = LEVEL_LOADING_SCREEN_CLASS_NAMES.stream()
+                .map(name -> {
+                    try {
+                        return Class.forName(name, false, MinecraftClient.class.getClassLoader());
+                    } catch (ClassNotFoundException ignored) {
+                        return null;
+                    }
+                })
+                .filter(Objects::nonNull)
+                .findAny()
+                .orElseThrow(() -> new IllegalArgumentException("Couldn't find LevelLoadingScreen class"));
     }
 
     // initialize StandardSettings, doesn't use ClientModInitializer because GameOptions need to be initialized first
