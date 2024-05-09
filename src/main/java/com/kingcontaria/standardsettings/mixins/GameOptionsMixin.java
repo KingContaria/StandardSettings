@@ -20,17 +20,14 @@ public class GameOptionsMixin {
             method = "<init>",
             at = @At(
                     value = "INVOKE",
-                    target = "Lnet/minecraft/client/option/SimpleOption;<init>(Ljava/lang/String;Lnet/minecraft/client/option/SimpleOption$TooltipFactory;Lnet/minecraft/client/option/SimpleOption$ValueTextGetter;Lnet/minecraft/client/option/SimpleOption$Callbacks;Ljava/lang/Object;Ljava/util/function/Consumer;)V"
-
+                    target = "Lnet/minecraft/client/option/SimpleOption;<init>(Ljava/lang/String;Lnet/minecraft/client/option/SimpleOption$TooltipFactory;Lnet/minecraft/client/option/SimpleOption$ValueTextGetter;Lnet/minecraft/client/option/SimpleOption$Callbacks;Ljava/lang/Object;Ljava/util/function/Consumer;)V",
+                    ordinal = 0
             ),
             slice = @Slice(
                     from = @At(value = "CONSTANT", args = "stringValue=options.guiScale")
             )
     )
     private void overrideGuiScaleCallbacks(Args args) {
-        if (!args.get(0).equals("options.guiScale")) {
-            return;
-        }
         // Normally when setting the GUI scale option's value, the game caps the value according to the current window size.
         // This is undesirable when loading StandardSettings values, since the window may be small now but be enlarged later in the reset.
         // We override the callbacks to avoid capping the GUI scale value while loading StandardSettings values.
