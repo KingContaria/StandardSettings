@@ -57,7 +57,7 @@ public class StandardSettings {
     public static Map<File, Long> filesLastModifiedMap;
     private static final Field[] entityCulling = new Field[2];
 
-    private static Supplier<Consumer<SodiumGameOptions>> saveSodiumOptionsSupplier = Suppliers.memoize(() -> {
+    private static final Supplier<Consumer<SodiumGameOptions>> saveSodiumOptionsSupplier = Suppliers.memoize(() -> {
         // Sodium 0.5.5 and earlier
         final var writeChangesMethod = Arrays.stream(SodiumGameOptions.class.getMethods())
                 .filter(method -> method.getName().equals("writeChanges") && method.getParameterCount() == 0)
@@ -66,8 +66,10 @@ public class StandardSettings {
             return options -> {
                 try {
                     writeChangesMethod.get().invoke(options);
-                } catch (IllegalAccessException | InvocationTargetException e) {
-                    throw new RuntimeException("Failed to save Sodium options via writeChanges", e);
+                } catch (IllegalAccessException e) {
+                    throw new RuntimeException("Failed to access writeChanges when saving Sodium options", e);
+                } catch (InvocationTargetException e) {
+                    LOGGER.error("Failed to save Sodium options via writeChanges", e.getCause());
                 }
             };
         }
@@ -80,8 +82,10 @@ public class StandardSettings {
             return options -> {
                 try {
                     writeToDiskMethod.get().invoke(null, SodiumClientMod.options());
-                } catch (IllegalAccessException | InvocationTargetException e) {
-                    throw new RuntimeException("Failed to save Sodium options via writeToDisk", e);
+                } catch (IllegalAccessException e) {
+                    throw new RuntimeException("Failed to access writeToDisk when saving Sodium options", e);
+                } catch (InvocationTargetException e) {
+                    LOGGER.error("Failed to save Sodium options via writeToDisk", e.getCause());
                 }
             };
         }
