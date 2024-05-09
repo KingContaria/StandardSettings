@@ -8,6 +8,7 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.ModifyArgs;
+import org.spongepowered.asm.mixin.injection.Slice;
 import org.spongepowered.asm.mixin.injection.invoke.arg.Args;
 
 @Mixin(GameOptions.class)
@@ -21,6 +22,9 @@ public class GameOptionsMixin {
                     value = "INVOKE",
                     target = "Lnet/minecraft/client/option/SimpleOption;<init>(Ljava/lang/String;Lnet/minecraft/client/option/SimpleOption$TooltipFactory;Lnet/minecraft/client/option/SimpleOption$ValueTextGetter;Lnet/minecraft/client/option/SimpleOption$Callbacks;Ljava/lang/Object;Ljava/util/function/Consumer;)V"
 
+            ),
+            slice = @Slice(
+                    from = @At(value = "CONSTANT", args = "stringValue=options.guiScale")
             )
     )
     private void overrideGuiScaleCallbacks(Args args) {
