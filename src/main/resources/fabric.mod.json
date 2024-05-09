@@ -6,7 +6,9 @@
   "name": "StandardSettings",
   "description": "Resetting Mod for Minecraft Speedrunning",
   "authors": [
-    "KingContaria"
+    "KingContaria",
+    "Slackow",
+    "Knawk"
   ],
   "contact": {
     "sources": "https://github.com/KingContaria/StandardSettings"
