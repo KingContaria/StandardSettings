@@ -240,12 +240,15 @@ public class StandardSettings {
                     case "lang" -> {
                         final var languages = client.getLanguageManager().getAllLanguages();
                         final var languageCode = strings[1];
-                        if (languages.containsKey(languageCode)) {
-                            client.getLanguageManager().setLanguage(languageCode);
-                            client.getLanguageManager().reload(client.getResourceManager());
-                            options.language = languageCode;
-                        } else {
-                            LOGGER.warn("No language found for language code '{}', ignoring", languageCode);
+                        // reloading languages is slow in 1.20+, so skip it if unnecessary
+                        if (!Objects.equals(client.getLanguageManager().getLanguage(), languageCode)) {
+                            if (languages.containsKey(languageCode)) {
+                                client.getLanguageManager().setLanguage(languageCode);
+                                client.getLanguageManager().reload(client.getResourceManager());
+                                options.language = languageCode;
+                            } else {
+                                LOGGER.warn("No language found for language code '{}', ignoring", languageCode);
+                            }
                         }
                     }
                     case "chatVisibility" -> options.getChatVisibility().setValue(ChatVisibility.byId(Integer.parseInt(strings[1])));
