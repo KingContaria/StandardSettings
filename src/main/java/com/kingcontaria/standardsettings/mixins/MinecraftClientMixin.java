@@ -1,6 +1,7 @@
 package com.kingcontaria.standardsettings.mixins;
 
 import com.kingcontaria.standardsettings.StandardSettings;
+import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.RunArgs;
 import net.minecraft.client.gui.screen.GameMenuScreen;
@@ -16,8 +17,9 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.io.File;
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
@@ -35,32 +37,10 @@ public abstract class MinecraftClientMixin {
     private int tickCount = -3;
 
     @Unique
-    private static Method openGameMenuMethod;
+    private static MethodHandle openGameMenuMethod;
 
     @Unique
     private static Class<?> levelLoadingScreenClass;
-
-    // includes both intermediary and yarn names for compatibility with non-production environments.
-    @Unique
-    private static final List<String> OPEN_GAME_MENU_METHOD_NAMES = List.of(
-            // intermediary for 1.20-1.20.6
-            "method_20539",
-            // yarn for 1.20.2-1.20.6
-            "openGameMenu",
-            // yarn for 1.20-1.20.1
-            "openPauseMenu"
-    );
-
-    // includes both intermediary and yarn names for compatibility with non-production environments.
-    @Unique
-    private static final List<String> LEVEL_LOADING_SCREEN_CLASS_NAMES = List.of(
-            // intermediary for 1.20-1.20.6
-            "net.minecraft.class_3928",
-            // yarn for 1.20.3-1.20.6
-            "net.minecraft.client.gui.screen.world.LevelLoadingScreen",
-            // yarn for 1.20-1.20.2
-            "net.minecraft.client.gui.screen.LevelLoadingScreen"
-    );
 
     /**
      * Initializes handles to symbols that have different mappings across Minecraft versions
@@ -68,22 +48,23 @@ public abstract class MinecraftClientMixin {
      */
     @Inject(method = "<clinit>", at = @At("TAIL"))
     private static void initializeMultiMappedSymbolHandles(CallbackInfo ci) {
-        openGameMenuMethod = Arrays.stream(MinecraftClient.class.getMethods())
-                .filter(method -> method.getParameterCount() == 1 && OPEN_GAME_MENU_METHOD_NAMES.contains(method.getName()))
-                .findAny()
-                .orElseThrow(() -> new RuntimeException("Couldn't find openPauseMenu/openGameMenu method"));
+        final var resolver = FabricLoader.getInstance().getMappingResolver();
 
-        levelLoadingScreenClass = LEVEL_LOADING_SCREEN_CLASS_NAMES.stream()
-                .map(name -> {
-                    try {
-                        return Class.forName(name, false, MinecraftClient.class.getClassLoader());
-                    } catch (ClassNotFoundException ignored) {
-                        return null;
-                    }
-                })
-                .filter(Objects::nonNull)
-                .findAny()
-                .orElseThrow(() -> new IllegalArgumentException("Couldn't find LevelLoadingScreen class"));
+        var openGameMenuMethodName = resolver.mapMethodName("intermediary", "net.minecraft.class_310", "method_20539", "(Z)V");
+        try {
+            StandardSettings.LOGGER.info(openGameMenuMethodName);
+            openGameMenuMethod = MethodHandles.publicLookup().findVirtual(
+                    MinecraftClient.class, openGameMenuMethodName, MethodType.methodType(void.class, boolean.class));
+        } catch (NoSuchMethodException | IllegalAccessException e) {
+            throw new RuntimeException("Couldn't find openGameMenu/openPauseMenu method");
+        }
+
+        var levelLoadingScreenClassName = resolver.mapClassName("intermediary", "net.minecraft.class_3928");
+        try {
+            levelLoadingScreenClass = Class.forName(levelLoadingScreenClassName, false, MinecraftClient.class.getClassLoader());
+        } catch (ClassNotFoundException ignored) {
+            throw new IllegalArgumentException("Couldn't find LevelLoadingScreen class");
+        }
     }
 
     // initialize StandardSettings, doesn't use ClientModInitializer because GameOptions need to be initialized first
@@ -242,10 +223,14 @@ public abstract class MinecraftClientMixin {
             }
             tickCount = 1;
             try {
-                openGameMenuMethod.invoke(this, true);
-            } catch (IllegalAccessException | InvocationTargetException e) {
+                //noinspection DataFlowIssue
+                final var client = (MinecraftClient) (Object) this;
+                //noinspection UnreachableCode
+                openGameMenuMethod.invoke(client, true);
+            } catch (Throwable e) {
                 throw new RuntimeException("Failed to open game menu", e);
             }
+            //noinspection UnreachableCode
             StandardSettings.f3PauseSoon = !(currentScreen instanceof GameMenuScreen);
         }
     }
