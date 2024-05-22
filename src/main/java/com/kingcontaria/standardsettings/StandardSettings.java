@@ -5,15 +5,12 @@ import com.kingcontaria.standardsettings.mixins.accessors.LanguageManagerAccesso
 import com.kingcontaria.standardsettings.mixins.accessors.MinecraftClientAccessor;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.hud.ChatVisibility;
+import net.minecraft.client.class_1659;
 import net.minecraft.client.options.GameOptions;
 import net.minecraft.client.options.KeyBinding;
 import net.minecraft.client.render.entity.EntityRenderDispatcher;
-import net.minecraft.client.sound.SoundCategory;
 import net.minecraft.client.util.Window;
-import net.minecraft.world.Difficulty;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import net.minecraft.util.logging.LogManager;
 import org.lwjgl.opengl.Display;
 
 import java.io.*;
@@ -23,7 +20,7 @@ import java.util.*;
 public class StandardSettings {
 
     public static final int[] version = new int[]{1,2,2,0};
-    public static final Logger LOGGER = LogManager.getLogger();
+    public static final LogManager LOGGER = MinecraftClient.getInstance().getLogManager();
     private static final MinecraftClient client = MinecraftClient.getInstance();
     public static final GameOptions options = client.options;
     public static final File standardoptionsFile = new File(FabricLoader.getInstance().getConfigDir().resolve("standardoptions.txt").toUri());
@@ -36,7 +33,6 @@ public class StandardSettings {
     public static String lastWorld;
     public static String[] standardoptionsCache;
     public static Map<File, Long> filesLastModifiedMap;
-    public static float defaultFOV;
 
     public static void load() {
         long start = System.nanoTime();
@@ -46,7 +42,7 @@ public class StandardSettings {
         try {
             if (!standardoptionsFile.exists()) {
                 standardoptionsCache = null;
-                LOGGER.error("standardoptions.txt is missing");
+                LOGGER.severe("standardoptions.txt is missing");
                 return;
             }
 
@@ -62,16 +58,16 @@ public class StandardSettings {
                 LOGGER.info("Reloading & caching StandardSettings...");
                 List<String> lines = resolveGlobalFile(standardoptionsFile);
                 if (lines == null) {
-                    LOGGER.error("standardoptions.txt is empty");
+                    LOGGER.severe("standardoptions.txt is empty");
                     return;
                 }
                 standardoptionsCache = lines.toArray(new String[0]);
             }
             load(standardoptionsCache);
-            LOGGER.info("Finished loading StandardSettings ({} ms)", (System.nanoTime() - start) / 1000000.0f);
+            LOGGER.info("Finished loading StandardSettings (" + (System.nanoTime() - start) / 1000000.0f + " ms)");
         } catch (Exception e) {
             standardoptionsCache = null;
-            LOGGER.error("Failed to load StandardSettings", e);
+            LOGGER.severe("Failed to load StandardSettings", e);
         }
     }
 
@@ -119,11 +115,13 @@ public class StandardSettings {
                 String[] string0_split = strings[0].split("_", 2);
 
                 switch (string0_split[0]) {
+                    case "music": options.musicVolume = Float.parseFloat(strings[1]); break;
+                    case "sound": options.soundVolume = Float.parseFloat(strings[1]); break;
                     case "invertYMouse": options.invertYMouse = Boolean.parseBoolean(strings[1]); break;
                     case "mouseSensitivity": options.sensitivity = Float.parseFloat(strings[1]); break;
-                    case "fov": options.fov = Float.parseFloat(strings[1]) < 5 ? Float.parseFloat(strings[1]) * (defaultFOV / 70.0f * 39.0f + 1.0f) + defaultFOV : (Integer.parseInt(strings[1]) - (70.0f - defaultFOV)) / (40.0f - defaultFOV / 70.0f * 39.0f); break;
+                    case "fov": options.fov = Float.parseFloat(strings[1]); break;
                     case "gamma": options.gamma = Float.parseFloat(strings[1]); break;
-                    case "renderDistance": options.viewDistance = Integer.parseInt(strings[1]); break;
+                    case "viewDistance": options.renderDistance = Integer.parseInt(strings[1]); break;
                     case "guiScale": options.guiScale = Integer.parseInt(strings[1]); break;
                     case "particles": options.particle = Integer.parseInt(strings[1]); break;
                     case "bobView": options.bobView = Boolean.parseBoolean(strings[1]); break;
@@ -131,17 +129,35 @@ public class StandardSettings {
                         if (options.anaglyph3d != (options.anaglyph3d = Boolean.parseBoolean(strings[1]))) {
                             client.getTextureManager().reload(client.getResourceManager());
                         } break;
-                    case "maxFps": options.maxFramerate = Integer.parseInt(strings[1]); break;
-                    case "difficulty": options.difficulty = Difficulty.byOrdinal(Integer.parseInt(strings[1])); break;
+                    case "advancedOpengl": options.advancedOpengl = Boolean.parseBoolean(strings[1]); break;
+                    case "fpsLimit": options.maxFramerate = Integer.parseInt(strings[1]); break;
+                    case "difficulty": options.difficultyLevel = Integer.parseInt(strings[1]); break;
                     case "fancyGraphics": options.fancyGraphics = Boolean.parseBoolean(strings[1]); break;
                     case "ao": options.ao = strings[1].equals("true") ? 2 : (strings[1].equals("false") ? 0 : Integer.parseInt(strings[1])); break;
                     case "clouds": options.renderClouds = Boolean.parseBoolean(strings[1]); break;
+                    case "skin":
+                        if (!options.currentTexturePackName.equals(strings[1])) {
+                            Optional<class_1659> selectedPack = client.getResourcePackLoader().method_5904().stream().filter(obj -> strings[1].equals(((class_1659) obj).method_5914())).findFirst();
+                            if (selectedPack.isPresent() || "Default".equals(strings[1])) {
+                                if (selectedPack.isPresent()) {
+                                    client.getResourcePackLoader().method_5903(selectedPack.get());
+                                } else {
+                                    client.getResourcePackLoader().method_5903();
+                                }
+                                client.stitchTextures();
+                                options.currentTexturePackName = client.getResourcePackLoader().method_5906();
+                            } else {
+                                StandardSettings.LOGGER.warn("resource pack " + strings[1] + " was not found");
+                            }
+                        } break;
                     case "lang":
                         if (!options.language.equals(strings[1]) && ((LanguageManagerAccessor)client.getLanguageManager()).getField_6653().containsKey(strings[1])) {
                             client.getLanguageManager().method_5939(((LanguageManagerAccessor)client.getLanguageManager()).getField_6653().get(options.language = strings[1]));
                             client.getLanguageManager().reload(client.getResourceManager());
+                            client.textRenderer.method_960(client.getLanguageManager().method_5938());
+                            client.textRenderer.setRightToLeft(client.getLanguageManager().method_5941());
                         } break;
-                    case "chatVisibility": options.field_7671 = ChatVisibility.get(Integer.parseInt(strings[1])); break;
+                    case "chatVisibility": options.chatVisibility = Integer.parseInt(strings[1]); break;
                     case "chatColors": options.chatColor = Boolean.parseBoolean(strings[1]); break;
                     case "chatLinks": options.chatLink = Boolean.parseBoolean(strings[1]); break;
                     case "chatLinksPrompt": options.chatLinkPrompt = Boolean.parseBoolean(strings[1]); break;
@@ -152,7 +168,7 @@ public class StandardSettings {
                                 client.toggleFullscreen();
                                 options.fullscreen = Boolean.parseBoolean(strings[1]);
                             } else {
-                                LOGGER.error("Could not reset fullscreen mode because window wasn't focused!");
+                                LOGGER.severe("Could not reset fullscreen mode because window wasn't focused!");
                             }
                         } break;
                     case "enableVsync": Display.setVSyncEnabled(options.vsync = Boolean.parseBoolean(strings[1])); break;
@@ -164,23 +180,10 @@ public class StandardSettings {
                     case "chatHeightUnfocused": options.chatHeightUnfocused = Float.parseFloat(strings[1]); break;
                     case "chatScale": options.chatScale = Float.parseFloat(strings[1]); break;
                     case "chatWidth": options.chatWidth = Float.parseFloat(strings[1]); break;
-                    case "mipmapLevels":
-                        reload = options.mipmapLevels != (options.mipmapLevels = Integer.parseInt(strings[1])) || reload;
-                        client.getSpriteAtlasTexture().setMaxTextureSize(options.mipmapLevels); break;
-                    case "anisotropicFiltering":
-                        reload = options.field_7638 != (options.field_7638 = Integer.parseInt(strings[1])) || reload;
-                        client.getSpriteAtlasTexture().method_7004(options.field_7638); break;
-                    case "forceUnicodeFont": client.textRenderer.method_960(client.getLanguageManager().method_5938() || (options.forceUnicode = Boolean.parseBoolean(strings[1]))); break;
                     case "key":
                         for (KeyBinding keyBinding : options.keysAll) {
-                            if (string0_split[1].equals(keyBinding.getTranslationKey())) {
-                                keyBinding.setCode(Integer.parseInt(strings[1])); break;
-                            }
-                        } break;
-                    case "soundCategory":
-                        for (SoundCategory soundCategory : SoundCategory.values()) {
-                            if (string0_split[1].equals(soundCategory.getName())) {
-                                options.setSoundVolume(soundCategory, Float.parseFloat(strings[1])); break;
+                            if (string0_split[1].equals(keyBinding.translationKey)) {
+                                keyBinding.code = Integer.parseInt(strings[1]); break;
                             }
                         } break;
                     case "hitboxes": EntityRenderDispatcher.field_5192 = Boolean.parseBoolean(strings[1]); break;
@@ -189,7 +192,7 @@ public class StandardSettings {
                         if (!strings[1].split("\\.")[0].equals("root")) break;
                         ((MinecraftClientAccessor)client).setOpenProfilerSection(strings[1]); break;
                     case "f1": options.hudHidden = Boolean.parseBoolean(strings[1]); break;
-                    case "fovOnWorldJoin": fovOnWorldJoin = Optional.of(Float.parseFloat(strings[1]) < 5 ? Float.parseFloat(strings[1]) * (defaultFOV / 7 * 4) + defaultFOV : (Integer.parseInt(strings[1]) - (70.0f - defaultFOV)) / (40.0f - defaultFOV / 70.0f * 39.0f)); break;
+                    case "fovOnWorldJoin": fovOnWorldJoin = Optional.of(Float.parseFloat(strings[1])); break;
                     case "guiScaleOnWorldJoin": guiScaleOnWorldJoin = Optional.of(Integer.parseInt(strings[1])); break;
                     case "renderDistanceOnWorldJoin": renderDistanceOnWorldJoin = Optional.of(Integer.parseInt(strings[1])); break;
                     case "changeOnResize": changeOnResize = Boolean.parseBoolean(strings[1]); break;
@@ -207,12 +210,12 @@ public class StandardSettings {
     public static void changeSettingsOnJoin() {
         long start = System.nanoTime();
 
-        renderDistanceOnWorldJoin.ifPresent(viewDistance -> options.viewDistance = viewDistance);
+        renderDistanceOnWorldJoin.ifPresent(renderDistance -> options.renderDistance = renderDistance);
         fovOnWorldJoin.ifPresent(fov -> options.fov = fov);
         guiScaleOnWorldJoin.ifPresent(guiScale -> {
             options.guiScale = guiScale;
             if (client.currentScreen != null) {
-                Window window = new Window(client, client.width, client.height);
+                Window window = new Window(client.options, client.width, client.height);
                 client.currentScreen.init(client, window.getWidth(), window.getHeight());
             }
         });
@@ -220,7 +223,7 @@ public class StandardSettings {
         if (fovOnWorldJoin.isPresent() || guiScaleOnWorldJoin.isPresent() || renderDistanceOnWorldJoin.isPresent()) {
             emptyOnWorldJoinOptions();
             options.save();
-            LOGGER.info("Changed Settings on World Join ({} ms)", (System.nanoTime() - start) / 1000000.0f);
+            LOGGER.info("Changed Settings on World Join (" + (System.nanoTime() - start) / 1000000.0f + " ms)");
         }
     }
 
@@ -238,32 +241,24 @@ public class StandardSettings {
         long start = System.nanoTime();
 
         options.sensitivity = check("Sensitivity", options.sensitivity * 2, 0, 2, true) / 2;
-        options.fov = check("FOV", options.fov, defaultFOV / 7 * 3, defaultFOV / 70 * 109 + 1, false);
-        if (defaultFOV == 70.0f) options.fov = (int) options.fov;
+        options.fov = check("FOV", options.fov, 0, 1, true);
         options.gamma = check("Brightness", options.gamma, 0, 5, true);
-        options.viewDistance = check("Render Distance", options.viewDistance, 2, 16);
+        options.renderDistance = check("Render Distance", options.renderDistance, 0, 3);
         options.guiScale = check("GUI Scale", options.guiScale, 0, 3);
-        options.maxFramerate = check("Max Framerate", options.maxFramerate, 1, 260);
+        options.maxFramerate = check("Max Framerate", options.maxFramerate, 0, 2);
         options.chatOpacity = check("(Chat) Opacity", options.chatOpacity, 0, 1, true);
         options.chatHeightFocused = check("(Chat) Focused Height", options.chatHeightFocused, 0, 1, false);
         options.chatHeightUnfocused = check("(Chat) Unfocused Height", options.chatHeightUnfocused, 0, 1, false);
         options.chatScale = check("(Chat) Scale", options.chatScale, 0, 1, true);
         options.chatWidth = check("(Chat) Width", options.chatWidth, 0, 1, false);
-        if (options.mipmapLevels != (options.mipmapLevels = check("Mipmap Levels", options.mipmapLevels, 0, 4)) || options.field_7638 != (options.field_7638 = check("Anisotropic Filtering", options.field_7638, 0, 16))) {
-            client.getSpriteAtlasTexture().method_7004(options.field_7638);
-            client.getSpriteAtlasTexture().setMaxTextureSize(options.mipmapLevels);
-            client.getSpriteAtlasTexture().load(client.getResourceManager());
-        }
-        for (SoundCategory soundCategory : SoundCategory.values()) {
-            options.setSoundVolume(soundCategory, check("(Music & Sounds) " + SoundCategoryName.valueOf(soundCategory.name()).assignedName, options.getSoundVolume(soundCategory), 0, 1, true));
-        }
+        options.musicVolume = check("Music", options.musicVolume, 0, 1, true);
+        options.soundVolume = check("Sound", options.soundVolume, 0, 1, true);
 
         if (renderDistanceOnWorldJoin.isPresent()) {
             renderDistanceOnWorldJoin = Optional.of(check("Render Distance (On World Join)", renderDistanceOnWorldJoin.get(), 2, 16));
         }
         if (fovOnWorldJoin.isPresent()) {
-            fovOnWorldJoin = Optional.of(check("FOV (On World Join)", fovOnWorldJoin.get(), defaultFOV / 7 * 3, defaultFOV / 70 * 109 + 1, false));
-            if (defaultFOV == 70.0f) fovOnWorldJoin = Optional.of((float) fovOnWorldJoin.get().intValue());
+            fovOnWorldJoin = Optional.of(check("FOV (On World Join)", fovOnWorldJoin.get(), 0, 1, false));
         }
         if (guiScaleOnWorldJoin.isPresent()) {
             guiScaleOnWorldJoin = Optional.of(check("GUI Scale (On World Join)", guiScaleOnWorldJoin.get(), 0, 3));
@@ -271,18 +266,18 @@ public class StandardSettings {
 
         options.save();
 
-        LOGGER.info("Finished checking and saving Settings ({} ms)", (System.nanoTime() - start) / 1000000.0f);
+        LOGGER.info("Finished checking and saving Settings (" + (System.nanoTime() - start) / 1000000.0f + " ms)");
     }
 
     // check methods return the value of the setting, adjusted to be in the given bounds
     // if a setting is outside the bounds, it also gives a log output to signal the value has been corrected
     private static float check(String settingName, float setting, float min, float max, boolean percent) {
         if (setting < min) {
-            LOGGER.warn(settingName + " was too low! ({})", percent ? asPercent(setting) : setting);
+            LOGGER.warn(settingName + " was too low! (" + (percent ? asPercent(setting) : setting) + ")");
             return min;
         }
         if (setting > max) {
-            LOGGER.warn(settingName + " was too high! ({})", percent ? asPercent(setting) : setting);
+            LOGGER.warn(settingName + " was too high! (" + (percent ? asPercent(setting) : setting) + ")");
             return max;
         }
         return setting;
@@ -290,11 +285,11 @@ public class StandardSettings {
 
     private static int check(String settingName, int setting, int min, int max) {
         if (setting < min) {
-            LOGGER.warn(settingName + " was too low! ({})", setting);
+            LOGGER.warn(settingName + " was too low! (" + setting + ")");
             return min;
         }
         if (setting > max) {
-            LOGGER.warn(settingName + " was too high! ({})", setting);
+            LOGGER.warn(settingName + " was too high! (" + setting + ")");
             return max;
         }
         return setting;
@@ -304,49 +299,34 @@ public class StandardSettings {
         return value * 100 == (int) (value * 100) ? (int) (value * 100) + "%" : value * 100 + "%";
     }
 
-    private enum SoundCategoryName {
-        MASTER("Master Volume"),
-        MUSIC("Music"),
-        RECORDS("Jukebox/Note Blocks"),
-        WEATHER("Weather"),
-        BLOCKS("Blocks"),
-        MOBS("Hostile Creatures"),
-        ANIMALS("Friendly Creatures"),
-        PLAYERS("Players"),
-        AMBIENT("Ambient/Environment");
-
-        private final String assignedName;
-        SoundCategoryName(String name) {
-            this.assignedName = name;
-        }
-    }
-
     // returns the contents for a new standardoptions.txt file
     public static String getStandardoptionsTxt() {
         String l = System.lineSeparator();
-        StringBuilder string = new StringBuilder("chatColors:" + options.chatColor + l +
+        StringBuilder string = new StringBuilder(
+                "music:" + options.musicVolume + l +
+                "sound:" + options.soundVolume + l +
+                "chatColors:" + options.chatColor + l +
                 "chatLinks:" + options.chatLink + l +
                 "chatLinksPrompt:" + options.chatLinkPrompt + l +
                 "enableVsync:" + options.vsync + l +
-                "forceUnicodeFont:" + options.forceUnicode + l +
                 "invertYMouse:" + options.invertYMouse + l +
                 "touchscreen:" + options.touchScreen + l +
                 "fullscreen:" + options.fullscreen + l +
                 "bobView:" + options.bobView + l +
                 "anaglyph3d:" + options.anaglyph3d + l +
                 "mouseSensitivity:" + options.sensitivity + l +
-                "fov:" + (options.fov - 70.0f) / 40.0f + l +
+                "fov:" + options.fov + l +
                 "gamma:" + options.gamma + l +
-                "renderDistance:" + options.viewDistance + l +
+                "viewDistance:" + options.renderDistance + l +
                 "guiScale:" + options.guiScale + l +
                 "particles:" + options.particle + l +
                 "maxFps:" + options.maxFramerate + l +
-                "difficulty:" + options.difficulty.getId() + l +
+                "difficulty:" + options.difficultyLevel + l +
                 "fancyGraphics:" + options.fancyGraphics + l +
                 "ao:" + options.ao + l +
                 "clouds:" + options.renderClouds + l +
                 "lang:" + options.language + l +
-                "chatVisibility:" + options.field_7671.getId() + l +
+                "chatVisibility:" + options.chatVisibility + l +
                 "chatOpacity:" + options.chatOpacity + l +
                 "advancedItemTooltips:" + options.advancedItemTooltips + l +
                 "pauseOnLostFocus:" + options.pauseOnLostFocus + l +
@@ -354,14 +334,9 @@ public class StandardSettings {
                 "chatHeightFocused:" + options.chatHeightFocused + l +
                 "chatHeightUnfocused:" + options.chatHeightUnfocused + l +
                 "chatScale:" + options.chatScale + l +
-                "chatWidth:" + options.chatWidth + l +
-                "mipmapLevels:" + options.mipmapLevels + l +
-                "anisotropicFiltering:" + options.field_7638 + l);
+                "chatWidth:" + options.chatWidth + l);
         for (KeyBinding keyBinding : options.keysAll) {
-            string.append("key_").append(keyBinding.getTranslationKey()).append(":").append(keyBinding.getCode()).append(l);
-        }
-        for (SoundCategory soundCategory : SoundCategory.values()) {
-            string.append("soundCategory_").append(soundCategory.getName()).append(":").append(options.getSoundVolume(soundCategory)).append(l);
+            string.append("key_").append(keyBinding.translationKey).append(":").append(keyBinding.code).append(l);
         }
         string.append("hitboxes:").append(l).append("perspective:").append(l).append("piedirectory:").append(l).append("f1:").append(l).append("fovOnWorldJoin:").append(l).append("guiScaleOnWorldJoin:").append(l).append("renderDistanceOnWorldJoin:").append(l).append("changeOnResize:false");
 
@@ -370,7 +345,7 @@ public class StandardSettings {
 
     public static List<String> checkVersion(int[] fileVersion, List<String> existingLines) {
         if (compareVersions(fileVersion, version)) {
-            LOGGER.warn("standardoptions.txt was marked with an outdated StandardSettings version ({}), updating now...", String.join(".", Arrays.stream(fileVersion).mapToObj(String::valueOf).toArray(String[]::new)));
+            LOGGER.warn("standardoptions.txt was marked with an outdated StandardSettings version (" + String.join(".", Arrays.stream(fileVersion).mapToObj(String::valueOf).toArray(String[]::new) + "), updating now..."));
         } else {
             return null;
         }

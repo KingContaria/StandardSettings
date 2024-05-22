@@ -1,8 +1,6 @@
 package com.kingcontaria.standardsettings.mixins;
 
 import com.kingcontaria.standardsettings.StandardSettings;
-import net.fabricmc.loader.api.FabricLoader;
-import net.fabricmc.loader.api.Version;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.world.level.LevelInfo;
 import org.lwjgl.opengl.Display;
@@ -30,14 +28,6 @@ public class MinecraftClientMixin {
     // initialize StandardSettings, doesn't use ClientModInitializer because GameOptions need to be initialized first
     @Inject(method = "initializeGame", at = @At("RETURN"))
     private void initializeStandardSettings(CallbackInfo ci) {
-        // determine the internal default FOV for compatibility with all 1.7.x versions
-        // before 1.7.6-pre1 FOV was saved as a value from 0.0 to 1.0, after that as 30.0 to 110.0
-        try {
-            StandardSettings.defaultFOV = ((FabricLoader.getInstance().getModContainer("minecraft").get().getMetadata().getVersion().compareTo(Version.parse("1.7.6-pre1")) + 2) / 2) * 70.0f;
-        } catch (Exception e) {
-            StandardSettings.LOGGER.error("Failed to get default FOV");
-        }
-
         // create standardoptions.txt
         if (!StandardSettings.standardoptionsFile.exists()) {
             StandardSettings.LOGGER.info("Creating StandardSettings File...");
@@ -47,7 +37,7 @@ public class MinecraftClientMixin {
             // create config file if necessary
             if (!StandardSettings.standardoptionsFile.getParentFile().exists()) {
                 if (!StandardSettings.standardoptionsFile.getParentFile().mkdir()) {
-                    StandardSettings.LOGGER.error("Failed to create config file");
+                    StandardSettings.LOGGER.severe("Failed to create config file");
                     return;
                 }
             }
@@ -57,9 +47,9 @@ public class MinecraftClientMixin {
                 UserDefinedFileAttributeView view = Files.getFileAttributeView(StandardSettings.standardoptionsFile.toPath(), UserDefinedFileAttributeView.class);
                 Files.write(StandardSettings.standardoptionsFile.toPath(), StandardSettings.getStandardoptionsTxt().getBytes());
                 view.write("standardsettings", Charset.defaultCharset().encode(StandardSettings.getVersion()));
-                StandardSettings.LOGGER.info("Finished creating StandardSettings File ({} ms)", (System.nanoTime() - start) / 1000000.0f);
+                StandardSettings.LOGGER.info("Finished creating StandardSettings File ({" + (System.nanoTime() - start) / 1000000.0f + "} ms)");
             } catch (IOException e) {
-                StandardSettings.LOGGER.error("Failed to create StandardSettings File", e);
+                StandardSettings.LOGGER.severe("Failed to create StandardSettings File", e);
             }
             return;
         }
@@ -86,7 +76,7 @@ public class MinecraftClientMixin {
                 fileVersionsMap.put(view, readVersion(view));
             }
         } catch (Exception e) {
-            StandardSettings.LOGGER.error("Failed to check for file versions", e);
+            StandardSettings.LOGGER.severe("Failed to check for file versions", e);
         }
 
         // Finds the highest StandardSettings version of the file chain
@@ -109,12 +99,12 @@ public class MinecraftClientMixin {
                     try {
                         entry.getKey().write("standardsettings", Charset.defaultCharset().encode(StandardSettings.getVersion()));
                     } catch (IOException e) {
-                        StandardSettings.LOGGER.error("Failed to sign version number to file", e);
+                        StandardSettings.LOGGER.severe("Failed to sign version number to file", e);
                     }
                 }
             }
         } catch (IOException e) {
-            StandardSettings.LOGGER.error("Failed to update standardoptions.txt", e);
+            StandardSettings.LOGGER.severe("Failed to update standardoptions.txt", e);
         }
     }
 
@@ -134,7 +124,7 @@ public class MinecraftClientMixin {
 
     // reset settings to standardoptions at the start of world creation
     // if it's an old world, try loading the Option Cache instead
-    @Inject(method = "startGame", at = @At("HEAD"))
+    @Inject(method = "method_2935", at = @At("HEAD"))
     private void resetSettings(String fileName, String worldName, LevelInfo levelInfo, CallbackInfo ci) {
         if (!new File("saves", fileName).exists()) {
             // don't reset settings if the last world was reset on world preview
@@ -155,7 +145,7 @@ public class MinecraftClientMixin {
 
     // activate OnWorldJoin options when finishing world creation
     // if instance is unfocused, it will instead wait
-    @Inject(method = "startGame", at = @At("RETURN"))
+    @Inject(method = "method_2935", at = @At("RETURN"))
     private void onWorldJoin(String fileName, String worldName, LevelInfo levelInfo, CallbackInfo ci) {
         if (Display.isActive()) {
             StandardSettings.changeSettingsOnJoin();
@@ -169,6 +159,15 @@ public class MinecraftClientMixin {
     @Inject(method = "runGameLoop", at = @At("HEAD"))
     private void changeSettingsOnJoin(CallbackInfo ci) {
         if (StandardSettings.changeOnWindowActivation && Display.isActive()) {
+            StandardSettings.changeOnWindowActivation = false;
+            StandardSettings.changeSettingsOnJoin();
+        }
+    }
+
+    // activate OnWorldJoin Options when resizing the instance
+    @Inject(method = "method_2923", at = @At("HEAD"))
+    private void changeSettingsOnResize(CallbackInfo ci) {
+        if (StandardSettings.changeOnWindowActivation && StandardSettings.changeOnResize) {
             StandardSettings.changeOnWindowActivation = false;
             StandardSettings.changeSettingsOnJoin();
         }
