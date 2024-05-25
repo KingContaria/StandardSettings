@@ -19,13 +19,12 @@ import java.util.List;
 
 public abstract class StandardSetting<T> implements SpeedrunOption<T> {
     private final String id;
-    @Nullable
     private final String category;
     protected final StandardGameOptions options;
 
     private boolean enabled = true;
 
-    public StandardSetting(String id, @Nullable String category, StandardGameOptions options) {
+    public StandardSetting(String id, String category, StandardGameOptions options) {
         this.id = id;
         this.category = category;
         this.options = options;
@@ -37,7 +36,7 @@ public abstract class StandardSetting<T> implements SpeedrunOption<T> {
     }
 
     @Override
-    public @Nullable String getCategory() {
+    public String getCategory() {
         return this.category;
     }
 

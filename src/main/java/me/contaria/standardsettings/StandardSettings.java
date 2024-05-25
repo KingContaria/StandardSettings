@@ -109,4 +109,8 @@ public class StandardSettings {
             LOGGER.warn("Failed to save standardoptions to world file.", e);
         }
     }
+
+    public static boolean isEnabled() {
+        return config.toggleStandardSettings;
+    }
 }

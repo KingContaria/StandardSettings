@@ -44,17 +44,21 @@ public abstract class MinecraftClientMixin {
     @Inject(method = "method_29607", at = @At("HEAD"))
     private void reset(String worldName, LevelInfo levelInfo, RegistryTracker.Modifiable registryTracker, GeneratorOptions generatorOptions, CallbackInfo ci) {
         StandardSettings.createCache();
-        StandardSettings.reset();
+        if (StandardSettings.isEnabled()) {
+            StandardSettings.reset();
+        }
     }
 
     @Inject(method = "method_29607", at = @At("TAIL"))
     private void onWorldJoin(String worldName, LevelInfo levelInfo, RegistryTracker.Modifiable registryTracker, GeneratorOptions generatorOptions, CallbackInfo ci) {
         StandardSettings.saveToWorldFile(worldName);
-        if (this.isWindowFocused()) {
-            StandardSettings.onWorldJoin();
-        } else {
-            StandardSettings.onWorldJoinPending = true;
-            StandardSettings.autoF3EscPending = StandardSettings.config.autoF3Esc;
+        if (StandardSettings.isEnabled()) {
+            if (this.isWindowFocused()) {
+                StandardSettings.onWorldJoin();
+            } else {
+                StandardSettings.onWorldJoinPending = true;
+                StandardSettings.autoF3EscPending = StandardSettings.config.autoF3Esc;
+            }
         }
     }
 

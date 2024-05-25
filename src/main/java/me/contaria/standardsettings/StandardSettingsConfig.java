@@ -56,6 +56,8 @@ public class StandardSettingsConfig implements SpeedrunConfig {
     @Config.Ignored
     private long fileLastModified;
 
+    public boolean toggleStandardSettings = true;
+
     @Config.Category("f3")
     public boolean autoF3Esc = false;
 
@@ -79,8 +81,8 @@ public class StandardSettingsConfig implements SpeedrunConfig {
     {
         StandardSettings.config = this;
 
-        this.register("fov", null, Option.FOV);
-        this.register("realmsNotifications", null, Option.REALMS_NOTIFICATIONS);
+        this.register("fov", "menu.options", Option.FOV);
+        this.register("realmsNotifications", "menu.options", Option.REALMS_NOTIFICATIONS);
 
         // Video Settings
         this.register("fullscreenResolution", "options.video", StandardGameOptions::getFullscreenResolution, StandardGameOptions::setFullscreenResolution, option -> VideoMode.fromString(option.get()).map(mode -> (Text) new LiteralText(mode.toString())).orElse(new TranslatableText("options.fullscreen.current")), option -> {
@@ -241,19 +243,19 @@ public class StandardSettingsConfig implements SpeedrunConfig {
         }).disable();
     }
 
-    private DoubleOptionStandardSetting register(String id, @Nullable String category, DoubleOption option) {
+    private DoubleOptionStandardSetting register(String id, String category, DoubleOption option) {
         return this.register(new DoubleOptionStandardSetting(id, category, this.options, option));
     }
 
-    private BooleanOptionStandardSetting register(String id, @Nullable String category, BooleanOption option) {
+    private BooleanOptionStandardSetting register(String id, String category, BooleanOption option) {
         return this.register(new BooleanOptionStandardSetting(id, category, this.options, option));
     }
 
-    private CyclingOptionStandardSetting register(String id, @Nullable String category, CyclingOption option, ToIntFunction<GameOptions> optionGetter) {
+    private CyclingOptionStandardSetting register(String id, String category, CyclingOption option, ToIntFunction<GameOptions> optionGetter) {
         return this.register(new CyclingOptionStandardSetting(id, category, this.options, option, optionGetter));
     }
 
-    private StringOptionStandardSetting register(String id, @Nullable String category, Function<GameOptions, String> getter, BiConsumer<GameOptions, String> setter, Function<StringOptionStandardSetting, Text> getText, Function<StringOptionStandardSetting, AbstractButtonWidget> createMainWidget) {
+    private StringOptionStandardSetting register(String id, String category, Function<GameOptions, String> getter, BiConsumer<GameOptions, String> setter, Function<StringOptionStandardSetting, Text> getText, Function<StringOptionStandardSetting, AbstractButtonWidget> createMainWidget) {
         return this.register(new StringOptionStandardSetting(id, category, this.options, getter, setter, getText, createMainWidget));
     }
 
