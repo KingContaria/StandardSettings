@@ -275,7 +275,7 @@ public class StandardSettingsConfig implements SpeedrunConfig {
     }
 
     @Override
-    public Map<String, SpeedrunOption<?>> init() {
+    public Map<String, SpeedrunOption<?>> init() throws ReflectiveOperationException {
         Map<String, SpeedrunOption<?>> options = new LinkedHashMap<>();
         for (StandardSetting<?> setting : this.standardSettings) {
             if (options.put(setting.getID(), setting) != null) {
