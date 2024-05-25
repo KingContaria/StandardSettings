@@ -1,15 +1,16 @@
 package com.kingcontaria.standardsettings;
 
 import com.google.common.io.Files;
-import com.kingcontaria.standardsettings.mixins.accessors.LanguageManagerAccessor;
-import com.kingcontaria.standardsettings.mixins.accessors.MinecraftClientAccessor;
+import com.kingcontaria.standardsettings.mixins.accessors.MinecraftAccessor;
+import com.kingcontaria.standardsettings.mixins.accessors.TexturePackManagerAccessor;
 import net.fabricmc.loader.api.FabricLoader;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.class_1659;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.options.GameOptions;
 import net.minecraft.client.options.KeyBinding;
 import net.minecraft.client.render.entity.EntityRenderDispatcher;
+import net.minecraft.client.texture.ITexturePack;
 import net.minecraft.client.util.Window;
+import net.minecraft.util.Language;
 import net.minecraft.util.logging.LogManager;
 import org.lwjgl.opengl.Display;
 
@@ -20,8 +21,8 @@ import java.util.*;
 public class StandardSettings {
 
     public static final int[] version = new int[]{1,2,2,0};
-    public static final LogManager LOGGER = MinecraftClient.getInstance().getLogManager();
-    private static final MinecraftClient client = MinecraftClient.getInstance();
+    public static final LogManager LOGGER = Minecraft.getMinecraft().getLogManager();
+    private static final Minecraft client = Minecraft.getMinecraft();
     public static final GameOptions options = client.options;
     public static final File standardoptionsFile = new File(FabricLoader.getInstance().getConfigDir().resolve("standardoptions.txt").toUri());
     public static boolean changeOnWindowActivation = false;
@@ -127,7 +128,7 @@ public class StandardSettings {
                     case "bobView": options.bobView = Boolean.parseBoolean(strings[1]); break;
                     case "anaglyph3d":
                         if (options.anaglyph3d != (options.anaglyph3d = Boolean.parseBoolean(strings[1]))) {
-                            client.getTextureManager().reload(client.getResourceManager());
+                            client.field_3813.updateAnaglyph3D();
                         } break;
                     case "advancedOpengl": options.advancedOpengl = Boolean.parseBoolean(strings[1]); break;
                     case "fpsLimit": options.maxFramerate = Integer.parseInt(strings[1]); break;
@@ -137,25 +138,27 @@ public class StandardSettings {
                     case "clouds": options.renderClouds = Boolean.parseBoolean(strings[1]); break;
                     case "skin":
                         if (!options.currentTexturePackName.equals(strings[1])) {
-                            Optional<class_1659> selectedPack = client.getResourcePackLoader().method_5904().stream().filter(obj -> strings[1].equals(((class_1659) obj).method_5914())).findFirst();
+                            Optional<ITexturePack> selectedPack = client.texturePackManager.method_1688().stream().filter(obj -> strings[1].equals(((ITexturePack) obj).getName())).findFirst();
                             if (selectedPack.isPresent() || "Default".equals(strings[1])) {
                                 if (selectedPack.isPresent()) {
-                                    client.getResourcePackLoader().method_5903(selectedPack.get());
+                                    client.texturePackManager.setCurrentPack(selectedPack.get());
                                 } else {
-                                    client.getResourcePackLoader().method_5903();
+                                    client.texturePackManager.setCurrentPack(TexturePackManagerAccessor.getDefaultPack());
                                 }
-                                client.stitchTextures();
-                                options.currentTexturePackName = client.getResourcePackLoader().method_5906();
+                                client.field_3813.updateAnaglyph3D();
+                                client.worldRenderer.reload();
                             } else {
                                 StandardSettings.LOGGER.warn("resource pack " + strings[1] + " was not found");
                             }
                         } break;
                     case "lang":
-                        if (!options.language.equals(strings[1]) && ((LanguageManagerAccessor)client.getLanguageManager()).getField_6653().containsKey(strings[1])) {
-                            client.getLanguageManager().method_5939(((LanguageManagerAccessor)client.getLanguageManager()).getField_6653().get(options.language = strings[1]));
-                            client.getLanguageManager().reload(client.getResourceManager());
-                            client.textRenderer.method_960(client.getLanguageManager().method_5938());
-                            client.textRenderer.setRightToLeft(client.getLanguageManager().method_5941());
+                        if (!options.language.equals(strings[1]) && Language.getInstance().method_634().containsKey(strings[1])) {
+                            Language.getInstance().method_631(strings[1], false);
+                            options.language = strings[1];
+                            client.textRenderer.method_960(Language.getInstance().method_638());
+                            client.textRenderer.setRightToLeft(Language.hasSpecialCharacters(options.language));
+                            Minecraft.getMinecraft().textRenderer.method_4940();
+                            Minecraft.getMinecraft().shadowTextRenderer.method_4940();
                         } break;
                     case "chatVisibility": options.chatVisibility = Integer.parseInt(strings[1]); break;
                     case "chatColors": options.chatColor = Boolean.parseBoolean(strings[1]); break;
@@ -190,7 +193,7 @@ public class StandardSettings {
                     case "perspective": options.perspective = Integer.parseInt(strings[1]) % 3; break;
                     case "piedirectory":
                         if (!strings[1].split("\\.")[0].equals("root")) break;
-                        ((MinecraftClientAccessor)client).setOpenProfilerSection(strings[1]); break;
+                        ((MinecraftAccessor)client).setOpenProfilerSection(strings[1]); break;
                     case "f1": options.hudHidden = Boolean.parseBoolean(strings[1]); break;
                     case "fovOnWorldJoin": fovOnWorldJoin = Optional.of(Float.parseFloat(strings[1])); break;
                     case "guiScaleOnWorldJoin": guiScaleOnWorldJoin = Optional.of(Integer.parseInt(strings[1])); break;
@@ -216,7 +219,7 @@ public class StandardSettings {
             options.guiScale = guiScale;
             if (client.currentScreen != null) {
                 Window window = new Window(client.options, client.width, client.height);
-                client.currentScreen.init(client, window.getWidth(), window.getHeight());
+                client.currentScreen.method_1028(client, window.getWidth(), window.getHeight());
             }
         });
 

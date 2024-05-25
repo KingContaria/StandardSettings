@@ -1,16 +1,16 @@
 package com.kingcontaria.standardsettings;
 
-import com.kingcontaria.standardsettings.mixins.accessors.MinecraftClientAccessor;
-import net.minecraft.client.MinecraftClient;
+import com.kingcontaria.standardsettings.mixins.accessors.MinecraftAccessor;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.options.GameOptions;
 import net.minecraft.client.options.KeyBinding;
 import net.minecraft.client.render.entity.EntityRenderDispatcher;
-import net.minecraft.client.resource.language.LanguageDefinition;
+import net.minecraft.util.Language;
 import org.lwjgl.opengl.Display;
 
 public class OptionsCache {
 
-    private final MinecraftClient client;
+    private final Minecraft client;
     private final GameOptions options;
     private String levelName;
     private float musicVolume;
@@ -34,7 +34,7 @@ public class OptionsCache {
     private int maxFramerate;
     private boolean fancyGraphics;
     private int ao;
-    private LanguageDefinition language;
+    private String language;
     private int chatVisibility;
     private float chatOpacity;
     private boolean advancedItemTooltips;
@@ -49,7 +49,7 @@ public class OptionsCache {
     private boolean hudHidden;
     private final int[] keysAll;
 
-    public OptionsCache(MinecraftClient client) {
+    public OptionsCache(Minecraft client) {
         this.client = client;
         this.options = client.options;
         keysAll = new int[options.keysAll.length];
@@ -77,7 +77,7 @@ public class OptionsCache {
         maxFramerate = options.maxFramerate;
         fancyGraphics = options.fancyGraphics;
         ao = options.ao;
-        language = client.getLanguageManager().getLanguage();
+        language = client.options.language;
         chatVisibility = options.chatVisibility;
         chatOpacity = options.chatOpacity;
         advancedItemTooltips = options.advancedItemTooltips;
@@ -88,7 +88,7 @@ public class OptionsCache {
         chatWidth = options.chatWidth;
         hitboxes = EntityRenderDispatcher.field_5192;
         perspective = options.perspective;
-        piedirectory = ((MinecraftClientAccessor)client).getOpenProfilerSection();
+        piedirectory = ((MinecraftAccessor)client).getOpenProfilerSection();
         hudHidden = options.hudHidden;
         int i = 0;
         for (KeyBinding key : options.keysAll) {
@@ -109,7 +109,7 @@ public class OptionsCache {
         options.chatLinkPrompt = chatLinkPrompt;
         Display.setVSyncEnabled(options.vsync = vsync);
         options.renderClouds = renderClouds;
-        client.textRenderer.method_960(client.getLanguageManager().method_5938());
+        client.textRenderer.method_960(Language.getInstance().method_638());
         options.invertYMouse = invertYMouse;
         options.touchScreen = touchScreen;
         if (options.fullscreen != fullscreen) {
@@ -121,7 +121,7 @@ public class OptionsCache {
         }
         options.bobView = bobView;
         if (options.anaglyph3d != (options.anaglyph3d = anaglyph3d)) {
-            client.getTextureManager().reload(client.getResourceManager());
+            client.field_3813.updateAnaglyph3D();
         }
         options.sensitivity = sensitivity;
         options.fov = fov;
@@ -132,10 +132,11 @@ public class OptionsCache {
         options.maxFramerate = maxFramerate;
         options.fancyGraphics = fancyGraphics;
         options.ao = ao;
-        if (!language.method_5935().equals(options.language)) {
-            client.getLanguageManager().method_5939(language);
-            client.getLanguageManager().reload(client.getResourceManager());
-            options.language = client.getLanguageManager().getLanguage().method_5935();
+        if (!language.equals(options.language)) {
+            Language.getInstance().method_631(language, false);
+            options.language = language;
+            client.textRenderer.method_960(Language.getInstance().method_638());
+            client.textRenderer.setRightToLeft(Language.hasSpecialCharacters(options.language));
         }
         options.chatVisibility = chatVisibility;
         options.chatOpacity = chatOpacity;
@@ -147,7 +148,7 @@ public class OptionsCache {
         options.chatWidth = chatWidth;
         EntityRenderDispatcher.field_5192 = hitboxes;
         options.perspective = perspective;
-        ((MinecraftClientAccessor)client).setOpenProfilerSection(piedirectory);
+        ((MinecraftAccessor)client).setOpenProfilerSection(piedirectory);
         options.hudHidden = hudHidden;
         int i = 0;
         for (KeyBinding keyBinding : options.keysAll) {

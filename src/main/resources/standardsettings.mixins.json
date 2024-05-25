@@ -4,10 +4,10 @@
   "package": "com.kingcontaria.standardsettings.mixins",
   "compatibilityLevel": "JAVA_8",
   "client": [
-    "accessors.LanguageManagerAccessor",
-    "accessors.MinecraftClientAccessor",
-    "MinecraftClientMixin",
-    "WorldSaveHandlerMixin"
+    "MinecraftMixin",
+    "WorldSaveHandlerMixin",
+    "accessors.MinecraftAccessor",
+    "accessors.TexturePackManagerAccessor"
   ],
   "injectors": {
     "defaultRequire": 1
