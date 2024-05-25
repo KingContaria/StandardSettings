@@ -33,16 +33,12 @@ public class OptionsCache {
     private int particle;
     private int maxFramerate;
     private boolean fancyGraphics;
-    private int ao;
+    private boolean ambientOcculsion;
     private String language;
     private int chatVisibility;
     private float chatOpacity;
     private boolean advancedItemTooltips;
     private boolean pauseOnLostFocus;
-    private float chatHeightFocused;
-    private float chatHeightUnfocused;
-    private float chatScale;
-    private float chatWidth;
     private boolean hitboxes;
     private int perspective;
     private String piedirectory;
@@ -64,7 +60,9 @@ public class OptionsCache {
         vsync = options.vsync;
         renderClouds = options.renderClouds;
         invertYMouse = options.invertYMouse;
-        touchScreen = options.touchScreen;
+        if (StandardSettings.touchscreen) {
+            touchScreen = options.touchScreen;
+        }
         fullscreen = options.fullscreen;
         bobView = options.bobView;
         anaglyph3d = options.anaglyph3d;
@@ -76,17 +74,15 @@ public class OptionsCache {
         particle = options.particle;
         maxFramerate = options.maxFramerate;
         fancyGraphics = options.fancyGraphics;
-        ao = options.ao;
+        ambientOcculsion = options.ambientOcculsion;
         language = client.options.language;
         chatVisibility = options.chatVisibility;
         chatOpacity = options.chatOpacity;
         advancedItemTooltips = options.advancedItemTooltips;
         pauseOnLostFocus = options.pauseOnLostFocus;
-        chatHeightFocused = options.chatHeightFocused;
-        chatHeightUnfocused = options.chatHeightUnfocused;
-        chatScale = options.chatScale;
-        chatWidth = options.chatWidth;
-        hitboxes = EntityRenderDispatcher.field_5192;
+        if (hitboxes) {
+            hitboxes = EntityRenderDispatcher.field_5192;
+        }
         perspective = options.perspective;
         piedirectory = ((MinecraftAccessor)client).getOpenProfilerSection();
         hudHidden = options.hudHidden;
@@ -95,7 +91,7 @@ public class OptionsCache {
             keysAll[i++] = key.code;
         }
 
-        StandardSettings.LOGGER.info("Cached options for '" + (this.levelName = levelName) + "'" + (this.levelName != null ? " & abandoned old cache" : ""));
+        System.out.println("Cached options for '" + (this.levelName = levelName) + "'" + (this.levelName != null ? " & abandoned old cache" : ""));
     }
 
     public void load(String levelName) {
@@ -111,12 +107,14 @@ public class OptionsCache {
         options.renderClouds = renderClouds;
         client.textRenderer.method_960(Language.getInstance().method_638());
         options.invertYMouse = invertYMouse;
-        options.touchScreen = touchScreen;
+        if (StandardSettings.touchscreen) {
+            options.touchScreen = touchScreen;
+        }
         if (options.fullscreen != fullscreen) {
             if (Display.isActive()) {
                 client.toggleFullscreen();
             } else {
-                StandardSettings.LOGGER.severe("Could not reset fullscreen mode because window wasn't focused!");
+                System.err.println("Could not reset fullscreen mode because window wasn't focused!");
             }
         }
         options.bobView = bobView;
@@ -131,9 +129,9 @@ public class OptionsCache {
         options.particle = particle;
         options.maxFramerate = maxFramerate;
         options.fancyGraphics = fancyGraphics;
-        options.ao = ao;
+        options.ambientOcculsion = ambientOcculsion;
         if (!language.equals(options.language)) {
-            Language.getInstance().method_631(language, false);
+            Language.getInstance().setCode(language);
             options.language = language;
             client.textRenderer.method_960(Language.getInstance().method_638());
             client.textRenderer.setRightToLeft(Language.hasSpecialCharacters(options.language));
@@ -142,11 +140,9 @@ public class OptionsCache {
         options.chatOpacity = chatOpacity;
         options.advancedItemTooltips = advancedItemTooltips;
         options.pauseOnLostFocus = pauseOnLostFocus;
-        options.chatHeightFocused = chatHeightFocused;
-        options.chatHeightUnfocused = chatHeightUnfocused;
-        options.chatScale = chatScale;
-        options.chatWidth = chatWidth;
-        EntityRenderDispatcher.field_5192 = hitboxes;
+        if (StandardSettings.hitboxes) {
+            EntityRenderDispatcher.field_5192 = hitboxes;
+        }
         options.perspective = perspective;
         ((MinecraftAccessor)client).setOpenProfilerSection(piedirectory);
         options.hudHidden = hudHidden;
@@ -156,7 +152,7 @@ public class OptionsCache {
         }
         KeyBinding.updateKeysByCode();
 
-        StandardSettings.LOGGER.info("Restored cached options for '" + this.levelName + "'");
+        System.out.println("Restored cached options for '" + this.levelName + "'");
         this.levelName = null;
     }
 

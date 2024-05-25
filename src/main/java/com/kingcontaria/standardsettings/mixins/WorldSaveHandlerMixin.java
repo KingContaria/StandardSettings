@@ -31,9 +31,10 @@ public class WorldSaveHandlerMixin {
         if (isNewWorld && StandardSettings.standardoptionsCache != null) {
             try {
                 Files.write(worldDir.toPath().resolve("standardoptions.txt"), String.join(System.lineSeparator(), StandardSettings.standardoptionsCache).getBytes());
-                StandardSettings.LOGGER.info("Saved standardoptions.txt to world file");
+                System.out.println("Saved standardoptions.txt to world file");
             } catch (IOException e) {
-                StandardSettings.LOGGER.severe("Failed to save standardoptions.txt to world file", e);
+                System.err.println("Failed to save standardoptions.txt to world file");
+                e.printStackTrace();
             }
         }
     }

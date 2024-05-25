@@ -30,14 +30,14 @@ public class MinecraftMixin {
     private void initializeStandardSettings(CallbackInfo ci) {
         // create standardoptions.txt
         if (!StandardSettings.standardoptionsFile.exists()) {
-            StandardSettings.LOGGER.info("Creating StandardSettings File...");
+            System.out.println("Creating StandardSettings File...");
 
             long start = System.nanoTime();
 
             // create config file if necessary
             if (!StandardSettings.standardoptionsFile.getParentFile().exists()) {
                 if (!StandardSettings.standardoptionsFile.getParentFile().mkdir()) {
-                    StandardSettings.LOGGER.severe("Failed to create config file");
+                    System.err.println("Failed to create config file");
                     return;
                 }
             }
@@ -47,9 +47,10 @@ public class MinecraftMixin {
                 UserDefinedFileAttributeView view = Files.getFileAttributeView(StandardSettings.standardoptionsFile.toPath(), UserDefinedFileAttributeView.class);
                 Files.write(StandardSettings.standardoptionsFile.toPath(), StandardSettings.getStandardoptionsTxt().getBytes());
                 view.write("standardsettings", Charset.defaultCharset().encode(StandardSettings.getVersion()));
-                StandardSettings.LOGGER.info("Finished creating StandardSettings File ({" + (System.nanoTime() - start) / 1000000.0f + "} ms)");
+                System.out.println("Finished creating StandardSettings File ({" + (System.nanoTime() - start) / 1000000.0f + "} ms)");
             } catch (IOException e) {
-                StandardSettings.LOGGER.severe("Failed to create StandardSettings File", e);
+                System.err.println("Failed to create StandardSettings File");
+                e.printStackTrace();
             }
             return;
         }
@@ -76,7 +77,8 @@ public class MinecraftMixin {
                 fileVersionsMap.put(view, readVersion(view));
             }
         } catch (Exception e) {
-            StandardSettings.LOGGER.severe("Failed to check for file versions", e);
+            System.err.println("Failed to check for file versions");
+            e.printStackTrace();
         }
 
         // Finds the highest StandardSettings version of the file chain
@@ -92,19 +94,21 @@ public class MinecraftMixin {
             List<String> linesToAdd = StandardSettings.checkVersion(highestVersion, lines);
             if (linesToAdd != null) {
                 com.google.common.io.Files.append(System.lineSeparator() + String.join(System.lineSeparator(), linesToAdd), fileChain.get(fileChain.size() - 1), Charset.defaultCharset());
-                StandardSettings.LOGGER.info("Finished updating standardoptions.txt");
+                System.out.println("Finished updating standardoptions.txt");
             }
             for (Map.Entry<UserDefinedFileAttributeView, int[]> entry : fileVersionsMap.entrySet()) {
                 if (StandardSettings.compareVersions(entry.getValue(), StandardSettings.version)) {
                     try {
                         entry.getKey().write("standardsettings", Charset.defaultCharset().encode(StandardSettings.getVersion()));
                     } catch (IOException e) {
-                        StandardSettings.LOGGER.severe("Failed to sign version number to file", e);
+                        System.err.println("Failed to sign version number to file");
+                        e.printStackTrace();
                     }
                 }
             }
         } catch (IOException e) {
-            StandardSettings.LOGGER.severe("Failed to update standardoptions.txt", e);
+            System.err.println("Failed to update standardoptions.txt");
+            e.printStackTrace();
         }
     }
 
@@ -129,9 +133,9 @@ public class MinecraftMixin {
         if (!new File("saves", fileName).exists()) {
             // don't reset settings if the last world was reset on world preview
             if (shouldResetSettings) {
-                StandardSettings.LOGGER.info("Reset to StandardSettings...");
+                System.out.println("Reset to StandardSettings...");
                 StandardSettings.load();
-                StandardSettings.LOGGER.info("Checking and saving Settings...");
+                System.out.println("Checking and saving Settings...");
                 StandardSettings.checkSettings();
                 shouldResetSettings = false;
             }

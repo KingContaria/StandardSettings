@@ -4,6 +4,7 @@ import com.google.common.io.Files;
 import com.kingcontaria.standardsettings.mixins.accessors.MinecraftAccessor;
 import com.kingcontaria.standardsettings.mixins.accessors.TexturePackManagerAccessor;
 import net.fabricmc.loader.api.FabricLoader;
+import net.fabricmc.loader.api.MappingResolver;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.options.GameOptions;
 import net.minecraft.client.options.KeyBinding;
@@ -11,7 +12,6 @@ import net.minecraft.client.render.entity.EntityRenderDispatcher;
 import net.minecraft.client.texture.ITexturePack;
 import net.minecraft.client.util.Window;
 import net.minecraft.util.Language;
-import net.minecraft.util.logging.LogManager;
 import org.lwjgl.opengl.Display;
 
 import java.io.*;
@@ -21,7 +21,6 @@ import java.util.*;
 public class StandardSettings {
 
     public static final int[] version = new int[]{1,2,2,0};
-    public static final LogManager LOGGER = Minecraft.getMinecraft().getLogManager();
     private static final Minecraft client = Minecraft.getMinecraft();
     public static final GameOptions options = client.options;
     public static final File standardoptionsFile = new File(FabricLoader.getInstance().getConfigDir().resolve("standardoptions.txt").toUri());
@@ -34,6 +33,28 @@ public class StandardSettings {
     public static String lastWorld;
     public static String[] standardoptionsCache;
     public static Map<File, Long> filesLastModifiedMap;
+    // 1.4.3+
+    static boolean hitboxes;
+    // 1.4.6+
+    static boolean touchscreen;
+
+    static {
+        MappingResolver mappingResolver = FabricLoader.getInstance().getMappingResolver();
+        try {
+            Class<?> entityRenderDispatcher = Class.forName(mappingResolver.mapClassName("intermediary", "net.minecraft.class_550"));
+            entityRenderDispatcher.getField(mappingResolver.mapFieldName("intermediary", "net.minecraft.class_550", "field_5192", "Z"));
+            hitboxes = true;
+        } catch (ClassNotFoundException | NoSuchFieldException e) {
+            hitboxes = false;
+        }
+        try {
+            Class<?> gameOptions = Class.forName(mappingResolver.mapClassName("intermediary", "net.minecraft.class_347"));
+            gameOptions.getField(mappingResolver.mapFieldName("intermediary", "net.minecraft.class_347", "field_5047", "Z"));
+            touchscreen = true;
+        } catch (ClassNotFoundException | NoSuchFieldException e) {
+            touchscreen = false;
+        }
+    }
 
     public static void load() {
         long start = System.nanoTime();
@@ -43,7 +64,7 @@ public class StandardSettings {
         try {
             if (!standardoptionsFile.exists()) {
                 standardoptionsCache = null;
-                LOGGER.severe("standardoptions.txt is missing");
+                System.err.println("standardoptions.txt is missing");
                 return;
             }
 
@@ -56,19 +77,20 @@ public class StandardSettings {
 
             // reload and cache standardoptions if necessary
             if (standardoptionsCache == null || wereFilesModified(filesLastModifiedMap)) {
-                LOGGER.info("Reloading & caching StandardSettings...");
+                System.out.println("Reloading & caching StandardSettings...");
                 List<String> lines = resolveGlobalFile(standardoptionsFile);
                 if (lines == null) {
-                    LOGGER.severe("standardoptions.txt is empty");
+                    System.err.println("standardoptions.txt is empty");
                     return;
                 }
                 standardoptionsCache = lines.toArray(new String[0]);
             }
             load(standardoptionsCache);
-            LOGGER.info("Finished loading StandardSettings (" + (System.nanoTime() - start) / 1000000.0f + " ms)");
+            System.out.println("Finished loading StandardSettings (" + (System.nanoTime() - start) / 1000000.0f + " ms)");
         } catch (Exception e) {
             standardoptionsCache = null;
-            LOGGER.severe("Failed to load StandardSettings", e);
+            System.err.println("Failed to load StandardSettings");
+            e.printStackTrace();
         }
     }
 
@@ -134,7 +156,7 @@ public class StandardSettings {
                     case "fpsLimit": options.maxFramerate = Integer.parseInt(strings[1]); break;
                     case "difficulty": options.difficultyLevel = Integer.parseInt(strings[1]); break;
                     case "fancyGraphics": options.fancyGraphics = Boolean.parseBoolean(strings[1]); break;
-                    case "ao": options.ao = strings[1].equals("true") ? 2 : (strings[1].equals("false") ? 0 : Integer.parseInt(strings[1])); break;
+                    case "ao": options.ambientOcculsion = Boolean.parseBoolean(strings[1]); break;
                     case "clouds": options.renderClouds = Boolean.parseBoolean(strings[1]); break;
                     case "skin":
                         if (!options.currentTexturePackName.equals(strings[1])) {
@@ -148,17 +170,15 @@ public class StandardSettings {
                                 client.field_3813.updateAnaglyph3D();
                                 client.worldRenderer.reload();
                             } else {
-                                StandardSettings.LOGGER.warn("resource pack " + strings[1] + " was not found");
+                                System.err.println("resource pack " + strings[1] + " was not found");
                             }
                         } break;
                     case "lang":
                         if (!options.language.equals(strings[1]) && Language.getInstance().method_634().containsKey(strings[1])) {
-                            Language.getInstance().method_631(strings[1], false);
+                            Language.getInstance().setCode(strings[1]);
                             options.language = strings[1];
                             client.textRenderer.method_960(Language.getInstance().method_638());
                             client.textRenderer.setRightToLeft(Language.hasSpecialCharacters(options.language));
-                            Minecraft.getMinecraft().textRenderer.method_4940();
-                            Minecraft.getMinecraft().shadowTextRenderer.method_4940();
                         } break;
                     case "chatVisibility": options.chatVisibility = Integer.parseInt(strings[1]); break;
                     case "chatColors": options.chatColor = Boolean.parseBoolean(strings[1]); break;
@@ -171,25 +191,25 @@ public class StandardSettings {
                                 client.toggleFullscreen();
                                 options.fullscreen = Boolean.parseBoolean(strings[1]);
                             } else {
-                                LOGGER.severe("Could not reset fullscreen mode because window wasn't focused!");
+                                System.err.println("Could not reset fullscreen mode because window wasn't focused!");
                             }
                         } break;
                     case "enableVsync": Display.setVSyncEnabled(options.vsync = Boolean.parseBoolean(strings[1])); break;
                     case "advancedItemTooltips": options.advancedItemTooltips = Boolean.parseBoolean(strings[1]); break;
                     case "pauseOnLostFocus": options.pauseOnLostFocus = Boolean.parseBoolean(strings[1]); break;
                     case "showCape": options.field_5053 = Boolean.parseBoolean(strings[1]); break;
-                    case "touchscreen": options.touchScreen = Boolean.parseBoolean(strings[1]); break;
-                    case "chatHeightFocused": options.chatHeightFocused = Float.parseFloat(strings[1]); break;
-                    case "chatHeightUnfocused": options.chatHeightUnfocused = Float.parseFloat(strings[1]); break;
-                    case "chatScale": options.chatScale = Float.parseFloat(strings[1]); break;
-                    case "chatWidth": options.chatWidth = Float.parseFloat(strings[1]); break;
+                    case "touchscreen": if (touchscreen) {
+                        options.touchScreen = Boolean.parseBoolean(strings[1]);
+                    } break;
                     case "key":
                         for (KeyBinding keyBinding : options.keysAll) {
                             if (string0_split[1].equals(keyBinding.translationKey)) {
                                 keyBinding.code = Integer.parseInt(strings[1]); break;
                             }
                         } break;
-                    case "hitboxes": EntityRenderDispatcher.field_5192 = Boolean.parseBoolean(strings[1]); break;
+                    case "hitboxes": if (hitboxes) {
+                        EntityRenderDispatcher.field_5192 = Boolean.parseBoolean(strings[1]);
+                    } break;
                     case "perspective": options.perspective = Integer.parseInt(strings[1]) % 3; break;
                     case "piedirectory":
                         if (!strings[1].split("\\.")[0].equals("root")) break;
@@ -203,7 +223,7 @@ public class StandardSettings {
                 // Some options.txt settings which aren't accessible in vanilla Minecraft and some unnecessary settings (like Multiplayer and Streaming stuff) are not included.
                 // also has a few extra settings that can be reset that Minecraft doesn't save to options.txt, but are important in speedrunning
             } catch (Exception e) {
-                LOGGER.warn("Skipping bad StandardSetting: " + line);
+                System.err.println("Skipping bad StandardSetting: " + line);
             }
         }
         KeyBinding.updateKeysByCode();
@@ -226,7 +246,7 @@ public class StandardSettings {
         if (fovOnWorldJoin.isPresent() || guiScaleOnWorldJoin.isPresent() || renderDistanceOnWorldJoin.isPresent()) {
             emptyOnWorldJoinOptions();
             options.save();
-            LOGGER.info("Changed Settings on World Join (" + (System.nanoTime() - start) / 1000000.0f + " ms)");
+            System.out.println("Changed Settings on World Join (" + (System.nanoTime() - start) / 1000000.0f + " ms)");
         }
     }
 
@@ -250,10 +270,6 @@ public class StandardSettings {
         options.guiScale = check("GUI Scale", options.guiScale, 0, 3);
         options.maxFramerate = check("Max Framerate", options.maxFramerate, 0, 2);
         options.chatOpacity = check("(Chat) Opacity", options.chatOpacity, 0, 1, true);
-        options.chatHeightFocused = check("(Chat) Focused Height", options.chatHeightFocused, 0, 1, false);
-        options.chatHeightUnfocused = check("(Chat) Unfocused Height", options.chatHeightUnfocused, 0, 1, false);
-        options.chatScale = check("(Chat) Scale", options.chatScale, 0, 1, true);
-        options.chatWidth = check("(Chat) Width", options.chatWidth, 0, 1, false);
         options.musicVolume = check("Music", options.musicVolume, 0, 1, true);
         options.soundVolume = check("Sound", options.soundVolume, 0, 1, true);
 
@@ -269,18 +285,18 @@ public class StandardSettings {
 
         options.save();
 
-        LOGGER.info("Finished checking and saving Settings (" + (System.nanoTime() - start) / 1000000.0f + " ms)");
+        System.out.println("Finished checking and saving Settings (" + (System.nanoTime() - start) / 1000000.0f + " ms)");
     }
 
     // check methods return the value of the setting, adjusted to be in the given bounds
     // if a setting is outside the bounds, it also gives a log output to signal the value has been corrected
     private static float check(String settingName, float setting, float min, float max, boolean percent) {
         if (setting < min) {
-            LOGGER.warn(settingName + " was too low! (" + (percent ? asPercent(setting) : setting) + ")");
+            System.err.println(settingName + " was too low! (" + (percent ? asPercent(setting) : setting) + ")");
             return min;
         }
         if (setting > max) {
-            LOGGER.warn(settingName + " was too high! (" + (percent ? asPercent(setting) : setting) + ")");
+            System.err.println(settingName + " was too high! (" + (percent ? asPercent(setting) : setting) + ")");
             return max;
         }
         return setting;
@@ -288,11 +304,11 @@ public class StandardSettings {
 
     private static int check(String settingName, int setting, int min, int max) {
         if (setting < min) {
-            LOGGER.warn(settingName + " was too low! (" + setting + ")");
+            System.err.println(settingName + " was too low! (" + setting + ")");
             return min;
         }
         if (setting > max) {
-            LOGGER.warn(settingName + " was too high! (" + setting + ")");
+            System.err.println(settingName + " was too high! (" + setting + ")");
             return max;
         }
         return setting;
@@ -313,7 +329,7 @@ public class StandardSettings {
                 "chatLinksPrompt:" + options.chatLinkPrompt + l +
                 "enableVsync:" + options.vsync + l +
                 "invertYMouse:" + options.invertYMouse + l +
-                "touchscreen:" + options.touchScreen + l +
+                (StandardSettings.touchscreen ? "touchscreen:" + options.touchScreen + l : "") +
                 "fullscreen:" + options.fullscreen + l +
                 "bobView:" + options.bobView + l +
                 "anaglyph3d:" + options.anaglyph3d + l +
@@ -326,29 +342,28 @@ public class StandardSettings {
                 "maxFps:" + options.maxFramerate + l +
                 "difficulty:" + options.difficultyLevel + l +
                 "fancyGraphics:" + options.fancyGraphics + l +
-                "ao:" + options.ao + l +
+                "ao:" + options.ambientOcculsion + l +
                 "clouds:" + options.renderClouds + l +
                 "lang:" + options.language + l +
                 "chatVisibility:" + options.chatVisibility + l +
                 "chatOpacity:" + options.chatOpacity + l +
                 "advancedItemTooltips:" + options.advancedItemTooltips + l +
                 "pauseOnLostFocus:" + options.pauseOnLostFocus + l +
-                "showCape:" + options.field_5053 + l +
-                "chatHeightFocused:" + options.chatHeightFocused + l +
-                "chatHeightUnfocused:" + options.chatHeightUnfocused + l +
-                "chatScale:" + options.chatScale + l +
-                "chatWidth:" + options.chatWidth + l);
+                "showCape:" + options.field_5053 + l);
         for (KeyBinding keyBinding : options.keysAll) {
             string.append("key_").append(keyBinding.translationKey).append(":").append(keyBinding.code).append(l);
         }
-        string.append("hitboxes:").append(l).append("perspective:").append(l).append("piedirectory:").append(l).append("f1:").append(l).append("fovOnWorldJoin:").append(l).append("guiScaleOnWorldJoin:").append(l).append("renderDistanceOnWorldJoin:").append(l).append("changeOnResize:false");
+        if (hitboxes) {
+            string.append("hitboxes:").append(l);
+        }
+        string.append("perspective:").append(l).append("piedirectory:").append(l).append("f1:").append(l).append("fovOnWorldJoin:").append(l).append("guiScaleOnWorldJoin:").append(l).append("renderDistanceOnWorldJoin:").append(l).append("changeOnResize:false");
 
         return string.toString();
     }
 
     public static List<String> checkVersion(int[] fileVersion, List<String> existingLines) {
         if (compareVersions(fileVersion, version)) {
-            LOGGER.warn("standardoptions.txt was marked with an outdated StandardSettings version (" + String.join(".", Arrays.stream(fileVersion).mapToObj(String::valueOf).toArray(String[]::new) + "), updating now..."));
+            System.err.println("standardoptions.txt was marked with an outdated StandardSettings version (" + String.join(".", Arrays.stream(fileVersion).mapToObj(String::valueOf).toArray(String[]::new) + "), updating now..."));
         } else {
             return null;
         }
@@ -374,7 +389,7 @@ public class StandardSettings {
         }
 
         if (lines.size() == 0) {
-            LOGGER.info("Didn't find anything to update, good luck on the runs!");
+            System.out.println("Didn't find anything to update, good luck on the runs!");
             return null;
         }
         return lines;
