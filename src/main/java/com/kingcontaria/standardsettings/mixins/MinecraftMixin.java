@@ -1,6 +1,7 @@
 package com.kingcontaria.standardsettings.mixins;
 
 import com.kingcontaria.standardsettings.StandardSettings;
+import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.level.LevelInfo;
 import org.lwjgl.opengl.Display;
@@ -28,6 +29,7 @@ public class MinecraftMixin {
     // initialize StandardSettings, doesn't use ClientModInitializer because GameOptions need to be initialized first
     @Inject(method = "initializeGame", at = @At("RETURN"))
     private void initializeStandardSettings(CallbackInfo ci) {
+        StandardSettings.usePauseOnLostFocus = FabricLoader.getInstance().isModLoaded("no-paus");
         // create standardoptions.txt
         if (!StandardSettings.standardoptionsFile.exists()) {
             System.out.println("Creating StandardSettings File...");

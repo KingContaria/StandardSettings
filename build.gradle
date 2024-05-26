@@ -34,6 +34,7 @@ dependencies {
 	mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
 	modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
 	include(implementation("com.google.guava:guava:33.2.0-jre"))
+	modImplementation(files("libs/no-paus-1.0.1+1.3.1-1.4-alpha.12.32.a.jar"))
 
 	// Fabric API provides hooks for events, item registration, and more. As most mods will need this, it's included by default. 
 	// If you know for a fact you don't, it's not required and can be safely removed.

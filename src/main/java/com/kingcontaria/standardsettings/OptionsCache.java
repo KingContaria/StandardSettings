@@ -1,10 +1,10 @@
 package com.kingcontaria.standardsettings;
 
 import com.kingcontaria.standardsettings.mixins.accessors.MinecraftAccessor;
+import dev.tildejustin.nopaus.NoPaus;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.options.GameOptions;
 import net.minecraft.client.options.KeyBinding;
-import net.minecraft.client.render.entity.EntityRenderDispatcher;
 import net.minecraft.util.Language;
 import org.lwjgl.opengl.Display;
 
@@ -21,7 +21,6 @@ public class OptionsCache {
     private boolean vsync;
     private boolean renderClouds;
     private boolean invertYMouse;
-    private boolean touchScreen;
     private boolean fullscreen;
     private boolean bobView;
     private boolean anaglyph3d;
@@ -37,9 +36,7 @@ public class OptionsCache {
     private String language;
     private int chatVisibility;
     private float chatOpacity;
-    private boolean advancedItemTooltips;
     private boolean pauseOnLostFocus;
-    private boolean hitboxes;
     private int perspective;
     private String piedirectory;
     private boolean hudHidden;
@@ -60,9 +57,6 @@ public class OptionsCache {
         vsync = options.vsync;
         renderClouds = options.renderClouds;
         invertYMouse = options.invertYMouse;
-        if (StandardSettings.touchscreen) {
-            touchScreen = options.touchScreen;
-        }
         fullscreen = options.fullscreen;
         bobView = options.bobView;
         anaglyph3d = options.anaglyph3d;
@@ -78,10 +72,8 @@ public class OptionsCache {
         language = client.options.language;
         chatVisibility = options.chatVisibility;
         chatOpacity = options.chatOpacity;
-        advancedItemTooltips = options.advancedItemTooltips;
-        pauseOnLostFocus = options.pauseOnLostFocus;
-        if (hitboxes) {
-            hitboxes = EntityRenderDispatcher.field_5192;
+        if (StandardSettings.usePauseOnLostFocus) {
+            pauseOnLostFocus = NoPaus.pauseOnLostFocus;
         }
         perspective = options.perspective;
         piedirectory = ((MinecraftAccessor)client).getOpenProfilerSection();
@@ -107,9 +99,6 @@ public class OptionsCache {
         options.renderClouds = renderClouds;
         client.textRenderer.method_960(Language.getInstance().method_638());
         options.invertYMouse = invertYMouse;
-        if (StandardSettings.touchscreen) {
-            options.touchScreen = touchScreen;
-        }
         if (options.fullscreen != fullscreen) {
             if (Display.isActive()) {
                 client.toggleFullscreen();
@@ -138,10 +127,8 @@ public class OptionsCache {
         }
         options.chatVisibility = chatVisibility;
         options.chatOpacity = chatOpacity;
-        options.advancedItemTooltips = advancedItemTooltips;
-        options.pauseOnLostFocus = pauseOnLostFocus;
-        if (StandardSettings.hitboxes) {
-            EntityRenderDispatcher.field_5192 = hitboxes;
+        if (StandardSettings.usePauseOnLostFocus) {
+            NoPaus.pauseOnLostFocus = pauseOnLostFocus;
         }
         options.perspective = perspective;
         ((MinecraftAccessor)client).setOpenProfilerSection(piedirectory);

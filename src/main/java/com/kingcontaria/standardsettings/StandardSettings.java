@@ -3,12 +3,11 @@ package com.kingcontaria.standardsettings;
 import com.google.common.io.Files;
 import com.kingcontaria.standardsettings.mixins.accessors.MinecraftAccessor;
 import com.kingcontaria.standardsettings.mixins.accessors.TexturePackManagerAccessor;
+import dev.tildejustin.nopaus.NoPaus;
 import net.fabricmc.loader.api.FabricLoader;
-import net.fabricmc.loader.api.MappingResolver;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.options.GameOptions;
 import net.minecraft.client.options.KeyBinding;
-import net.minecraft.client.render.entity.EntityRenderDispatcher;
 import net.minecraft.client.texture.ITexturePack;
 import net.minecraft.client.util.Window;
 import net.minecraft.util.Language;
@@ -33,28 +32,7 @@ public class StandardSettings {
     public static String lastWorld;
     public static String[] standardoptionsCache;
     public static Map<File, Long> filesLastModifiedMap;
-    // 1.4.3+
-    static boolean hitboxes;
-    // 1.4.6+
-    static boolean touchscreen;
-
-    static {
-        MappingResolver mappingResolver = FabricLoader.getInstance().getMappingResolver();
-        try {
-            Class<?> entityRenderDispatcher = Class.forName(mappingResolver.mapClassName("intermediary", "net.minecraft.class_550"));
-            entityRenderDispatcher.getField(mappingResolver.mapFieldName("intermediary", "net.minecraft.class_550", "field_5192", "Z"));
-            hitboxes = true;
-        } catch (ClassNotFoundException | NoSuchFieldException e) {
-            hitboxes = false;
-        }
-        try {
-            Class<?> gameOptions = Class.forName(mappingResolver.mapClassName("intermediary", "net.minecraft.class_347"));
-            gameOptions.getField(mappingResolver.mapFieldName("intermediary", "net.minecraft.class_347", "field_5047", "Z"));
-            touchscreen = true;
-        } catch (ClassNotFoundException | NoSuchFieldException e) {
-            touchscreen = false;
-        }
-    }
+    public static boolean usePauseOnLostFocus;
 
     public static void load() {
         long start = System.nanoTime();
@@ -195,21 +173,16 @@ public class StandardSettings {
                             }
                         } break;
                     case "enableVsync": Display.setVSyncEnabled(options.vsync = Boolean.parseBoolean(strings[1])); break;
-                    case "advancedItemTooltips": options.advancedItemTooltips = Boolean.parseBoolean(strings[1]); break;
-                    case "pauseOnLostFocus": options.pauseOnLostFocus = Boolean.parseBoolean(strings[1]); break;
-                    case "showCape": options.field_5053 = Boolean.parseBoolean(strings[1]); break;
-                    case "touchscreen": if (touchscreen) {
-                        options.touchScreen = Boolean.parseBoolean(strings[1]);
-                    } break;
+                    case "pauseOnLostFocus":
+                        if (StandardSettings.usePauseOnLostFocus) {
+                            NoPaus.pauseOnLostFocus = Boolean.parseBoolean(strings[1]);
+                        } break;
                     case "key":
                         for (KeyBinding keyBinding : options.keysAll) {
                             if (string0_split[1].equals(keyBinding.translationKey)) {
                                 keyBinding.code = Integer.parseInt(strings[1]); break;
                             }
                         } break;
-                    case "hitboxes": if (hitboxes) {
-                        EntityRenderDispatcher.field_5192 = Boolean.parseBoolean(strings[1]);
-                    } break;
                     case "perspective": options.perspective = Integer.parseInt(strings[1]) % 3; break;
                     case "piedirectory":
                         if (!strings[1].split("\\.")[0].equals("root")) break;
@@ -329,7 +302,6 @@ public class StandardSettings {
                 "chatLinksPrompt:" + options.chatLinkPrompt + l +
                 "enableVsync:" + options.vsync + l +
                 "invertYMouse:" + options.invertYMouse + l +
-                (StandardSettings.touchscreen ? "touchscreen:" + options.touchScreen + l : "") +
                 "fullscreen:" + options.fullscreen + l +
                 "bobView:" + options.bobView + l +
                 "anaglyph3d:" + options.anaglyph3d + l +
@@ -346,15 +318,12 @@ public class StandardSettings {
                 "clouds:" + options.renderClouds + l +
                 "lang:" + options.language + l +
                 "chatVisibility:" + options.chatVisibility + l +
-                "chatOpacity:" + options.chatOpacity + l +
-                "advancedItemTooltips:" + options.advancedItemTooltips + l +
-                "pauseOnLostFocus:" + options.pauseOnLostFocus + l +
-                "showCape:" + options.field_5053 + l);
+                "chatOpacity:" + options.chatOpacity + l);
+        if (StandardSettings.usePauseOnLostFocus) {
+            string.append("pauseOnLostFocus:").append(NoPaus.pauseOnLostFocus).append(l);
+        }
         for (KeyBinding keyBinding : options.keysAll) {
             string.append("key_").append(keyBinding.translationKey).append(":").append(keyBinding.code).append(l);
-        }
-        if (hitboxes) {
-            string.append("hitboxes:").append(l);
         }
         string.append("perspective:").append(l).append("piedirectory:").append(l).append("f1:").append(l).append("fovOnWorldJoin:").append(l).append("guiScaleOnWorldJoin:").append(l).append("renderDistanceOnWorldJoin:").append(l).append("changeOnResize:false");
 
