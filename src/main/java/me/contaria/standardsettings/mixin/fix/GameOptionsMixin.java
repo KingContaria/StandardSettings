@@ -13,28 +13,17 @@ import net.minecraft.sound.SoundCategory;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Slice;
 
 import java.util.function.BooleanSupplier;
 
 @Mixin(GameOptions.class)
 public abstract class GameOptionsMixin {
 
-    // TODO: all this slice weirdness (these were made by trial and error bc nothing is working the way I expected it to)
-    //       is caused by mixin not distinguishing between the two different constructors for whatever reason
-    //       hopefully the slices can be replaced by using expressions in the future
-
     @WrapOperation(
             method = "<init>",
             at = @At(
                     value = "NEW",
                     target = "(Ljava/lang/String;ILjava/lang/String;)Lnet/minecraft/client/options/KeyBinding;"
-            ),
-            slice = @Slice(
-                    to = @At(
-                            value = "CONSTANT",
-                            args = "stringValue=key.use"
-                    )
             )
     )
     private KeyBinding doNotCreateKeyBindings(String translationKey, int code, String category, Operation<KeyBinding> original) {
@@ -49,16 +38,6 @@ public abstract class GameOptionsMixin {
             at = @At(
                     value = "NEW",
                     target = "(Ljava/lang/String;Lnet/minecraft/client/util/InputUtil$Type;ILjava/lang/String;)Lnet/minecraft/client/options/KeyBinding;"
-            ),
-            slice = @Slice(
-                    from = @At(
-                            value = "CONSTANT",
-                            args = "stringValue=key.drop"
-                    ),
-                    to = @At(
-                            value = "CONSTANT",
-                            args = "stringValue=key.chat"
-                    )
             )
     )
     private KeyBinding doNotCreateKeyBindings(String translationKey, InputUtil.Type type, int code, String category, Operation<KeyBinding> original) {
@@ -66,23 +45,6 @@ public abstract class GameOptionsMixin {
             return null;
         }
         return original.call(translationKey, type, code, category);
-    }
-
-    @WrapOperation(
-            method = "<init>",
-            at = @At(
-                    value = "NEW",
-                    target = "(Ljava/lang/String;ILjava/lang/String;)Lnet/minecraft/client/options/KeyBinding;"
-            ),
-            slice = @Slice(
-                    from = @At(
-                            value = "CONSTANT",
-                            args = "stringValue=key.pickItem"
-                    )
-            )
-    )
-    private KeyBinding doNotCreateKeyBindings2(String translationKey, int code, String category, Operation<KeyBinding> original) {
-        return this.doNotCreateKeyBindings(translationKey, code, category, original);
     }
 
     @WrapOperation(
