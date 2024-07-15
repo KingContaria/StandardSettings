@@ -112,7 +112,7 @@ public class StandardSettingsConfig implements SpeedrunConfig {
                 // see Option.GRAPHICS's setter
                 options.graphicsMode = GraphicsMode.byId(value);
                 if (!(options instanceof StandardGameOptions)) {
-                    if (options.graphicsMode == GraphicsMode.FABULOUS && (!GlStateManager.supportsGl30() || MinecraftClient.getInstance().method_30049().method_30142())) {
+                    if (options.graphicsMode == GraphicsMode.FABULOUS && (!GlStateManager.supportsGl30() || MinecraftClient.getInstance().getVideoWarningManager().hasCancelledAfterWarning())) {
                         StandardSettings.LOGGER.warn("Set Graphics Mode to 'Fancy' because 'Fabulous!' is not supported on this device.");
                         options.graphicsMode = GraphicsMode.FANCY;
                     }
@@ -188,7 +188,7 @@ public class StandardSettingsConfig implements SpeedrunConfig {
         this.register("chatLineSpacing", "options.chat.title", Option.CHAT_LINE_SPACING);
         this.register("chatWidth", "options.chat.title", Option.CHAT_WIDTH);
         this.register("chatHeightFocused", "options.chat.title", Option.CHAT_HEIGHT_FOCUSED);
-        this.register("chatHeightUnfocused", "options.chat.title", Option.SATURATION);
+        this.register("chatHeightUnfocused", "options.chat.title", Option.CHAT_HEIGHT_UNFOCUSED);
         this.register("narrator", "options.chat.title", Option.NARRATOR, options -> options.narrator.getId());
         this.register("autoSuggestions", "options.chat.title", Option.AUTO_SUGGESTIONS);
         this.register("reducedDebugInfo", "options.chat.title", Option.REDUCED_DEBUG_INFO);

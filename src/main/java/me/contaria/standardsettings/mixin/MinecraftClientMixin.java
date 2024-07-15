@@ -41,7 +41,7 @@ public abstract class MinecraftClientMixin {
     @Shadow
     public abstract void openPauseMenu(boolean pause);
 
-    @Inject(method = "method_29607", at = @At("HEAD"))
+    @Inject(method = "createWorld", at = @At("HEAD"))
     private void reset(String worldName, LevelInfo levelInfo, RegistryTracker.Modifiable registryTracker, GeneratorOptions generatorOptions, CallbackInfo ci) {
         StandardSettings.createCache();
         if (StandardSettings.isEnabled()) {
@@ -49,7 +49,7 @@ public abstract class MinecraftClientMixin {
         }
     }
 
-    @Inject(method = "method_29607", at = @At("TAIL"))
+    @Inject(method = "createWorld", at = @At("TAIL"))
     private void onWorldJoin(String worldName, LevelInfo levelInfo, RegistryTracker.Modifiable registryTracker, GeneratorOptions generatorOptions, CallbackInfo ci) {
         StandardSettings.saveToWorldFile(worldName);
         if (StandardSettings.isEnabled()) {
