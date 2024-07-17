@@ -22,6 +22,7 @@ import net.minecraft.text.TranslatableText;
 import org.apache.commons.lang3.ArrayUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.lwjgl.glfw.GLFW;
 import org.mcsr.speedrunapi.config.SpeedrunConfigAPI;
 import org.mcsr.speedrunapi.config.SpeedrunConfigContainer;
 import org.mcsr.speedrunapi.config.api.SpeedrunConfig;
@@ -336,6 +337,9 @@ public class StandardSettingsConfig implements SpeedrunConfig {
     public @Nullable Predicate<InputUtil.Key> createInputListener() {
         return key -> {
             if (this.focusedKeyBinding != null) {
+                if (key.getCategory() == InputUtil.Type.KEYSYM && key.getCode() == GLFW.GLFW_KEY_ESCAPE) {
+                    key = InputUtil.UNKNOWN_KEY;
+                }
                 this.focusedKeyBinding.set(key);
                 this.focusedKeyBinding = null;
                 return true;
