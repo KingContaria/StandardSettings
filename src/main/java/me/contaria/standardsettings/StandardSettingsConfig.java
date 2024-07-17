@@ -41,7 +41,6 @@ import java.util.function.ToIntFunction;
 
 @InitializeOn(InitializeOn.InitPoint.POSTLAUNCH)
 public class StandardSettingsConfig implements SpeedrunConfig {
-
     @Config.Ignored
     public final StandardGameOptions options = new StandardGameOptions(MinecraftClient.getInstance(), null);
     @Config.Ignored
@@ -75,8 +74,6 @@ public class StandardSettingsConfig implements SpeedrunConfig {
     @Config.Ignored
     @Nullable
     private KeyBindingStandardSetting focusedKeyBinding;
-    @Config.Ignored
-    private Runnable focusedKeyBindingCallback;
 
     {
         StandardSettings.config = this;
@@ -341,17 +338,14 @@ public class StandardSettingsConfig implements SpeedrunConfig {
             if (this.focusedKeyBinding != null) {
                 this.focusedKeyBinding.set(key);
                 this.focusedKeyBinding = null;
-                this.focusedKeyBindingCallback.run();
-                this.focusedKeyBindingCallback = null;
                 return true;
             }
             return false;
         };
     }
 
-    public void setFocusedKeyBinding(KeyBindingStandardSetting keyBinding, Runnable callback) {
+    public void setFocusedKeyBinding(@Nullable KeyBindingStandardSetting keyBinding) {
         this.focusedKeyBinding = keyBinding;
-        this.focusedKeyBindingCallback = callback;
     }
 
     public boolean isFocusedKeyBinding(KeyBindingStandardSetting keyBinding) {
