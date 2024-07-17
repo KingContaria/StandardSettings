@@ -10,6 +10,7 @@
     "accessors.MinecraftClientAccessor",
     "accessors.OptionAccessor",
     "fix.GameOptionsMixin",
+    "fix.KeyboardMixin",
     "fix.LanguageOptionsScreenMixin",
     "fix.OptionMixin"
   ],

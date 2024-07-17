@@ -19,7 +19,7 @@ import java.util.List;
 
 public class StandardSettings {
     public static final Logger LOGGER = LogManager.getLogger();
-    public static boolean HAS_SODIUM = FabricLoader.getInstance().isModLoaded("sodium");
+    public static final boolean HAS_SODIUM = FabricLoader.getInstance().isModLoaded("sodium");
     public static StandardSettingsConfig config;
 
     @Nullable

@@ -4,7 +4,6 @@ import com.google.gson.JsonParseException;
 import com.mojang.blaze3d.platform.GlStateManager;
 import me.contaria.standardsettings.options.*;
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.screen.options.LanguageOptionsScreen;
 import net.minecraft.client.gui.widget.AbstractButtonWidget;
 import net.minecraft.client.gui.widget.ButtonWidget;
@@ -20,7 +19,6 @@ import net.minecraft.text.LiteralText;
 import net.minecraft.text.Text;
 import net.minecraft.text.TranslatableText;
 import org.apache.commons.lang3.ArrayUtils;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.lwjgl.glfw.GLFW;
 import org.mcsr.speedrunapi.config.SpeedrunConfigAPI;
@@ -328,9 +326,8 @@ public class StandardSettingsConfig implements SpeedrunConfig {
     }
 
     @Override
-    public @NotNull Screen createConfigScreen(Screen parent) {
+    public void finishSaving() {
         this.focusedKeyBinding = null;
-        return SpeedrunConfig.super.createConfigScreen(parent);
     }
 
     @Override
@@ -354,5 +351,9 @@ public class StandardSettingsConfig implements SpeedrunConfig {
 
     public boolean isFocusedKeyBinding(KeyBindingStandardSetting keyBinding) {
         return this.focusedKeyBinding == keyBinding;
+    }
+
+    public boolean hasFocusedKeyBinding() {
+        return this.focusedKeyBinding != null;
     }
 }
