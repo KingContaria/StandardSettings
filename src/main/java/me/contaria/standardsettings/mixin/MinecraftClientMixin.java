@@ -43,6 +43,9 @@ public abstract class MinecraftClientMixin {
 
     @Inject(method = "createWorld", at = @At("HEAD"))
     private void reset(String worldName, LevelInfo levelInfo, RegistryTracker.Modifiable registryTracker, GeneratorOptions generatorOptions, CallbackInfo ci) {
+        if (!MinecraftClient.getInstance().isOnThread()) {
+            return;
+        }
         StandardSettings.createCache();
         if (StandardSettings.isEnabled()) {
             StandardSettings.reset();
@@ -51,6 +54,9 @@ public abstract class MinecraftClientMixin {
 
     @Inject(method = "createWorld", at = @At("TAIL"))
     private void onWorldJoin(String worldName, LevelInfo levelInfo, RegistryTracker.Modifiable registryTracker, GeneratorOptions generatorOptions, CallbackInfo ci) {
+        if (!MinecraftClient.getInstance().isOnThread()) {
+            return;
+        }
         StandardSettings.saveToWorldFile(worldName);
         if (StandardSettings.isEnabled()) {
             if (this.isWindowFocused()) {
@@ -78,17 +84,23 @@ public abstract class MinecraftClientMixin {
 
     @Inject(method = "startIntegratedServer(Ljava/lang/String;Lnet/minecraft/util/registry/RegistryTracker$Modifiable;Ljava/util/function/Function;Lcom/mojang/datafixers/util/Function4;ZLnet/minecraft/client/MinecraftClient$WorldLoadAction;)V", at = @At("HEAD"))
     private void resetPendingActions(CallbackInfo ci) {
-        StandardSettings.resetPendingActions();
+        if (MinecraftClient.getInstance().isOnThread()) {
+            StandardSettings.resetPendingActions();
+        }
     }
 
     @Inject(method = "startIntegratedServer(Ljava/lang/String;)V", at = @At("HEAD"))
     private void loadCache(String worldName, CallbackInfo ci) {
-        StandardSettings.loadCache(worldName);
+        if (MinecraftClient.getInstance().isOnThread()) {
+            StandardSettings.loadCache(worldName);
+        }
     }
 
     @Inject(method = "startIntegratedServer(Ljava/lang/String;Lnet/minecraft/util/registry/RegistryTracker$Modifiable;Ljava/util/function/Function;Lcom/mojang/datafixers/util/Function4;ZLnet/minecraft/client/MinecraftClient$WorldLoadAction;)V", at = @At("TAIL"))
     private void setLastWorld(String worldName, RegistryTracker.Modifiable registryTracker, Function<LevelStorage.Session, DataPackSettings> function, Function4<LevelStorage.Session, RegistryTracker.Modifiable, ResourceManager, DataPackSettings, SaveProperties> function4, boolean safeMode, @Coerce Object worldLoadAction, CallbackInfo ci) {
-        StandardSettings.lastWorld = worldName;
+        if (MinecraftClient.getInstance().isOnThread()) {
+            StandardSettings.lastWorld = worldName;
+        }
     }
 
     @Inject(method = "tick", at = @At("HEAD"))
