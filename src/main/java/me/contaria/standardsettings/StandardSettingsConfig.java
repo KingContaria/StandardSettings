@@ -163,7 +163,12 @@ public class StandardSettingsConfig implements SpeedrunConfig {
         this.register("mouseWheelSensitivity", "options.mouse_settings", Option.MOUSE_WHEEL_SENSITIVITY);
         this.register("discrete_mouse_scroll", "options.mouse_settings", Option.DISCRETE_MOUSE_SCROLL);
         this.register("touchscreen", "options.mouse_settings", Option.TOUCHSCREEN);
-        this.register("rawMouseInput", "options.mouse_settings", Option.RAW_MOUSE_INPUT);
+        this.register(new BooleanOptionStandardSetting("rawMouseInput", "options.mouse_settings", this.options, Option.RAW_MOUSE_INPUT) {
+            @Override
+            public boolean hasWidget() {
+                return super.hasWidget() && InputUtil.isRawMouseMotionSupported();
+            }
+        });
 
         // Controls
         this.register("autoJump", "options.controls", Option.AUTO_JUMP);
