@@ -146,6 +146,7 @@ public class StandardSettingsConfig implements SpeedrunConfig {
         for (PlayerModelPart playerModelPart : PlayerModelPart.values()) {
             this.register(new PlayerModelPartStandardSetting("modelPart_" + playerModelPart.getName(), "options.skinCustomisation", this.options, playerModelPart));
         }
+        this.register("mainHand", "options.skinCustomisation", Option.MAIN_HAND, options -> options.mainArm.ordinal());
 
         // Music & Sounds
         for (SoundCategory soundCategory : SoundCategory.values()) {
