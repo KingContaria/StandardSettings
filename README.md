@@ -17,7 +17,7 @@ This mod requires Speedrun API. You can download StandardSettings, Speedrun API,
 
 *If you used StandardSettings before, you'd be used to the mod reading from `.../.minecraft/config/standardoptions.txt`. This is no longer the case!*
 
-To get to the config screen, go to `Options > Book and Quill > StandardSettings` in game. Here you can edit  all the settings changed by StandardSettings, including most settings from Minecraft's `options.txt` file, plus some additional settings. It does not include settings that aren't accessible from inside the game (i.e. difficulty – configure it in Atum's settings instead).
+To get to the config screen, go to `Options > Book and Quill > StandardSettings` in game. Here you can edit all the settings changed by StandardSettings, including most settings from Minecraft's `options.txt` file, plus some additional settings. It does not include settings that aren't accessible from inside the game (i.e. difficulty – configure it in Atum's settings instead).
 
 There is a global toggle for all settings at the top – setting "Toggle StandardSettings" to "OFF" will prevent every setting from being reset.
 
