@@ -21,7 +21,7 @@ To get to the config screen, go to `Options > Book and Quill > StandardSettings`
 
 There is a global toggle for all settings at the top – setting "Toggle StandardSettings" to "OFF" will prevent every setting from being reset.
 
-To find a specific setting quickly, press `Ctrl + F` in the config screen and start typing the name pf the setting.
+To find a specific setting quickly, press `Ctrl + F` in the config screen and start typing the name of the setting.
 
 To stop a specific setting from being reset, change the button on the right of it from "ON" to "OFF".
 
