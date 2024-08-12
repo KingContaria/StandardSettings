@@ -17,7 +17,7 @@ This mod requires Speedrun API. You can download StandardSettings, Speedrun API,
 
 *If you used StandardSettings before, you'd be used to the mod reading from `.../.minecraft/config/standardoptions.txt`. This is no longer the case!*
 
-To get to the config screen, go to `Options > Book and Quill > StandardSettings` in game. Here you can edit  all the settings changed by StandardSettings, including most settings from Minecraft's `options.txt` file, plus some additional settings. It does not include settings that aren't accessible from inside the game (i.e. difficulty – configure it in Atum's settings instead), and some unnecessary options (for example multiplayer related) are also left out.
+To get to the config screen, go to `Options > Book and Quill > StandardSettings` in game. Here you can edit  all the settings changed by StandardSettings, including most settings from Minecraft's `options.txt` file, plus some additional settings. It does not include settings that aren't accessible from inside the game (i.e. difficulty – configure it in Atum's settings instead).
 
 There is a global toggle for all settings at the top – setting "Toggle StandardSettings" to "OFF" will prevent every setting from being reset.
 
@@ -36,6 +36,10 @@ After that is done, it will also perform a quick check to make sure the values a
 ### What are the additional settings?
 
 Depending on the Minecraft version you are playing, some of these might not be included.
+
+**F3 Pause On World Load**: This will use the F3+Esc pause screen instead of the regular pause screen for WorldPreview and for joining the world with Minecraft unfocused.
+
+**First World F3 Pause Delay**: Sets a delay for F3 Pause on the first world to circumvent first world lag preventing chunks from rendering.
 
 **Entity Culling**: Sets the Sodium "Entity Culling" option.
 
@@ -78,3 +82,13 @@ The same concept applies for all the other OnWorldJoin options too. Here is a li
 **GUI Scale**: This is the GUI Scale the game will change to once you finish world creation & have the instance focused.
 
 **Trigger On Resize**: If you enable this, resizing the window of your instance will also result in the OnWorldJoin options being triggered. This is mainly useful for macros to implement delays between activating OnWorldJoin options and joining the instance.
+
+### How can I use a global standardoptions file?
+
+To do this, you have to create a `.minecraft/config/mcsr/standardsettings.global` file and put a path to a global file there, for example:
+```
+C:\Users\KingContaria\Desktop\speedrunning stuff\standardoptions\globalstandardoptions_116.json
+```
+This will make StandardSettings use the settings specified there instead of `.minecraft/config/mcsr/standardsettings.json`, and will allow you to change the settings in this file in game from Speedrun API.
+
+By putting a directory to another `.global` file into that file, you can now create chains of file paths. This can be useful if you use a lot of different settings for different categories.
