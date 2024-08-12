@@ -95,5 +95,3 @@ C:\Users\KingContaria\Desktop\speedrunning stuff\standardoptions\globalstandardo
 To do this, you can copy an existing `standardoptions.json` file, put it wherever you'd like, go to it in File Explorer, and shift right click on it > Copy as Path. Then, open `standardsettings.global` with Notepad, paste the path you just copied there, remove the quotes around it, and save the file.
 
 This will make StandardSettings use the settings specified there instead of `.minecraft/config/mcsr/standardsettings.json`, and will allow you to change the settings in this file in game from Speedrun API.
-
-By putting a directory to another `.global` file into that file, you can now create chains of file paths. This can be useful if you use a lot of different settings for different categories.
