@@ -85,10 +85,15 @@ The same concept applies for all the other OnWorldJoin options too. Here is a li
 
 ### How can I use a global standardoptions file?
 
-To do this, you have to create a `.minecraft/config/mcsr/standardsettings.global` file and put a path to a global file there, for example:
+To do this, you have to create a `.minecraft/config/mcsr/standardsettings.global` file. Note that it has to have a `.global` extension! Make sure you have file extensions enabled by going to File Explorer > `View` tab on the top > ticking the `File name extensions` box.
+
+Put a path to your global file there, for example:
 ```
 C:\Users\KingContaria\Desktop\speedrunning stuff\standardoptions\globalstandardoptions_116.json
 ```
+
+To do this, you can copy an existing `standardoptions.json` file, put it wherever you'd like, go to it in File Explorer, and shift right click on it > Copy as Path. Then, open `standardsettings.global` with Notepad, paste the path you just copied there, remove the quotes around it, and save the file.
+
 This will make StandardSettings use the settings specified there instead of `.minecraft/config/mcsr/standardsettings.json`, and will allow you to change the settings in this file in game from Speedrun API.
 
 By putting a directory to another `.global` file into that file, you can now create chains of file paths. This can be useful if you use a lot of different settings for different categories.
