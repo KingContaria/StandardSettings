@@ -4,6 +4,9 @@ import com.google.gson.JsonParseException;
 import com.mojang.blaze3d.platform.GlStateManager;
 import me.contaria.standardsettings.options.*;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.gui.screen.ConfirmScreen;
+import net.minecraft.client.gui.screen.Screen;
+import net.minecraft.client.gui.screen.ScreenTexts;
 import net.minecraft.client.gui.screen.options.LanguageOptionsScreen;
 import net.minecraft.client.gui.widget.AbstractButtonWidget;
 import net.minecraft.client.gui.widget.ButtonWidget;
@@ -30,6 +33,7 @@ import org.mcsr.speedrunapi.config.api.annotations.InitializeOn;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
@@ -55,6 +59,9 @@ public class StandardSettingsConfig implements SpeedrunConfig {
     private long fileLastModified;
 
     public boolean toggleStandardSettings = true;
+
+    @SuppressWarnings("unused")
+    public boolean toggleAll = true;
 
     @Config.Category("f3")
     public boolean autoF3Esc = false;
@@ -261,7 +268,7 @@ public class StandardSettingsConfig implements SpeedrunConfig {
         return this.register(new StringOptionStandardSetting(id, category, this.options, getter, setter, getText, createMainWidget));
     }
 
-    private <T extends StandardSetting<?>> T  register(T standardSetting) {
+    private <T extends StandardSetting<?>> T register(T standardSetting) {
         this.standardSettings.add(standardSetting);
         return standardSetting;
     }
@@ -291,6 +298,46 @@ public class StandardSettingsConfig implements SpeedrunConfig {
         }
         options.putAll(SpeedrunConfig.super.init());
         return options;
+    }
+
+    private void toggleAll(boolean enabled) {
+        for (StandardSetting<?> setting : StandardSettings.config.standardSettings) {
+            setting.setEnabled(enabled);
+        }
+        for (StandardSetting<?> setting : StandardSettings.config.standardSettingsOnWorldJoin) {
+            setting.setEnabled(enabled);
+        }
+    }
+
+    private void confirmToggleAll(ButtonWidget button) {
+        MinecraftClient client = MinecraftClient.getInstance();
+        Screen screen = client.currentScreen;
+        client.openScreen(new ConfirmScreen(
+                confirmed -> {
+                    if (confirmed) {
+                        this.toggleAll = !this.toggleAll;
+                        this.toggleAll(this.toggleAll);
+                    }
+                    client.openScreen(screen);
+                },
+                new TranslatableText("speedrunapi.config.standardsettings.option.toggleAll"),
+                new TranslatableText("speedrunapi.config.standardsettings.option.toggleAll.description")
+                        .append(" ")
+                        .append(new TranslatableText("speedrunapi.config.standardsettings.option.toggleAll.confirm")),
+                ScreenTexts.PROCEED,
+                ScreenTexts.CANCEL
+        ));
+    }
+
+    @Override
+    public @Nullable SpeedrunOption<?> parseField(Field field, SpeedrunConfig config, String... idPrefix) {
+        if ("toggleAll".equals(field.getName())) {
+            return new SpeedrunConfigAPI.CustomOption.Builder<Boolean>(this, this, field, idPrefix)
+                    .createWidget((option, innerConfig, configStorage, optionField) ->
+                            new ButtonWidget(0, 0, 150, 20, ScreenTexts.getToggleText(!option.get()), this::confirmToggleAll)
+                    ).build();
+        }
+        return SpeedrunConfig.super.parseField(field, config, idPrefix);
     }
 
     @Override
