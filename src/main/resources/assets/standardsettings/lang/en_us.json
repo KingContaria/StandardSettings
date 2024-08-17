@@ -7,7 +7,10 @@
   "speedrunapi.config.standardsettings.option.language": "Language",
   "speedrunapi.config.standardsettings.option.pieDirectory": "Pie Directory",
 
-  "speedrunapi.config.standardsettings.option.toggleStandardSettings": "Toggle StandardSettings",
+  "speedrunapi.config.standardsettings.option.toggleStandardSettings": "Use StandardSettings",
+  "speedrunapi.config.standardsettings.option.toggleAll": "Toggle all",
+  "speedrunapi.config.standardsettings.option.toggleAll.description": "This will enable / disable all toggleable options.",
+  "speedrunapi.config.standardsettings.option.toggleAll.confirm": "If you don't want to do this or understand what this means, please press Cancel.",
   "speedrunapi.config.standardsettings.option.autoF3Esc": "F3 Pause on World Load",
   "speedrunapi.config.standardsettings.option.autoF3Esc.description": "Automatically opens the F3 Pause Screen on WorldPreview and when joining a world while the game is unfocused.\nMake sure Pause On Lost Focus is disabled for this option to work properly!",
   "speedrunapi.config.standardsettings.option.firstAutoF3EscDelay": "First World F3 Pause Delay",

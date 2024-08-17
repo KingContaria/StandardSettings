@@ -134,6 +134,10 @@ public abstract class StandardSetting<T> implements SpeedrunOption<T> {
         return this.enabled;
     }
 
+    public void setEnabled(boolean enabled) {
+        this.enabled = enabled;
+    }
+
     public boolean toggleEnabled() {
         return this.enabled = !this.enabled;
     }
