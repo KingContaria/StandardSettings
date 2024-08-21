@@ -22,6 +22,7 @@ import net.minecraft.text.LiteralText;
 import net.minecraft.text.Text;
 import net.minecraft.text.TranslatableText;
 import org.apache.commons.lang3.ArrayUtils;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.lwjgl.glfw.GLFW;
 import org.mcsr.speedrunapi.config.SpeedrunConfigAPI;
@@ -408,5 +409,11 @@ public class StandardSettingsConfig implements SpeedrunConfig {
 
     public boolean hasFocusedKeyBinding() {
         return this.focusedKeyBinding != null;
+    }
+
+    @Override
+    public @NotNull Screen createConfigScreen(Screen parent) {
+        this.update();
+        return SpeedrunConfig.super.createConfigScreen(parent);
     }
 }
