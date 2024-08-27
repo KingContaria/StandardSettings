@@ -6,6 +6,7 @@ import net.minecraft.client.gui.ParentElement;
 import net.minecraft.client.gui.screen.ScreenTexts;
 import net.minecraft.client.gui.widget.AbstractButtonWidget;
 import net.minecraft.client.gui.widget.ButtonWidget;
+import net.minecraft.client.gui.widget.TextFieldWidget;
 import net.minecraft.client.util.math.MatrixStack;
 import org.jetbrains.annotations.Nullable;
 
@@ -26,9 +27,17 @@ public class StandardOptionWidget extends AbstractButtonWidget implements Parent
             boolean enabled = setting.toggleEnabled();
             button.setMessage(ScreenTexts.getToggleText(enabled));
             this.mainWidget.setMessage(setting.getText());
-            this.mainWidget.active = enabled;
+            this.setEnabled(enabled);
         });
-        this.mainWidget.active = setting.isEnabled();
+        this.setEnabled(setting.isEnabled());
+    }
+
+    private void setEnabled(boolean enabled) {
+        this.mainWidget.active = enabled;
+        if (this.mainWidget instanceof TextFieldWidget) {
+            ((TextFieldWidget) this.mainWidget).setEditable(enabled);
+            ((TextFieldWidget) this.mainWidget).setFocusUnlocked(enabled);
+        }
     }
 
     @Override
