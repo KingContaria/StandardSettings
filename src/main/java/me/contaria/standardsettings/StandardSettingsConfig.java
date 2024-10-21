@@ -353,7 +353,7 @@ public class StandardSettingsConfig implements SpeedrunConfig {
         Path globalRedirect = SpeedrunConfigAPI.getConfigDir().resolve("standardsettings.global");
         if (Files.exists(globalRedirect)) {
             try {
-                File file = new File(new String(Files.readAllBytes(globalRedirect)));
+                File file = new File(new String(Files.readAllBytes(globalRedirect)).trim());
                 if (file.isFile()) {
                     return file;
                 }
