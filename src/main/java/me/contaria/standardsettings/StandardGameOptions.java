@@ -93,7 +93,7 @@ public class StandardGameOptions extends GameOptions {
         if (!value.startsWith("root")) {
             value = "root";
         }
-        value = value.replace('.', '\u001e').strip();
+        value = value.replace('.', '\u001e').trim();
         if (options instanceof StandardGameOptions) {
             ((StandardGameOptions) options).pieDirectory = value;
         } else {
