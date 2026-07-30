@@ -83,7 +83,7 @@ public class SimpleOptionStandardSetting<T> extends StandardSetting<T> {
 
     @Override
     protected void valueFromJson(JsonElement jsonElement) {
-        this.copy.getCodec().parse(JsonOps.INSTANCE, jsonElement).result().ifPresent(this.copy::setValue);
+        this.copy.getCodec().parse(JsonOps.INSTANCE, jsonElement).result().ifPresent(this::set);
     }
 
     @Override
